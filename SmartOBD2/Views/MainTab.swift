@@ -27,12 +27,14 @@ struct MainTab: View {
                 
                 Button("Start RPM") {
                     guard let characteristic = bluethoothViewModel.ecuCharacteristic else { return }
+                    print("Start RPM")
+                    
                     elmComm.startRPMRequest(characteristic: characteristic, peripheral: bluethoothViewModel.connectedPeripheral!)
                 }
                 
             }
             .tabItem {
-                Image(systemName: "wrench.and.s crewdriver")
+                Image(systemName: "wrench.and.screwdriver")
                 Text("Settings")
             }
             
@@ -55,9 +57,61 @@ struct MainTab: View {
                 Text(bluethoothViewModel.connected ? "Connected to \(bluethoothViewModel.carly)" : "Not Connected")
             }
             
-            VStack {
+            VStack(spacing: 20) {
+                HStack {
+                    Spacer()
+                    // Status square
+                    ZStack {
+                        Circle()
+                            .foregroundColor(bluethoothViewModel.initialized ? .green : .red)
+                            .frame(width: 60, height: 60)
+                        
+                        Text(bluethoothViewModel.initialized ? "Ready" : "Not Ready")
+                            .font(.system(size: 10))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                }
+                
+                // Received data list
+                List {
+                    ForEach(bluethoothViewModel.receivedDataBuffer.components(separatedBy: "\r\n"), id: \.self) { data in
+                        Text(data)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                
+                TextField("Enter Command", text: $bluethoothViewModel.command)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.bottom, 20)
+                
+                
+                
+                
+                Button(action: {
+                    guard let characteristic = bluethoothViewModel.ecuCharacteristic else { return }
+                    print("Start RPM")
+                    elmComm.startRPMRequest(characteristic: characteristic, peripheral: bluethoothViewModel.connectedPeripheral!)
+                }, label: {
+                    Text("Send")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                })
+                .disabled(!bluethoothViewModel.connected)
+                
+                
                 
             }
+            .padding(20)
             .tabItem {
                 Image(systemName: "gear")
                 Text("Settings")

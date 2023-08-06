@@ -30,22 +30,13 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     private let ecuServiceUUID = UUID(uuidString: "FFE0")
     @Published var ecuCharacteristicUUID = UUID(uuidString: "FFE1")
     @Published var ecuCharacteristic: CBCharacteristic?
-    private let rpmPattern = "([0-9A-Fa-f]{2})\\s([0-9A-Fa-f]{2})\\s55\\s55\\s55"
+    @Published var command: String = "" 
     
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    func processData(response: String) {
-        let range = response.range(of: rpmPattern, options: .regularExpression)
-        guard let matchedRange = range else {
-            return
-        }
-        
-        let rpmData = response[matchedRange]
-        self.rpm = elm.processBuffer(rpmData:rpmData)
-    }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
@@ -54,13 +45,16 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
         }
         switch characteristic.uuid.uuidString {
         case "FFE1":
-            if let response = characteristic.value {
-                guard let responseString = String(data: response, encoding: .utf8) else {
-                    print("Invalid data format")
-                    return
-                }
-                self.processData(response: responseString)
+            guard let response = characteristic.value else {
+                return
             }
+            guard let responseString = String(data: response, encoding: .utf8)?.replacingOccurrences(of: " ", with: "") else {
+                print("Invalid data format")
+                return
+            }
+            print(responseString)
+            self.rpm = elm.processBuffer(response: responseString)
+            
         case "F000FFC1-0451-4000-B000-000000000000":
             if let response = characteristic.value {
                 guard let responseString = String(data: response, encoding: .utf8) else {
