@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		38ABFA052A7CC0B900433A18 /* bleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* bleConnection.swift */; };
-		38ABFA062A7CC0B900433A18 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FD2A7CC0B800433A18 /* Services.swift */; };
-		38ABFA072A7CC0B900433A18 /* Characteristics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FE2A7CC0B800433A18 /* Characteristics.swift */; };
-		38ABFA092A7CC0B900433A18 /* CarlyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABFA012A7CC0B800433A18 /* CarlyManager.swift */; };
+		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
+		38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FD2A7CC0B800433A18 /* BleServices.swift */; };
+		38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */; };
 		38ABFA0A2A7CC0B900433A18 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABFA022A7CC0B800433A18 /* MainView.swift */; };
 		38ABFA0E2A7DA70400433A18 /* GaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABFA0D2A7DA70400433A18 /* GaugeView.swift */; };
 		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
@@ -19,13 +18,16 @@
 		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
 		38F6B3732A7F00430040F928 /* Elm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3722A7F00430040F928 /* Elm.swift */; };
 		38F6B3752A7F24990040F928 /* MainTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3742A7F24990040F928 /* MainTab.swift */; };
+		38F6B3822A80BE3B0040F928 /* BleUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3812A80BE3B0040F928 /* BleUpdates.swift */; };
+		38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */; };
+		38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3852A80E0880040F928 /* OBDModel.swift */; };
+		38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 38F6B3882A80E0FC0040F928 /* SwiftyJSON */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		38ABF9FC2A7CC0B800433A18 /* bleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = bleConnection.swift; sourceTree = "<group>"; };
-		38ABF9FD2A7CC0B800433A18 /* Services.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
-		38ABF9FE2A7CC0B800433A18 /* Characteristics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Characteristics.swift; sourceTree = "<group>"; };
-		38ABFA012A7CC0B800433A18 /* CarlyManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CarlyManager.swift; sourceTree = "<group>"; };
+		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
+		38ABF9FD2A7CC0B800433A18 /* BleServices.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleServices.swift; sourceTree = "<group>"; };
+		38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleCharacteristics.swift; sourceTree = "<group>"; };
 		38ABFA022A7CC0B800433A18 /* MainView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		38ABFA0C2A7CC87700433A18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		38ABFA0D2A7DA70400433A18 /* GaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GaugeView.swift; sourceTree = "<group>"; };
@@ -36,6 +38,9 @@
 		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
 		38F6B3722A7F00430040F928 /* Elm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Elm.swift; sourceTree = "<group>"; };
 		38F6B3742A7F24990040F928 /* MainTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTab.swift; sourceTree = "<group>"; };
+		38F6B3812A80BE3B0040F928 /* BleUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleUpdates.swift; sourceTree = "<group>"; };
+		38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2Parser.swift; sourceTree = "<group>"; };
+		38F6B3852A80E0880040F928 /* OBDModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,9 +58,12 @@
 		38ABF9FB2A7CC0B800433A18 /* BleComm */ = {
 			isa = PBXGroup;
 			children = (
-				38ABF9FC2A7CC0B800433A18 /* bleConnection.swift */,
-				38ABF9FD2A7CC0B800433A18 /* Services.swift */,
-				38ABF9FE2A7CC0B800433A18 /* Characteristics.swift */,
+				38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */,
+				38ABF9FD2A7CC0B800433A18 /* BleServices.swift */,
+				38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */,
+				38F6B3812A80BE3B0040F928 /* BleUpdates.swift */,
+				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
+				38F6B3852A80E0880040F928 /* OBDModel.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -62,7 +71,6 @@
 		38ABF9FF2A7CC0B800433A18 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				38ABFA012A7CC0B800433A18 /* CarlyManager.swift */,
 				38ABFA022A7CC0B800433A18 /* MainView.swift */,
 				38ABFA0D2A7DA70400433A18 /* GaugeView.swift */,
 				38F6B3702A7EA99D0040F928 /* ELM327.swift */,
@@ -133,6 +141,9 @@
 			dependencies = (
 			);
 			name = SmartOBD2;
+			packageProductDependencies = (
+				38F6B3882A80E0FC0040F928 /* SwiftyJSON */,
+			);
 			productName = SmartOBD2;
 			productReference = 38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */;
 			productType = "com.apple.product-type.application";
@@ -161,6 +172,9 @@
 				Base,
 			);
 			mainGroup = 38C93E7C2A7CBE3D0044C7E4;
+			packageReferences = (
+				38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
+			);
 			productRefGroup = 38C93E862A7CBE3D0044C7E4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -189,14 +203,16 @@
 			files = (
 				38F6B3752A7F24990040F928 /* MainTab.swift in Sources */,
 				38F6B3732A7F00430040F928 /* Elm.swift in Sources */,
-				38ABFA092A7CC0B900433A18 /* CarlyManager.swift in Sources */,
 				38ABFA0E2A7DA70400433A18 /* GaugeView.swift in Sources */,
 				38ABFA0A2A7CC0B900433A18 /* MainView.swift in Sources */,
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
-				38ABFA072A7CC0B900433A18 /* Characteristics.swift in Sources */,
-				38ABFA062A7CC0B900433A18 /* Services.swift in Sources */,
+				38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */,
+				38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */,
+				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
+				38F6B3822A80BE3B0040F928 /* BleUpdates.swift in Sources */,
 				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
-				38ABFA052A7CC0B900433A18 /* bleConnection.swift in Sources */,
+				38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */,
+				38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +423,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		38F6B3882A80E0FC0040F928 /* SwiftyJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
+			productName = SwiftyJSON;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 38C93E7D2A7CBE3D0044C7E4 /* Project object */;
 }

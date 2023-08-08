@@ -9,11 +9,9 @@ import SwiftUI
 
 @main
 struct SmartOBD2App: App {
-    @StateObject private var elmComm = ELMComm()
     var body: some Scene {
         WindowGroup {
             MainView()
-                .environmentObject(elmComm)
         }
     }
 }
