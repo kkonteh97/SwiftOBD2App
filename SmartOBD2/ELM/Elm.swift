@@ -8,10 +8,20 @@
 import Foundation
 import CoreBluetooth
 
+extension String {
+    func leftPadding(toLength: Int, withPad character: Character) -> String {
+        let paddingAmount = max(0, toLength - count)
+        let padding = String(repeating: character, count: paddingAmount)
+        return padding + self
+    }
+}
+
 class ELMComm: ObservableObject {
     var obdProtocol: ELM327.PROTOCOL = .NONE //Will be determined by the setup
     private var readyToSend = true
-    private var currentSetupStepReady = true
+    @Published var currentSetupStepReady = true
+    
+    @Published var ecuCount = 0
     private var setupInProgress = false
     private var setupTimer: Timer?
     fileprivate var parserResponse: (Bool, [String]) = (false, [])
@@ -23,33 +33,14 @@ class ELMComm: ObservableObject {
     fileprivate var getDTCsStatus: ELM327.QUERY.GET_DTCS_STEP = .none
     fileprivate var currentDTCs: [String] = []
     fileprivate var currentGetDTCsQueryReady = false
-
-
-
-
+    fileprivate var getDTCsTimer: Timer?
+    fileprivate var rpmTimer: Timer?
+    fileprivate var supportedPIDs: [String:[String]] = [:]
     
     
-    @Published var linesToParse: [String] = []
     
-    func initializeELM(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
-        //        for command in initCommands {
-        //            let data = command.data(using: .utf8)
-        //            peripheral.writeValue(data!, for: characteristic, type: .withResponse)
-        //        }
-    }
-    
-    init(Ble: BluetoothViewModel, obdProtocol: ELM327.PROTOCOL, readyToSend: Bool = true, currentSetupStepReady: Bool = true, setupInProgress: Bool = false, setupTimer: Timer? = nil, parserResponse: (Bool, [String]), numberOfDTCs: Int, linesToParse: [String]) {
-        self.obdProtocol = obdProtocol
-        self.readyToSend = readyToSend
-        self.currentSetupStepReady = currentSetupStepReady
-        self.setupInProgress = setupInProgress
-        self.setupTimer = setupTimer
-        self.parserResponse = parserResponse
-        self.numberOfDTCs = numberOfDTCs
-        self.linesToParse = linesToParse
-        
+    init(Ble: BluetoothViewModel) {
         self.Ble = Ble
-        
     }
     
     var currentQuery = ELM327.QUERY.Q_ATD
@@ -78,7 +69,7 @@ class ELMComm: ObservableObject {
             case .send_ATH0_1: self.currentQuery = .Q_ATH0; Ble.sendMessage("ATH0", logMessage: "ATH0_1");
             case .send_ATH1_1: self.currentQuery = .Q_ATH1; Ble.sendMessage("ATH1", logMessage: "ATH1_1");
             case .send_ATDPN: self.currentQuery = .Q_ATDPN; Ble.sendMessage("ATDPN", logMessage: "ATDPN");
-            case .send_ATSPC: self.currentQuery = .Q_ATSPC; Ble.sendMessage("ATSPC", logMessage: "ATSPC");
+            case .send_ATSPC: self.currentQuery = .Q_ATSPC; Ble.sendMessage("ATSP7", logMessage: "ATSPC");
             case .send_ATSPB: self.currentQuery = .Q_ATSPB; Ble.sendMessage("ATSPB", logMessage: "ATSPB");
             case .send_ATSPA: self.currentQuery = .Q_ATSPA; Ble.sendMessage("ATSPA", logMessage: "ATSPA");
             case .send_ATSP9: self.currentQuery = .Q_ATSP9; Ble.sendMessage("ATSP9", logMessage: "ATSP9");
@@ -99,19 +90,108 @@ class ELMComm: ObservableObject {
             case .finished:
                 self.setupInProgress = false
                 self.setupTimer!.invalidate()
+                requestDTCs()
             case .none:
                 break
             }
         }
     }
     
-    func evaluateResponse(response: String){
-            guard !response.isEmpty else {
-                Ble.sendMessage(currentQuery.rawValue, logMessage: currentQuery.rawValue)
-                return
+    func decodeSupportedPIDs(responseData: String) -> [String] {
+        print("data: \(responseData)")
+        
+        // Convert the response data from hexadecimal to binary
+        let binaryData = Array(responseData)
+            .compactMap { $0.hexDigitValue }
+            .map { String($0, radix: 2).leftPadding(toLength: 8, withPad: "0") }
+            .joined()
+        
+        
+        // Define the supported PIDs based on the binary representation
+        let supportedPIDs = binaryData.enumerated()
+            .compactMap { index, bit -> String? in
+                if bit == "1" {
+                    let pidNumber = String(format: "%02X", index + 1)
+                    return pidNumber
+                }
+                return nil
             }
-            if setupInProgress {
+        
+        return supportedPIDs
+    }
+    
+    
+    func getSupportedPIDs(response: [String]) {
+        if readyToSend {
+            currentQuery = .Q_0100
+            Ble.sendMessage("0100", logMessage: "0100")
             
+            let linesAsStr = linesToStr(response)
+            print("Lines as str: \(linesAsStr)")
+            
+            let ecuSegments = linesAsStr.components(separatedBy: "18 DA F1")
+            
+            // The first element of splitLines will be an empty string since the input starts with the pattern
+            
+            for ecuSegment in ecuSegments.dropFirst() {
+                let ecuData = String(ecuSegment.dropFirst(2)) // Remove the "10" prefix
+                
+                let ecuDataArray = linesToStrArray([ecuSegment]).dropLast()
+                
+                // Convert the ECU data from hexadecimal to binary
+                let binaryData = Array(ecuData)
+                    .compactMap { $0.hexDigitValue }
+                    .map { String($0, radix: 2).leftPadding(toLength: 8, withPad: "0") }
+                    .joined()
+                if ecuDataArray.count >= 8 && ecuDataArray[0] == "10" {
+                    let ecuName = "Engine Control"
+                    let supportedPIDsArray = Array(ecuDataArray[4...7])
+                    let supportedPIDs = decodeSupportedPIDs(responseData: supportedPIDsArray.joined())
+                    print("Supported PIDs for \(ecuName): \(supportedPIDs)")
+                }
+            }
+        }
+    }
+    
+    
+    func decodeRPM(response: String) {
+        let pattern = "([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})555555"
+        let range = response.range(of: pattern, options: .regularExpression)
+        
+        //         Process the pattern occurrence in the buffer
+        guard let matchedRange = range else {
+            return
+            
+        }
+        let rpmData = response[matchedRange]
+        
+        guard let rpmValue = UInt(rpmData.prefix(4), radix: 16) else {
+            print("Invalid RPM value")
+            return
+            
+        }
+        print("RPM: \(rpmValue)")
+        return
+    }
+    
+    func startRequest(characteristic: CBCharacteristic, peripheral: CBPeripheral) {
+        //            Make sure the RPM timer is stopped before starting a new one
+        stopRequest()
+        
+        //            Start a new timer to send RPM requests every X seconds
+        rpmTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Ble.sendMessage("010C", logMessage: "010C")
+        }
+    }
+    
+    func stopRequest() {
+        rpmTimer?.invalidate()
+        rpmTimer = nil
+    }
+    
+    func evaluateResponse(response: [String]){
+        if setupInProgress {
             if (setupStatus == .send_ATD      ||
                 setupStatus == .send_ATZ      ||
                 setupStatus == .send_ATE0     ||
@@ -133,7 +213,9 @@ class ELMComm: ObservableObject {
                     return
                 }
                 
-            }else if (setupStatus == .send_ATSPC){setupStatus = setupStatus.next();obdProtocol = .PC}
+            }
+            
+            else if (setupStatus == .send_ATSPC){setupStatus = setupStatus.next();obdProtocol = .PC}
             else if  (setupStatus == .send_ATSPB){setupStatus = setupStatus.next();obdProtocol = .PB}
             else if  (setupStatus == .send_ATSPA){setupStatus = setupStatus.next();obdProtocol = .PA}
             else if  (setupStatus == .send_ATSP9){setupStatus = setupStatus.next();obdProtocol = .P9}
@@ -180,26 +262,31 @@ class ELMComm: ObservableObject {
                         case .P2: setupStatus = .send_ATSP2
                         case .P1: setupStatus = .send_ATSP1
                         case .P0: setupStatus = .send_ATSP0
-                            default: break }
-                    }else{
+                        default: break
+                            
+                        }
+                    } else {
                         setupStatus = .none
-                        //                        log.error("Error")
                         return
                     }
                 default:
                     break
                 }
-            }else if(setupStatus == .test_SELECTED_PROTOCOL_FINISHED){
+            }
+            else if(setupStatus == .test_SELECTED_PROTOCOL_FINISHED) {
                 setupStatus = .send_ATH1_2
             }
             self.currentSetupStepReady = true
-        }else if(self.requestingDTCs)
-        {
+        } else if(self.requestingDTCs) {
+            
             switch self.getDTCsStatus {
+                
             case .send_0101: // CHECK HOW MANY DTCs are stored in the vehicle
                 if(numberOfDTCs != 0){
+                    
                     getDTCsStatus = .send_03
-                }else {
+                    
+                } else {
                     print("NO DTCS TO ASK FOR")
                     return
                 }
@@ -207,7 +294,7 @@ class ELMComm: ObservableObject {
                 self.currentDTCs = self.parserResponse.1
                 if(currentDTCs.count > 0){
                     getDTCsStatus = .finished
-                }else {
+                } else {
                     print("NO DTCS")
                     getDTCsStatus = .none
                     return
@@ -221,33 +308,41 @@ class ELMComm: ObservableObject {
         }
     }
     
-    
-    
-    func processBuffer(response: String) -> Int {
-        //        let pattern = "([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})555555"
-        //        let range = response.range(of: pattern, options: .regularExpression)
-        //
-        // Process the pattern occurrence in the buffer
-        //        guard let matchedRange = range else {
-        //            return currentRPM
-        //
-        //        }
-        //        let rpmData = response[matchedRange]
-        //
-        //        guard let rpmValue = UInt(rpmData.prefix(4), radix: 16) else {
-        //            print("Invalid RPM value")
-        //            return currentRPM
-        //
-        //        }
-        //        self.currentRPM = Int(rpmValue) / 4
-        //        return Int(rpmValue) / 4
-        return 0
+    func requestDTCs(){
+        if requestingDTCs {
+            return
+        }
+        
+        self.getDTCsTimer = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(self.requestDTCsTimedFunc), userInfo: nil, repeats: true)
+        //Start the setup by sending ATD to the adapter the rest will be done by the timedFunc and the response evaluator
+        self.requestingDTCs = true
+        self.currentQuery = .Q_0101
+        self.getDTCsStatus = .send_0101
+        Ble.sendMessage("0101", logMessage: "0101")
     }
     
-    func parseResponse(response: String){
+    
+    @objc func requestDTCsTimedFunc(){
         
-        let linesAsStr = response
-        print("Response: \(linesAsStr)")
+        if(readyToSend && currentGetDTCsQueryReady){
+            currentGetDTCsQueryReady = false
+            
+            switch (getDTCsStatus) {
+            case .send_0101: self.currentQuery = .Q_0101; Ble.sendMessage("0101", logMessage: "0101")
+            case .send_03: self.currentQuery = .Q_03; Ble.sendMessage("03", logMessage: "0101")
+            case .finished: self.currentQuery = .NONE
+                self.requestingDTCs = false
+                //Kill the timer if the protocol has been determined
+                self.getDTCsTimer!.invalidate()
+            case .none:
+                break
+            }
+        }
+    }
+    
+    func parseResponse(response: [String]){
+        let linesAsStr = linesToStr(response)
+        
         switch self.currentQuery {
             
         case .Q_ATD, .Q_ATE0, .Q_ATH0, .Q_ATH1, .Q_ATSPC, .Q_ATSPB, .Q_ATSPA,
@@ -257,8 +352,10 @@ class ELMComm: ObservableObject {
                 parserResponse = (true,[])
                 evaluateResponse(response: response)
                 
-            }else {
+            } else {
                 parserResponse = (false, [])
+                evaluateResponse(response: response)
+                
             }
         case .Q_ATZ:
             parserResponse = (true, []) // TODO
@@ -267,16 +364,21 @@ class ELMComm: ObservableObject {
             // protocol description
             parserResponse = (true, []) // TODO
             evaluateResponse(response: response)
-        case .Q_0100:            if linesAsStr.contains("41"){
+        case .Q_0100:
+            if linesAsStr.contains("41"){
                 parserResponse = (true,[])
                 evaluateResponse(response: response)
-            }else {
+                getSupportedPIDs(response: response)
+            } else {
                 parserResponse = (false, [])
+                evaluateResponse(response: response)
             }
         case .Q_0101:
-            numberOfDTCs = parser.parse_0101(linesToParse, obdProtocol: obdProtocol)
+            numberOfDTCs = parser.parse_0101(response, obdProtocol: obdProtocol)
+            evaluateResponse(response: response)
         case .Q_03:
-            parserResponse = parser.parseDTCs(self.numberOfDTCs, linesToParse: linesToParse, obdProtocol: self.obdProtocol)
+            parserResponse = parser.parseDTCs(self.numberOfDTCs, linesToParse: response, obdProtocol: self.obdProtocol)
+            evaluateResponse(response: response)
         case .Q_0902:
             parserResponse = (false, [])
         case .Q_07:
@@ -286,24 +388,5 @@ class ELMComm: ObservableObject {
         }
     }
     
-    
-    func startRPMRequest(characteristic: CBCharacteristic, peripheral: CBPeripheral) {
-        // Make sure the RPM timer is stopped before starting a new one
-        //        stopRPMRequest()
-        //        let data = self.getRPMCommand.data(using: .utf8)
-        //        peripheral.writeValue(data!, for: characteristic, type: .withResponse)
-        
-        // Start a new timer to send RPM requests every X seconds
-        //        rpmTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-        //            guard let self = self else { return }
-        //            let data = self.getRPMCommand.data(using: .utf8)
-        //            peripheral.writeValue(data!, for: characteristic, type: .withResponse)
-        //        }
-    }
-    
-    func stopRPMRequest() {
-        //        rpmTimer?.invalidate()
-        //        rpmTimer = nil
-    }
     
 }

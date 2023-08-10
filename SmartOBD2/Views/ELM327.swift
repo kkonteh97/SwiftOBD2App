@@ -35,6 +35,56 @@ enum ELM327 {
         }
     }
     
+    enum PIDS: String {
+        case
+        speed = "0D",
+        rpm = "0C",
+        throttle = "11",
+        coolant = "05",
+        intake = "0F",
+        fuel = "2F",
+        fuelTrim = "06",
+        fuelTrim2 = "07",
+        fuelTrim3 = "08",
+        fuelTrim4 = "09",
+        
+        none = "None"
+        
+        
+        static let asArray: [PIDS] = [speed, rpm, throttle, coolant, intake, fuel, fuelTrim, fuelTrim2, fuelTrim3, fuelTrim4]
+        
+        func next() -> PIDS{
+            switch (self) {
+                
+            case .speed:
+                return .rpm
+            case .rpm:
+                return .throttle
+            case .throttle:
+                return .coolant
+            case .coolant:
+                return .intake
+            case .intake:
+                return .fuel
+            case .fuel:
+                return .fuelTrim
+            case .fuelTrim:
+                return .fuelTrim2
+            case .fuelTrim2:
+                return .fuelTrim3
+            case .fuelTrim3:
+                return .fuelTrim4
+            case .fuelTrim4:
+                return .none
+            case .none:
+                return .none
+            
+            }
+
+        }
+        
+    }
+    
     enum QUERY: String {
         case
         Q_ATD = "ATD",

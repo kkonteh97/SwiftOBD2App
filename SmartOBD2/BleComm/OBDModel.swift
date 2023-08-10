@@ -71,18 +71,3 @@ class OBDDTC: NSObject {
     }
 }
 
-class OBDConnection: NSObject{
-    
-    let host: String
-    let port: Int
-    
-    var buffer = [UInt8](repeating: 0, count: 1024)
-    
-    var inputStream: InputStream?
-    var outputStream: OutputStream?
-    
-    init(host: String = "192.168.0.10", port: Int = 35000){
-        self.host = host
-        self.port = port
-    }
-}

@@ -26,12 +26,9 @@ struct MainTab: View {
                     .padding(.leading, 20)
                 
                 Button("Start RPM") {
-                    guard let characteristic = bluethoothViewModel.ecuCharacteristic else { return }
                     print("Start RPM")
                     
-                    elmComm.startRPMRequest(characteristic: characteristic, peripheral: bluethoothViewModel.connectedPeripheral!)
                 }
-                
             }
             .tabItem {
                 Image(systemName: "wrench.and.screwdriver")
@@ -76,9 +73,16 @@ struct MainTab: View {
                 
                 // Received data list
                 List {
-                    ForEach(bluethoothViewModel.receivedDataBuffer.components(separatedBy: "\r\n"), id: \.self) { data in
-                        Text(data)
+                    // history dictionary
+                    
+                    ForEach(bluethoothViewModel.history.sorted(by: <), id: \.key) { key, value in
+                        HStack {
+                            Text("\(key)")
+                            Spacer()
+                            Text("\(value)")
+                        }
                     }
+
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -94,9 +98,7 @@ struct MainTab: View {
                 
                 
                 Button(action: {
-                    guard let characteristic = bluethoothViewModel.ecuCharacteristic else { return }
-                    print("Start RPM")
-                    elmComm.startRPMRequest(characteristic: characteristic, peripheral: bluethoothViewModel.connectedPeripheral!)
+                    bluethoothViewModel.sendMessage(bluethoothViewModel.command)
                 }, label: {
                     Text("Send")
                         .font(.headline)

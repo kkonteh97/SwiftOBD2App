@@ -19,11 +19,19 @@ extension BluetoothViewModel {
             guard let response = characteristic.value else {
                 return
             }
-            guard let responseString = String(data: response, encoding: .utf8)?.replacingOccurrences(of: " ", with: "") else {
+            //hex to decimal
+            guard let responseString = String(data: response, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) else {
                 print("Invalid data format")
                 return
             }
-            elm?.parseResponse(response: responseString)
+            
+            self.linesToParse.append(responseString)
+            if responseString.contains(">") {
+                print("Response: \(linesToParse)")
+                elm?.parseResponse(response: linesToParse)
+                history[command] = linesToParse.joined(separator: " ")
+                linesToParse = []
+            }
             
         case "F000FFC1-0451-4000-B000-000000000000":
             if let response = characteristic.value {

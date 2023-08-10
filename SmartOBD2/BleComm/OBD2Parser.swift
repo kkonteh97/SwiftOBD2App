@@ -21,11 +21,9 @@ public func linesToStrArray(_ linesToParse: [String]) -> [String]{
 
 public func linesToStr(_ linesToParse: [String]) -> String{
     var endStr = ""
-    
-    let linesAsStrArray = linesToStrArray(linesToParse)
-    
-    for str in linesAsStrArray {
-        endStr.append("\(str) ")
+        
+    for str in linesToParse {
+        endStr.append(str)
     }
     
     return endStr
@@ -46,6 +44,7 @@ class OBDParser: NSObject {
     ////////////////////////////////////////////////////////
     
     func parse_0101(_ linesToParse: [String], obdProtocol: ELM327.PROTOCOL) -> Int{
+        print("Parsing 0101")
         
         let linesAsStrArr = linesToStrArray(linesToParse)
         
