@@ -7,6 +7,48 @@
 
 import Foundation
 
+public func getSupportedPIDs(response: [String])  -> [String: [String]] {
+    var supportedPIDsByECU: [String: [String]] = [:]
+    
+    let linesAsStr = linesToStr(response.dropLast())
+    
+    let ecuSegments = linesAsStr.components(separatedBy: "18 DA F1 ")
+    
+    for ecuSegment in ecuSegments.dropFirst() {
+        let ecuData = String(ecuSegment).dropFirst(12).dropLast(4)
+        
+        let Bytes = ecuData.split(separator: " ").compactMap { String($0) }
+        // Convert each byte to binary and join them together
+            let binaryData = Bytes
+                .compactMap { Int($0, radix: 16) }
+                .map { String($0, radix: 2).leftPadding(toLength: 8, withPad: "0") }
+                .joined()
+
+        // Define the PID numbers based on the binary data
+            let supportedPIDs = binaryData.enumerated()
+                .compactMap { index, bit -> String? in
+                    if bit == "1" {
+                        let pidNumber = String(format: "%02X", index + 1)
+                        return pidNumber
+                    }
+                    return nil
+                
+            }
+        
+        // if first 2 strings of ecuSegment are "10" then it is the engine control unit
+        if ecuSegment.prefix(2) == "10" {
+            supportedPIDsByECU["Engine Control"] = supportedPIDs
+        } else if ecuSegment.prefix(2) == "1E" {
+            
+            supportedPIDsByECU["Telemetry"] = supportedPIDs // Change "Engine Control" to appropriate ECU name
+        }
+        
+    }
+    print(supportedPIDsByECU)
+    return supportedPIDsByECU
+}
+
+
 public func linesToStrArray(_ linesToParse: [String]) -> [String]{
     var allBytesTogether: [String] = []
     

@@ -29,7 +29,7 @@ extension BluetoothViewModel {
                 ecuCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
                 // Write initiatization commands
-                elm?.setupAdapter()
+                setupAdapter()
             default:
                 if characteristic.properties.contains(.notify) {
                     peripheral.setNotifyValue(true, for: characteristic)

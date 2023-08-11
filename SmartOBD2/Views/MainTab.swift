@@ -19,6 +19,15 @@ struct MainTab: View {
                         .frame(width: 150, height: 150, alignment: .center)
                     // speed
                 }
+                
+                List {
+                    ForEach(bluethoothViewModel.supportedPIDsByECU.keys.sorted(), id: \.self) { ecu in
+                                    Text("ECU: \(ecu)")
+                                    ForEach(bluethoothViewModel.supportedPIDsByECU[ecu]!, id: \.self) { pid in
+                                        Text("PID: \(pid)")
+                                    }
+                                }
+                }
                 Text("\(bluethoothViewModel.rpm) RPM")
                     .font(.system(size: 30))
                     .fontWeight(.bold)
@@ -51,7 +60,8 @@ struct MainTab: View {
             }
             .tabItem {
                 Image(systemName: "car.front.waves.up")
-                Text(bluethoothViewModel.connected ? "Connected to \(bluethoothViewModel.carly)" : "Not Connected")
+                Text(bluethoothViewModel.connected ? "Connected to \(bluethoothViewModel.deviceName)" : "Connect")
+            
             }
             
             VStack(spacing: 20) {

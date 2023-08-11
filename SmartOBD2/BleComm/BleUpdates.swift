@@ -28,7 +28,7 @@ extension BluetoothViewModel {
             self.linesToParse.append(responseString)
             if responseString.contains(">") {
                 print("Response: \(linesToParse)")
-                elm?.parseResponse(response: linesToParse)
+                parseResponse(response: linesToParse)
                 history[command] = linesToParse.joined(separator: " ")
                 linesToParse = []
             }
