@@ -3,7 +3,7 @@
 //  SmartOBD2
 //
 //  Created by kemo konteh on 8/5/23.
-
+//
 
 import Foundation
 enum ELM327 {
@@ -244,8 +244,5 @@ enum ELM327 {
                 return .NONE
             }
         }
-        
-        
     }//END PROTOCOL
 }
-

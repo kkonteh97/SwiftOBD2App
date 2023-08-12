@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3844B7E42A86863200377ACA /* AppManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3844B7E32A86863200377ACA /* AppManager.swift */; };
 		3844B7E62A86A55E00377ACA /* OBDParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3844B7E52A86A55E00377ACA /* OBDParser.swift */; };
 		3844B7E82A86BE9B00377ACA /* OBDPIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3844B7E72A86BE9B00377ACA /* OBDPIDs.swift */; };
 		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
@@ -28,7 +27,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3844B7E32A86863200377ACA /* AppManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppManager.swift; sourceTree = "<group>"; };
 		3844B7E52A86A55E00377ACA /* OBDParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDParser.swift; sourceTree = "<group>"; };
 		3844B7E72A86BE9B00377ACA /* OBDPIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDPIDs.swift; sourceTree = "<group>"; };
 		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
@@ -81,9 +79,7 @@
 			children = (
 				38ABFA022A7CC0B800433A18 /* MainView.swift */,
 				38ABFA0D2A7DA70400433A18 /* GaugeView.swift */,
-				38F6B3702A7EA99D0040F928 /* ELM327.swift */,
 				38F6B3742A7F24990040F928 /* MainTab.swift */,
-				3844B7E32A86863200377ACA /* AppManager.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -91,6 +87,7 @@
 		38ABFA032A7CC0B800433A18 /* ELM */ = {
 			isa = PBXGroup;
 			children = (
+				38F6B3702A7EA99D0040F928 /* ELM327.swift */,
 				38F6B3722A7F00430040F928 /* Elm.swift */,
 			);
 			path = ELM;
@@ -218,7 +215,6 @@
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
 				3844B7E82A86BE9B00377ACA /* OBDPIDs.swift in Sources */,
 				38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */,
-				3844B7E42A86863200377ACA /* AppManager.swift in Sources */,
 				38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */,
 				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
 				38F6B3822A80BE3B0040F928 /* BleUpdates.swift in Sources */,
