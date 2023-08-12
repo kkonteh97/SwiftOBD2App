@@ -14,7 +14,6 @@ import SwiftyJSON
  
  */
 class OBDDTC: NSObject {
-    
     //CLASS PROPERTIES
     fileprivate static let PREFIXES: [String: String] = ["0":"P0","1":"P1","2":"P2","3":"P3",
                                                      "4":"C0","5":"C1","6":"C2","7":"C3",
@@ -29,30 +28,6 @@ class OBDDTC: NSObject {
         self.DTC = DTC
         self.system = system
         self.fault = fault
-    }
-    
-    ////////////////////////////////////////////////////////
-    // MARK: PARSING DTC OBJECT from JSON
-    ////////////////////////////////////////////////////////
-    
-    class func parseFronJSON(_ data: JSON, withDTC dtc: String) -> OBDDTC?{
-        
-        var system: String?
-        var fault: String?
-        
-        for (dtcDataKey, dtcDataValue) in data {
-            if (dtcDataKey == "dtc_data"){
-                system = dtcDataValue["system"].stringValue
-                fault = dtcDataValue["fault"].stringValue
-            }
-        }
-        if let system = system, let fault = fault
-        {
-            return OBDDTC(DTC: dtc, system: system, fault: fault)
-        }else {
-            print("Could not parse DTC data from JSON")
-            return nil
-        }
     }
     
     /**

@@ -14,20 +14,13 @@ struct MainTab: View {
     var body: some View {
         TabView {
             VStack {
-                HStack {
-                    GaugeView(coveredRadius: 280, maxValue: 80, steperSplit: 10, value: $bluethoothViewModel.rpm)
-                        .frame(width: 150, height: 150, alignment: .center)
-                    // speed
+                ForEach(bluethoothViewModel.supportedPIDsByECU.keys.sorted(), id: \.self) { ecu in
+                    Text("ECU: \(ecu)")
+                    ForEach(bluethoothViewModel.supportedPIDsByECU[ecu]!, id: \.self) { pid in
+                        Text("PID: \(pid)")
+                    }
                 }
                 
-                List {
-                    ForEach(bluethoothViewModel.supportedPIDsByECU.keys.sorted(), id: \.self) { ecu in
-                                    Text("ECU: \(ecu)")
-                                    ForEach(bluethoothViewModel.supportedPIDsByECU[ecu]!, id: \.self) { pid in
-                                        Text("PID: \(pid)")
-                                    }
-                                }
-                }
                 Text("\(bluethoothViewModel.rpm) RPM")
                     .font(.system(size: 30))
                     .fontWeight(.bold)
@@ -43,7 +36,6 @@ struct MainTab: View {
                 Image(systemName: "wrench.and.screwdriver")
                 Text("Settings")
             }
-            
             
             VStack {
                 Text("""
@@ -61,7 +53,7 @@ struct MainTab: View {
             .tabItem {
                 Image(systemName: "car.front.waves.up")
                 Text(bluethoothViewModel.connected ? "Connected to \(bluethoothViewModel.deviceName)" : "Connect")
-            
+                
             }
             
             VStack(spacing: 20) {
@@ -80,19 +72,14 @@ struct MainTab: View {
                     }
                     Spacer()
                 }
+                // history dictionary
                 
-                // Received data list
-                List {
-                    // history dictionary
-                    
-                    ForEach(bluethoothViewModel.history.sorted(by: <), id: \.key) { key, value in
-                        HStack {
-                            Text("\(key)")
-                            Spacer()
-                            Text("\(value)")
-                        }
+                ForEach(bluethoothViewModel.history.sorted(by: <), id: \.key) { key, value in
+                    HStack {
+                        Text("\(key)")
+                        Spacer()
+                        Text("\(value)")
                     }
-
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -130,9 +117,21 @@ struct MainTab: View {
             }
         }
     }
+    
+    
+}
+
+struct VINResults: Codable {
+    let Results: [VINInfo]
 }
 
 
+
+struct VINInfo: Codable{
+    let Make: String
+    let Model: String
+    let ModelYear: String
+}
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

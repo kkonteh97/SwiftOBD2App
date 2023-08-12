@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3844B7E62A86A55E00377ACA /* OBDParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3844B7E52A86A55E00377ACA /* OBDParser.swift */; };
-		3844B7E82A86BE9B00377ACA /* OBDPIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3844B7E72A86BE9B00377ACA /* OBDPIDs.swift */; };
 		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
 		38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FD2A7CC0B800433A18 /* BleServices.swift */; };
 		38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */; };
@@ -27,8 +25,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3844B7E52A86A55E00377ACA /* OBDParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDParser.swift; sourceTree = "<group>"; };
-		3844B7E72A86BE9B00377ACA /* OBDPIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDPIDs.swift; sourceTree = "<group>"; };
 		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
 		38ABF9FD2A7CC0B800433A18 /* BleServices.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleServices.swift; sourceTree = "<group>"; };
 		38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleCharacteristics.swift; sourceTree = "<group>"; };
@@ -68,8 +64,6 @@
 				38F6B3812A80BE3B0040F928 /* BleUpdates.swift */,
 				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
-				3844B7E52A86A55E00377ACA /* OBDParser.swift */,
-				3844B7E72A86BE9B00377ACA /* OBDPIDs.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -211,9 +205,7 @@
 				38F6B3732A7F00430040F928 /* Elm.swift in Sources */,
 				38ABFA0E2A7DA70400433A18 /* GaugeView.swift in Sources */,
 				38ABFA0A2A7CC0B900433A18 /* MainView.swift in Sources */,
-				3844B7E62A86A55E00377ACA /* OBDParser.swift in Sources */,
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
-				3844B7E82A86BE9B00377ACA /* OBDPIDs.swift in Sources */,
 				38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */,
 				38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */,
 				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
