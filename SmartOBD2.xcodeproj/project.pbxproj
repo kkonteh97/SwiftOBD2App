@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		381070F92A8FC5A2000A9540 /* ChatViewVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070F82A8FC5A2000A9540 /* ChatViewVM.swift */; };
+		381070FB2A8FC76A000A9540 /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FA2A8FC76A000A9540 /* OpenAIService.swift */; };
+		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
+		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
+		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
+		38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */; };
+		3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715A2A8BF6AD00D6F5EB /* PKBC.swift */; };
+		3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */; };
+		3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */; };
+		387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387871602A8D2A3B00D6F5EB /* TabBarItem.swift */; };
 		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
 		38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FD2A7CC0B800433A18 /* BleServices.swift */; };
 		38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */; };
@@ -15,6 +25,8 @@
 		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
 		38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */; };
 		38C93E902A7CBE440044C7E4 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */; };
+		38EF41F22A87F74100EF9E66 /* HandleVIN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F12A87F74100EF9E66 /* HandleVIN.swift */; };
+		38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */; };
 		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
 		38F6B3732A7F00430040F928 /* Elm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3722A7F00430040F928 /* Elm.swift */; };
 		38F6B3752A7F24990040F928 /* MainTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3742A7F24990040F928 /* MainTab.swift */; };
@@ -22,9 +34,23 @@
 		38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */; };
 		38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3852A80E0880040F928 /* OBDModel.swift */; };
 		38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 38F6B3882A80E0FC0040F928 /* SwiftyJSON */; };
+		38F75ADF2A89D24900F7533B /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75ADE2A89D24900F7533B /* HomeScreen.swift */; };
+		38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE02A89D37600F7533B /* CarScreen.swift */; };
+		38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE22A89D51800F7533B /* SettingsScreen.swift */; };
+		38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF1822A8834F700EABC60 /* CustomTabView.swift */; };
+		38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF18A2A8897DE00EABC60 /* NavButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		381070F82A8FC5A2000A9540 /* ChatViewVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewVM.swift; sourceTree = "<group>"; };
+		381070FA2A8FC76A000A9540 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		381070FF2A8FCA97000A9540 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		38147C7B2A8A70840086F293 /* Generics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generics.swift; sourceTree = "<group>"; };
+		38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewBuildertest.swift; sourceTree = "<group>"; };
+		3878715A2A8BF6AD00D6F5EB /* PKBC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKBC.swift; sourceTree = "<group>"; };
+		3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
+		3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItemsPK.swift; sourceTree = "<group>"; };
+		387871602A8D2A3B00D6F5EB /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
 		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
 		38ABF9FD2A7CC0B800433A18 /* BleServices.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleServices.swift; sourceTree = "<group>"; };
 		38ABF9FE2A7CC0B800433A18 /* BleCharacteristics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleCharacteristics.swift; sourceTree = "<group>"; };
@@ -35,12 +61,19 @@
 		38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2App.swift; sourceTree = "<group>"; };
 		38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		38EF41F12A87F74100EF9E66 /* HandleVIN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleVIN.swift; sourceTree = "<group>"; };
+		38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleDTCs.swift; sourceTree = "<group>"; };
 		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
 		38F6B3722A7F00430040F928 /* Elm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Elm.swift; sourceTree = "<group>"; };
 		38F6B3742A7F24990040F928 /* MainTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTab.swift; sourceTree = "<group>"; };
 		38F6B3812A80BE3B0040F928 /* BleUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleUpdates.swift; sourceTree = "<group>"; };
 		38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2Parser.swift; sourceTree = "<group>"; };
 		38F6B3852A80E0880040F928 /* OBDModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDModel.swift; sourceTree = "<group>"; };
+		38F75ADE2A89D24900F7533B /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
+		38F75AE02A89D37600F7533B /* CarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreen.swift; sourceTree = "<group>"; };
+		38F75AE22A89D51800F7533B /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		38FEF1822A8834F700EABC60 /* CustomTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabView.swift; sourceTree = "<group>"; };
+		38FEF18A2A8897DE00EABC60 /* NavButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +81,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				381070FE2A8FC825000A9540 /* Alamofire in Frameworks */,
 				38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,6 +89,35 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		381071012A8FDAAF000A9540 /* ttests */ = {
+			isa = PBXGroup;
+			children = (
+				38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */,
+				38147C7B2A8A70840086F293 /* Generics.swift */,
+				3878715A2A8BF6AD00D6F5EB /* PKBC.swift */,
+			);
+			path = ttests;
+			sourceTree = "<group>";
+		};
+		381071022A8FDAC8000A9540 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		381071032A8FDB22000A9540 /* TabNavigation */ = {
+			isa = PBXGroup;
+			children = (
+				38FEF1822A8834F700EABC60 /* CustomTabView.swift */,
+				387871602A8D2A3B00D6F5EB /* TabBarItem.swift */,
+				3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */,
+				3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */,
+				38FEF18A2A8897DE00EABC60 /* NavButton.swift */,
+			);
+			path = TabNavigation;
+			sourceTree = "<group>";
+		};
 		38ABF9FB2A7CC0B800433A18 /* BleComm */ = {
 			isa = PBXGroup;
 			children = (
@@ -64,6 +127,8 @@
 				38F6B3812A80BE3B0040F928 /* BleUpdates.swift */,
 				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
+				38EF41F12A87F74100EF9E66 /* HandleVIN.swift */,
+				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -74,6 +139,12 @@
 				38ABFA022A7CC0B800433A18 /* MainView.swift */,
 				38ABFA0D2A7DA70400433A18 /* GaugeView.swift */,
 				38F6B3742A7F24990040F928 /* MainTab.swift */,
+				38F75ADE2A89D24900F7533B /* HomeScreen.swift */,
+				38F75AE02A89D37600F7533B /* CarScreen.swift */,
+				38F75AE22A89D51800F7533B /* SettingsScreen.swift */,
+				381070F82A8FC5A2000A9540 /* ChatViewVM.swift */,
+				381070FA2A8FC76A000A9540 /* OpenAIService.swift */,
+				381070FF2A8FCA97000A9540 /* Constants.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -106,9 +177,12 @@
 		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
 			isa = PBXGroup;
 			children = (
+				381071012A8FDAAF000A9540 /* ttests */,
+				381071022A8FDAC8000A9540 /* ViewModels */,
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
 				38ABF9FB2A7CC0B800433A18 /* BleComm */,
+				381071032A8FDB22000A9540 /* TabNavigation */,
 				38ABFA032A7CC0B800433A18 /* ELM */,
 				38ABF9FF2A7CC0B800433A18 /* Views */,
 				38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */,
@@ -143,6 +217,7 @@
 			name = SmartOBD2;
 			packageProductDependencies = (
 				38F6B3882A80E0FC0040F928 /* SwiftyJSON */,
+				381070FD2A8FC825000A9540 /* Alamofire */,
 			);
 			productName = SmartOBD2;
 			productReference = 38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */;
@@ -174,6 +249,7 @@
 			mainGroup = 38C93E7C2A7CBE3D0044C7E4;
 			packageReferences = (
 				38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
+				381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			productRefGroup = 38C93E862A7CBE3D0044C7E4 /* Products */;
 			projectDirPath = "";
@@ -201,18 +277,34 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38EF41F22A87F74100EF9E66 /* HandleVIN.swift in Sources */,
+				381070F92A8FC5A2000A9540 /* ChatViewVM.swift in Sources */,
 				38F6B3752A7F24990040F928 /* MainTab.swift in Sources */,
 				38F6B3732A7F00430040F928 /* Elm.swift in Sources */,
 				38ABFA0E2A7DA70400433A18 /* GaugeView.swift in Sources */,
+				381071002A8FCA97000A9540 /* Constants.swift in Sources */,
 				38ABFA0A2A7CC0B900433A18 /* MainView.swift in Sources */,
+				3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */,
+				381070FB2A8FC76A000A9540 /* OpenAIService.swift in Sources */,
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
 				38ABFA072A7CC0B900433A18 /* BleCharacteristics.swift in Sources */,
 				38ABFA062A7CC0B900433A18 /* BleServices.swift in Sources */,
+				38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */,
 				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
+				38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */,
+				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
+				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
 				38F6B3822A80BE3B0040F928 /* BleUpdates.swift in Sources */,
+				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
+				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
 				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
+				38147C7C2A8A70840086F293 /* Generics.swift in Sources */,
+				38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */,
+				38F75ADF2A89D24900F7533B /* HomeScreen.swift in Sources */,
+				38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */,
 				38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */,
 				38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */,
+				3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -425,6 +517,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 		38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
@@ -436,6 +536,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		381070FD2A8FC825000A9540 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
 		38F6B3882A80E0FC0040F928 /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;

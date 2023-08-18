@@ -58,26 +58,28 @@ extension BluetoothViewModel {
             return handleTestSelectedProtocol(for: status, response: response)
 
         case .test_SELECTED_PROTOCOL_FINISHED:
-            setupStatus = .send_ATH1_2
-            return setupStatus
-
+            return .send_ATH1_2
+            
+        case .send_0902:
+            return decodeVIN(for: status, response: response)
         default:
             return nil
         }
        
     }
     
+    
 
     private func handleTestSelectedProtocol(for status: ELM327.QUERY.SETUP_STEP, response: (Bool, [String])) -> ELM327.QUERY.SETUP_STEP? {
         switch status {
             
         case .test_SELECTED_PROTOCOL_1:
-            return response.0 ? .test_SELECTED_PROTOCOL_FINISHED : setupStatus.next()
+            return response.0 ? .send_0902 : setupStatus.next()
 
         
         case .test_SELECTED_PROTOCOL_2:
             if response.0 {
-                return .test_SELECTED_PROTOCOL_FINISHED
+                return setupStatus.next()
             } else if obdProtocol != .P0 {
                 obdProtocol = obdProtocol.nextProtocol()
                 return obdProtocolSetupStatus(for: obdProtocol)
@@ -138,22 +140,9 @@ class ELMComm: ObservableObject {
         print("RPM: \(rpmValue)")
         return
     }
+}
     
-    func startRequest(characteristic: CBCharacteristic, peripheral: CBPeripheral) {
-        //            Make sure the RPM timer is stopped before starting a new one
-        stopRequest()
-        
-        //            Start a new timer to send RPM requests every X seconds
-//        rpmTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-//            guard let self = self else { return }
-        }
-    }
-    
-    func stopRequest() {
-//        rpmTimer?.invalidate()
-//        rpmTimer = nil
-    }
-    
+
 
     
 

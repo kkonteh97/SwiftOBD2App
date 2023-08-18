@@ -9,6 +9,7 @@ import Foundation
 import CoreBluetooth
 
 extension BluetoothViewModel {
+  
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
             print("Error reading characteristic value: \(error.localizedDescription)")
@@ -19,18 +20,18 @@ extension BluetoothViewModel {
             guard let response = characteristic.value else {
                 return
             }
-            //hex to decimal
-            guard let responseString = String(data: response, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) else {
-                print("Invalid data format")
-                return
-            }
-            
-            self.linesToParse.append(responseString)
-            if responseString.contains(">") {
-                print("Response: \(linesToParse)")
-                parseResponse(response: linesToParse)
-                history[command] = linesToParse.joined(separator: " ")
-                linesToParse = []
+            if let responseString = String(data: response, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) {
+                self.linesToParse.append(responseString)
+
+                
+                if responseString.contains(">") {
+                    print("Response: \(linesToParse)")
+                    
+                    parseResponse(for: linesToParse)
+                    
+                    history.append(linesToParse.joined(separator: " "))
+                    linesToParse.removeAll()
+                }
             }
             
         case "F000FFC1-0451-4000-B000-000000000000":
