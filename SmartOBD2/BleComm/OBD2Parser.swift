@@ -77,7 +77,7 @@ extension BLEManager {
         }
     
         let supportedPIDsByECU = supportedPIDs.map { pid in
-             ELM327.PIDs(rawValue: pid)
+             PIDs(rawValue: pid)
         }
         
         
@@ -147,7 +147,7 @@ class OBDParser: NSObject {
     // MARK: PARSING
     ////////////////////////////////////////////////////////
     
-    func parse_0101(_ linesToParse: [String], obdProtocol: ELM327.PROTOCOL) -> Int{
+    func parse_0101(_ linesToParse: [String], obdProtocol: PROTOCOL) -> Int{
         print("Parsing 0101")
         
         let linesAsStrArr = linesToStrArray(linesToParse)
@@ -162,7 +162,7 @@ class OBDParser: NSObject {
         }else {return 0}
     }
     
-    func parseDTCs(_ howMany: Int, linesToParse: [String], obdProtocol: ELM327.PROTOCOL) -> (Bool, [String]){
+    func parseDTCs(_ howMany: Int, linesToParse: [String], obdProtocol: PROTOCOL) -> (Bool, [String]){
         
         if(howMany <= 0){
             return (false, [])

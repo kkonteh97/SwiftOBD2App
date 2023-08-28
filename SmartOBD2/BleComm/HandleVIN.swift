@@ -9,7 +9,7 @@ import Foundation
 
 extension BLEManager {
     
-    func decodeVIN(for status: ELM327.QUERY.SETUP_STEP, response: (Bool, [String]))  -> ELM327.QUERY.SETUP_STEP? {
+    func decodeVIN(for status: QUERY.SETUP_STEP, response: (Bool, [String])) {
         // Unpack the response tuple
         let (_, responseStrings) = response
         
@@ -51,14 +51,6 @@ extension BLEManager {
             Task {
                 do {
                     let vinInfo = try await getVINInfo(vin: vinNumber)
-                    DispatchQueue.main.async {
-                                self.carMake = vinInfo.Results[0].Make
-                                self.carModel = vinInfo.Results[0].Model
-                                self.carYear = vinInfo.Results[0].ModelYear
-                                self.carCylinders = vinInfo.Results[0].EngineCylinders
-//                        self.requestPids()
-
-                            }
                     print(vinInfo)
 
                 } catch {
@@ -70,7 +62,6 @@ extension BLEManager {
             print("Prefix not found in the response")
         }
         
-        return setupStatus.next()
     }
     
     func getVINInfo(vin: String) async throws -> VINResults {

@@ -6,8 +6,260 @@
 //
 
 import Foundation
+import CoreBluetooth
 
-enum ELM327 {
+
+enum SetupStep: String, CaseIterable, Identifiable {
+    case ATD
+    case ATZ
+    case ATL0
+    case ATE0
+    case ATH1
+    case ATAT1
+    case ATSTFF
+    case ATDPN
+    case ATSP0
+    case ATSP1
+    case ATSP2
+    case ATSP3
+    case ATSP4
+    case ATSP5
+    case ATSP6
+    case ATSP7
+    case ATSP8
+    case ATSP9
+    case ATSPA
+    case ATSPB
+    case ATSPC
+    var id: String { self.rawValue }
+}
+
+enum PROTOCOL: String {
+    enum RESPONSE {
+        
+        enum ERROR: String {
+            
+            case QUESTION_MARK = "?",
+                 ACT_ALERT = "ACT ALERT",
+                 BUFFER_FULL = "BUFFER FULL",
+                 BUS_BUSSY = "BUS BUSSY",
+                 BUS_ERROR = "BUS ERROR",
+                 CAN_ERROR = "CAN ERROR",
+                 DATA_ERROR = "DATA ERROR",
+                 ERRxx = "ERR",
+                 FB_ERROR = "FB ERROR",
+                 LP_ALERT = "LP ALERT",
+                 LV_RESET = "LV RESET",
+                 NO_DATA = "NO DATA",
+                 RX_ERROR = "RX ERROR",
+                 STOPPED = "STOPPED",
+                 UNABLE_TO_CONNECT = "UNABLE TO CONNECT"
+            
+            static let asArray: [ERROR] = [QUESTION_MARK, ACT_ALERT, BUFFER_FULL, BUS_BUSSY,
+                                           BUS_ERROR, CAN_ERROR, DATA_ERROR, ERRxx, FB_ERROR,
+                                           LP_ALERT, LV_RESET, NO_DATA, RX_ERROR,STOPPED,
+                                           UNABLE_TO_CONNECT]
+        }
+    }
+    
+    case
+    P0 = "0",
+    P1 = "1",
+    P2 = "2",
+    P3 = "3",
+    P4 = "4",
+    P5 = "5",
+    P6 = "6",
+    P7 = "7",
+    P8 = "8",
+    P9 = "9",
+    PA = "A",
+    PB = "B",
+    PC = "C",
+    NONE = "None"
+    
+    static let asArray: [PROTOCOL] = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
+    
+    var description: String {
+        switch self {
+        case .P0: return "0: Automatic"
+        case .P1: return "1: SAE J1850 PWM (41.6 kbaud)"
+        case .P2: return "2: SAE J1850 VPW (10.4 kbaud)"
+        case .P3: return "3: ISO 9141-2 (5 baud init, 10.4 kbaud)"
+        case .P4: return "4: ISO 14230-4 KWP (5 baud init, 10.4 kbaud)"
+        case .P5: return "5: ISO 14230-4 KWP (fast init, 10.4 kbaud)"
+        case .P6: return "6: ISO 15765-4 CAN (11 bit ID,500 Kbaud)"
+        case .P7: return "7: ISO 15765-4 CAN (29 bit ID,500 Kbaud)"
+        case .P8: return "8: ISO 15765-4 CAN (11 bit ID,250 Kbaud)"
+        case .P9: return "9: ISO 15765-4 CAN (29 bit ID,250 Kbaud)"
+        case .PA: return "A: SAE J1939 CAN (11* bit ID, 250* kbaud)"
+        case .PB: return "B: USER1 CAN (11* bit ID, 125* kbaud)"
+        case .PC: return "C: USER1 CAN (11* bit ID, 50* kbaud)"
+        case .NONE: return "None"
+        }
+    }
+    
+    func nextProtocol() -> PROTOCOL{
+        switch self {
+        case .PC:
+            return .PB
+        case .PB:
+            return .PA
+        case .PA:
+            return .P9
+        case .P9:
+            return .P8
+        case .P8:
+            return .P7
+        case .P7:
+            return .P6
+        case .P6:
+            return .P5
+        case .P5:
+            return .P4
+        case .P4:
+            return .P3
+        case .P3:
+            return .P2
+        case .P2:
+            return .P1
+        case .P1:
+            return .P0
+        default:
+            return .NONE
+        }
+    }
+}
+
+protocol ElmManager {
+    // Define the methods and properties required by your elm327
+    func sendMessageAsync(_ message: String) async throws -> String
+    func setupAdapter(setupOrder: [SetupStep]) async throws
+}
+
+class ELM327: ObservableObject, ElmManager {
+    // MARK: - Properties
+
+    
+    // Bluetooth UUIDs
+    var BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
+    var BLE_ELM_CHARACTERISTIC_UUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
+    
+    // Bluetooth manager
+    let bleManager: BLEManaging
+
+    
+    // OBD protocol
+    var obdProtocol: PROTOCOL = .NONE
+    
+    // MARK: - Initialization
+    
+    init(bleManager: BLEManaging) {
+        self.bleManager = bleManager
+    }
+    
+    // MARK: - Message Sending
+    
+    // Send a message asynchronously
+    func sendMessageAsync(_ message: String) async throws -> String {
+        return try await bleManager.sendMessageAsync(message)
+    }
+    
+    // MARK: - Setup Steps
+    
+    // Possible setup errors
+    enum SetupError: Error {
+        case invalidResponse
+    }
+    
+    func okResponse(message: String) async throws -> String {
+        /*
+        Handle responses with ok
+        Commands thats only respond with ok are processed here
+         */
+        let response = try await bleManager.sendMessageAsync(message)
+        if response.contains("OK") {
+            return response
+        } else {
+            throw SetupError.invalidResponse
+        }
+    }
+    
+    func setupAdapter(setupOrder: [SetupStep]) async throws {
+        /*
+         Perform the setup process
+
+         */
+        var setupOrderCopy = setupOrder
+        var currentIndex = 0
+        
+        while currentIndex < setupOrderCopy.count {
+            let step = setupOrderCopy[currentIndex]
+            do {
+                switch step {
+                case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF:
+                    _ = try await okResponse(message: step.rawValue)
+                    
+                case .ATZ:
+                    _ = try await sendMessageAsync("ATZ")                      // reset command Responds Device Info
+                    
+                case .ATDPN:
+                    let currentProtocol = try await sendMessageAsync("ATDPN") // Describe current protocol number
+                    obdProtocol = PROTOCOL(rawValue: currentProtocol) ?? .P0
+                    
+                    if let setupStep = SetupStep(rawValue: "ATSP\(currentProtocol)") {
+                        setupOrderCopy.append(setupStep)                                // append current protocol to setupOrderCopy
+                    }
+                    
+                case .ATSP0, .ATSP1, .ATSP2, .ATSP3, .ATSP4, .ATSP5, .ATSP6, .ATSP7, .ATSP8, .ATSP9, .ATSPA, .ATSPB, .ATSPC:
+                    do {
+                        _ = try await okResponse(message: step.rawValue)
+                        try await testProtocol()                                        // test the protocol
+                                                                                        // we in this
+                        print("Setup Completed successfulleh")
+                        break
+                    } catch {
+                        obdProtocol = obdProtocol.nextProtocol()
+                        print("well that didn't work lets try \(obdProtocol.description)")
+                        if let setupStep = SetupStep(rawValue: "ATSP\(obdProtocol.rawValue)") {
+                            setupOrderCopy.append(setupStep)                            // append next protocol fi setupOrderCopy
+                        }
+                    }
+                }
+                print("Completed step: \(step)")
+            } catch {
+                throw error
+            }
+            currentIndex += 1
+        }
+    }
+    
+    // MARK: - Protocol Testing
+    
+    func testProtocol() async throws {
+        do {
+            // test protocol by sending 0100 and checking for 41 00 response
+            /*
+             while we here might as well get the supported pids
+             */
+            print("Testing protocol: \(obdProtocol.rawValue)")
+            
+            let response = try await sendMessageAsync("0100")
+            guard response.contains("41 00") else {
+                throw SetupError.invalidResponse
+            }
+            
+            let response2 = try await sendMessageAsync("0100")
+            if !response2.contains("41 00") {
+                throw SetupError.invalidResponse
+            }
+            
+        } catch {
+            throw error
+        }
+    }
+}
+
     
     enum RESPONSE {
         
@@ -162,77 +414,6 @@ enum ELM327 {
             }
         }//END GET_DTCS_STEP
     }//END QUERY
-    
-    enum PROTOCOL: String {
-        
-        case
-        P0 = "0: Automatic",
-        P1 = "1: SAE J1850 PWM (41.6 kbaud)",
-        P2 = "2: SAE J1850 VPW (10.4 kbaud)",
-        P3 = "3: ISO 9141-2 (5 baud init, 10.4 kbaud)",
-        P4 = "4: ISO 14230-4 KWP (5 baud init, 10.4 kbaud)",
-        P5 = "5: ISO 14230-4 KWP (fast init, 10.4 kbaud)",
-        P6 = "6: ISO 15765-4 CAN (11 bit ID,500 Kbaud)",
-        P7 = "7: ISO 15765-4 CAN (29 bit ID,500 Kbaud)",
-        P8 = "8: ISO 15765-4 CAN (11 bit ID,250 Kbaud)",
-        P9 = "9: ISO 15765-4 CAN (29 bit ID,250 Kbaud)",
-        PA = "A: SAE J1939 CAN (11* bit ID, 250* kbaud)",
-        PB = "B: USER1 CAN (11* bit ID, 125* kbaud)",
-        PC = "C: USER1 CAN (11* bit ID, 50* kbaud)",
-        NONE = "None"
-        
-        static let asArray: [PROTOCOL] = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
-        
-        func nextProtocol() -> PROTOCOL{
-            switch self {
-            case .PC:
-                return .PB
-            case .PB:
-                return .PA
-            case .PA:
-                return .P9
-            case .P9:
-                return .P8
-            case .P8:
-                return .P7
-            case .P7:
-                return .P6
-            case .P6:
-                return .P5
-            case .P5:
-                return .P4
-            case .P4:
-                return .P3
-            case .P3:
-                return .P2
-            case .P2:
-                return .P1
-            case .P1:
-                return .P0
-            default:
-                return .NONE
-            }
-        }
-    }//END PROTOCOL
-    
-    static func fromResponseNumber(_ responseNumber: String) -> PROTOCOL {
-            switch responseNumber {
-            case "0": return .P0
-            case "1": return .P1
-            case "2": return .P2
-            case "3": return .P3
-            case "4": return .P4
-            case "5": return .P5
-            case "6": return .P6
-            case "7": return .P7
-            case "8": return .P8
-            case "9": return .P9
-            case "A": return .PA
-            case "B": return .PB
-            case "C": return .PC
-            default: return .NONE
-            }
-        }
     
     enum PIDs: String {
         case pid04 = "04"
@@ -434,4 +615,3 @@ enum ELM327 {
             }
         }
     }
-}

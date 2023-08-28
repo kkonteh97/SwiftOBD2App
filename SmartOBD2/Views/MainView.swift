@@ -37,9 +37,14 @@ struct CarlyObd {
 struct MainView: View {
     let serviceUUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
     let characteristicUUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
-    let bleManager: BLEManager
+    @StateObject private var bleManager: BLEManager
+    @StateObject private var elm327: ELM327
+
     init() {
-        bleManager = BLEManager(serviceUUID: serviceUUID,characteristicUUID:characteristicUUID) // Create an instance of your view model
+        let newBleManager = BLEManager(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
+        let newElm327 = ELM327(bleManager: newBleManager)
+        _bleManager = StateObject(wrappedValue: newBleManager)
+        _elm327 = StateObject(wrappedValue: newElm327)
     }
     
     @StateObject private var chatViewModel = ChatViewModel()
@@ -55,7 +60,7 @@ struct MainView: View {
                     .tabItem {
                         Label("Home", systemImage: "house")
                     }
-                SettingsScreen(viewModel: SettingsScreenViewModel(bleManager: bleManager))
+                SettingsScreen(viewModel: SettingsScreenViewModel(elmManager: elm327))
         
                     .tabItem {
                         Label("Settings", systemImage: "gear")

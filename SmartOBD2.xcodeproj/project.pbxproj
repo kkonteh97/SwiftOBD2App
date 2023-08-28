@@ -26,7 +26,6 @@
 		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
 		38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */; };
 		38C93E902A7CBE440044C7E4 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */; };
-		38E9B57A2A908A4D00A4F6DD /* ELMSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E9B5792A908A4D00A4F6DD /* ELMSetup.swift */; };
 		38EF41F22A87F74100EF9E66 /* HandleVIN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F12A87F74100EF9E66 /* HandleVIN.swift */; };
 		38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */; };
 		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
@@ -62,7 +61,6 @@
 		38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2App.swift; sourceTree = "<group>"; };
 		38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		38E9B5792A908A4D00A4F6DD /* ELMSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELMSetup.swift; sourceTree = "<group>"; };
 		38EF41F12A87F74100EF9E66 /* HandleVIN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleVIN.swift; sourceTree = "<group>"; };
 		38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleDTCs.swift; sourceTree = "<group>"; };
 		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
@@ -92,6 +90,7 @@
 		381071012A8FDAAF000A9540 /* ttests */ = {
 			isa = PBXGroup;
 			children = (
+				381071032A8FDB22000A9540 /* TabNavigation */,
 				381EF82C2A971AB700A13E2E /* Animate.swift */,
 				387697342A984AF6008E2728 /* AsyncBootcamp.swift */,
 				38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */,
@@ -129,7 +128,6 @@
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
 				38EF41F12A87F74100EF9E66 /* HandleVIN.swift */,
 				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
-				38E9B5792A908A4D00A4F6DD /* ELMSetup.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -175,7 +173,6 @@
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
 				38ABF9FB2A7CC0B800433A18 /* BleComm */,
-				381071032A8FDB22000A9540 /* TabNavigation */,
 				38ABF9FF2A7CC0B800433A18 /* Views */,
 				38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */,
 				38C93E8E2A7CBE440044C7E4 /* Preview Content */,
@@ -285,7 +282,6 @@
 				3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */,
 				38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */,
 				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
-				38E9B57A2A908A4D00A4F6DD /* ELMSetup.swift in Sources */,
 				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
 				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
 				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
