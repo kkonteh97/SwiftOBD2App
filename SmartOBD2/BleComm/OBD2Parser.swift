@@ -15,51 +15,85 @@ extension Array {
     }
 }
 
-extension BluetoothViewModel {
+extension BLEManager {
     
-    func getSupportedPIDs(response: [String])  -> (pidDescriptions: [String], supportedPIDsByECU: [String]) {
-        var supportedPIDsByECU: [String] = []
+    func getECUs(response: String) -> [String]? {
+        var ecu: [String] = []
         
-        let linesAsStr = linesToStr(response.dropLast())
-        
-        let ecuSegments = linesAsStr.components(separatedBy: "18 DA F1 ")
-        
-        for ecuSegment in ecuSegments.dropFirst() {
-            let ecuData = String(ecuSegment).dropFirst(12).dropLast(4)
+        let ecuSegments = response.components(separatedBy: " ")
+        var index = 0
+
+        while index < ecuSegments.count {
+            let hexString = ecuSegments[index]
             
-            let Bytes = ecuData.split(separator: " ").compactMap { String($0) }
-            // Convert each byte to binary and join them together
-            let binaryData = Bytes
-                .compactMap { Int($0, radix: 16) }
-                .map { String($0, radix: 2).leftPadding(toLength: 8, withPad: "0") }
-                .joined()
-            
-            // Define the PID numbers based on the binary data
-            let supportedPIDs = binaryData.enumerated()
-                .compactMap { index, bit -> String? in
-                    if bit == "1" {
-                        let pidNumber = String(format: "%02X", index + 1)
-                        return pidNumber
-                    }
-                    return nil
+            if hexString == "41" {
+                let ecufound = ecuSegments[index - 2]
+                ecu.append(ecufound)
+                switch ecufound {
+                case "10":
                     
-                }
-            
-            // append unique pids to supportedPIDsByECU
-            for pid in supportedPIDs {
-                if !supportedPIDsByECU.contains(pid) {
-                    supportedPIDsByECU.append(pid)
+                    print("AT CRA\((ecuSegments[0...(index - 2)]).joined())")
+                    self.craFilter = "AT CRA\((ecuSegments[0...(index - 2)]).joined())"
+                default:
+                    break
                 }
             }
+            index += 1
+
         }
-        let supportedPIDsEnum: [ELM327.PIDs] = supportedPIDsByECU.compactMap { ELM327.PIDs(rawValue: $0) }
-        print(supportedPIDsEnum)
-        // pidDescriptions
-        let pidDescriptions = supportedPIDsEnum.map { $0.description }
-        let _ = supportedPIDsEnum.map { $0.rawValue }
-        self.PIDsReady = true        
-        return (pidDescriptions, supportedPIDsByECU)
+        
+        return ecu
     }
+    
+    
+    func getSupportedPIDs(response: String)  {
+        let response = response.components(separatedBy: " ")
+        print(response)
+        
+        let indexof41 = response.firstIndex(of: "41") ?? response.endIndex
+        let startIndex = response.index(indexof41, offsetBy: 2, limitedBy: response.endIndex) ?? response.endIndex
+        // filter 55 out
+        
+        let bytes = response[startIndex...]
+            .filter { $0 != "55" }
+            .compactMap { UInt8(String($0), radix: 16) }
+        
+        print(bytes)
+
+        
+
+        // Convert each byte to binary and join them together
+        let binaryData = bytes.flatMap { Array(String($0, radix: 2).leftPadding(toLength: 8, withPad: "0")) }
+
+        // Define the PID numbers based on the binary data
+        let supportedPIDs = binaryData.enumerated()
+            .compactMap { index, bit -> String? in
+                if bit == "1" {
+                    let pidNumber = String(format: "%02X", index + 1)
+                    return pidNumber
+                }
+                return nil
+                
+        }
+    
+        let supportedPIDsByECU = supportedPIDs.map { pid in
+             ELM327.PIDs(rawValue: pid)
+        }
+        
+        
+        // remove nils
+        self.supportedPIDsByECU = supportedPIDsByECU
+                                    .map { $0 }
+                                    .compactMap { $0 }
+        
+        self.pidDescriptions = supportedPIDsByECU
+                                    .map { $0?.description }
+                                    .compactMap { $0 }
+
+
+    }
+    
+   
     
     func requestPids1(pids: [String]) {
         // slice pids into groups of 6
@@ -95,7 +129,8 @@ public func linesToStr(_ linesToParse: [String]) -> String{
         endStr.append(str)
     }
     
-    return endStr
+    //return all but last character
+    return String(endStr.dropLast())
 }
 
 

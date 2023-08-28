@@ -17,10 +17,222 @@ extension String {
     }
 }
 
-class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
-    var sendMessageCompletion: ((String, String?) -> Void)?
 
 
+
+class BLEManager: NSObject, CBPeripheralDelegate {
+    let BLE_ELM_SERVICE_UUID: CBUUID
+    let BLE_ELM_CHARACTERISTIC_UUID: CBUUID
+    private var centralManager: CBCentralManager?
+    var linesToParse = [String]()
+    var adapterReady = false
+    
+    func logMessage(_ message: String) {
+        print(message)
+        // Update a text view or label in the UI if needed
+        
+    }
+    
+    init(serviceUUID: CBUUID, characteristicUUID: CBUUID) {
+            self.BLE_ELM_SERVICE_UUID = serviceUUID
+            self.BLE_ELM_CHARACTERISTIC_UUID = characteristicUUID
+            super.init()
+            centralManager = CBCentralManager(delegate: self, queue: nil)
+    }
+    
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        logMessage("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
+        connectedPeripheral = peripheral
+        peripheral.delegate = self // Set the delegate of the connected peripheral
+        self.connected = true
+        peripheral.discoverServices(nil) // Start discovering all services of the connected peripheral
+    }
+    
+    
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn:
+            // Scan for peripherals if BLE is turned on
+            logMessage("Bluetooth is On.")
+            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
+            
+        case .poweredOff:
+            logMessage("Bluetooth is currently powered off.")
+            
+        case .resetting:
+            logMessage("Bluetooth is resetting.")
+        default:
+            fatalError()
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if let error = error {
+            print("Error discovering services: \(error.localizedDescription)")
+            return
+        }
+        
+        
+        if let services = peripheral.services {
+            for service in services {
+                if service.uuid == BLE_ELM_SERVICE_UUID {
+                    logMessage("OBD2 Service: \(service.uuid)")
+                    peripheral.discoverCharacteristics(nil, for: service)
+                } else {
+                    logMessage("Found Service: \(service)")
+                }
+            }
+        }
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+            
+            if let name = peripheral.name {
+                if name.contains("Carly") {
+                    logMessage("Found Carly Adapter")
+                    self.centralManager?.stopScan()
+                    connectedPeripheral = peripheral
+                    self.centralManager?.connect(peripheral, options: nil)
+                }
+            }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        guard let characteristics = service.characteristics else {
+            print("No characteristics found")
+            return
+        }
+        for characteristic in characteristics {
+            if characteristic.properties.contains(.notify) {
+                peripheral.setNotifyValue(true, for: characteristic)
+            }
+            switch characteristic.uuid {
+            case BLE_ELM_CHARACTERISTIC_UUID:
+                ecuCharacteristic = characteristic
+                logMessage("Found ECU Characteristic: \(characteristic.uuid)")
+                peripheral.setNotifyValue(true, for: characteristic)
+                self.adapterReady = true
+                logMessage("Adapter Ready")
+            default:
+                logMessage("Unhandled Characteristic UUID: \(characteristic.uuid)")
+                if characteristic.properties.contains(.notify) {
+                    peripheral.setNotifyValue(true, for: characteristic)
+                    
+                }
+            }
+        }
+    }
+    
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        if let error = error {
+            logMessage("Error reading characteristic value: \(error.localizedDescription)")
+            return
+        }
+        switch characteristic.uuid.uuidString {
+        case "FFE1":
+            guard let characteristicValue = characteristic.value else {
+                            return
+                        }
+                        
+            processReceivedData(characteristicValue, completion: sendMessageCompletion)
+        
+            
+        case "F000FFC1-0451-4000-B000-000000000000":
+            if let response = characteristic.value {
+                guard let responseString = String(data: response, encoding: .utf8) else {
+                    print("Invalid data format")
+                    return
+                }
+                print("Manufacturer: \(responseString))")
+            }
+        case "2A24":
+            if let response = characteristic.value {
+                guard let responseString = String(data: response, encoding: .utf8) else {
+                    print("Invalid data format")
+                    return
+                }
+                logMessage("Manufacturer: \(responseString))")
+            }
+        case "2A26":
+            if let response = characteristic.value {
+                guard let responseString = String(data: response, encoding: .utf8) else {
+                    print("Invalid data format")
+                    return
+                }
+                logMessage("Manufacturer: \(responseString))")
+            }
+            
+        default:
+            logMessage("Unknown characteristic")
+        }
+    }
+    
+    func sendMessageAsync(message: String) async throws -> String {
+        
+        let message = "\(message)\r"
+        logMessage("Sending: \(message)")
+        
+        guard let connectedPeripheral = self.connectedPeripheral,
+              let ecuCharacteristic = self.ecuCharacteristic,
+              let data = message.data(using: .ascii) else {
+            logMessage("Error: Missing peripheral or characteristic.")
+            throw SendMessageError.missingPeripheralOrCharacteristic
+        }
+                
+        do {
+            let result = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+                self.sendMessageCompletion = { response, error in
+                    if let _ = error {
+                        continuation.resume(throwing: SendMessageError.timeout)
+                    } else {
+                        continuation.resume(returning: response)
+                    }
+                }
+                connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
+            }
+            return result
+        } catch {
+            throw error
+        }
+    }
+    
+    
+    func handleResponse(completion: ((String, String) -> Void)?) {
+        logMessage(linesToParse.joined(separator: " "))
+        let strippedResponse = linesToParse.map { $0.replacingOccurrences(of: ">", with: "") }.joined()
+        print("Response: ",strippedResponse)
+        sendMessageCompletion?(strippedResponse, nil)
+
+        self.timeoutTimer?.invalidate()
+        linesToParse.removeAll()
+    }
+    
+    
+    func processReceivedData(_ data: Data, completion: ((String, String) -> Void)?) {
+            guard let cleanedResponse = String(data: data, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) else {
+                return
+            }
+
+            let chunkSize = 8
+            var index = cleanedResponse.startIndex
+            while index < cleanedResponse.endIndex {
+                let endIndex = cleanedResponse.index(index, offsetBy: chunkSize, limitedBy: cleanedResponse.endIndex) ?? cleanedResponse.endIndex
+                let chunk = cleanedResponse[index..<endIndex]
+                
+                self.linesToParse.append(String(chunk))
+                
+                if chunk.contains(">") {
+                    handleResponse(completion: completion)
+                }
+                
+                index = endIndex
+            }
+        }
+  
+    
+    
+    
     var readyToSend = true
     @Published var currentSetupStepReady = true
     @Published var VIN: String = ""
@@ -28,10 +240,10 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     @Published var carModel: String = ""
     @Published var carYear: String = ""
     @Published var carCylinders: String = ""
-
+    var craFilter: String = ""
+    
     @Published var setupInProgress = false
     var setupTimer: Timer?
-    fileprivate var parserResponse: (Bool, [String]) = (false, [])
     fileprivate var numberOfDTCs: Int = 0
     
     
@@ -40,10 +252,8 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     var currentGetDTCsQueryReady = false
     
     var getDTCsTimer: Timer?
-    var rpmTimer: Timer?
-    
-    static let sharedInstance = BluetoothViewModel()
-    
+    var pidTimer: Timer?
+        
     //ELM327 PROTOCOL
     var obdProtocol: ELM327.PROTOCOL = .NONE //Will be determined by the setup
     var currentQuery = ELM327.QUERY.Q_ATD
@@ -52,86 +262,46 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
     
     //PARSING
     fileprivate let parser = OBDParser.sharedInstance
-    @Published var linesToParse: [String] = []
     
     //BLUETOOTH
-    private var centralManager: CBCentralManager!
     @Published var connectedPeripheral: CBPeripheral?
     @Published var characteristicsFound: [CBCharacteristic] = []
-    @Published var deviceName: String = ""
-    @Published var obd2Device: CBPeripheral?
     @Published var peripherals: [CBPeripheral] = []
-    @Published var peripheralsNames: [String] = []
-    @Published var test: [CBService:[CBCharacteristic]] = [:]
     @Published var ecuCharacteristic: CBCharacteristic?
-    
-    
-    @Published var isBlePower: Bool = false
-    @Published var isSearching: Bool = false
-    @Published var isConnected: Bool = false
-    
-    @Published var foundServices: [CBService] = []
-    @Published var foundCharacteristics: [CBCharacteristic] = []
-    
-    private let serviceUUID: CBUUID = CBUUID()
-
     
     @Published var connected: Bool = false
     @Published var initialized: Bool = false
     
-    //OBD2
     
-    
-    @Published var rpm: Int = 0
-    @Published var speed: Int = 0
-    @Published var engine_load: Int = 0
-    @Published var coolant_temp: Int = 0
-    @Published var timing_Advance: Int = 0
-    @Published var intake_air_temperature: Int = 0
-    @Published var MAF: Int = 0
-    @Published var oxygen_Sensor_2: Int = 0
-    @Published var time_Since_Engine_start: Int = 0
-    @Published var Fuel_system_status: Int = 0
-    @Published var Short_term_fuel_trim_Bank_1: Int = 0
-    @Published var Short_term_fuel_trim_Bank_2: Int = 0
-    @Published var Long_term_fuel_trim_Bank_1: Int = 0
-    @Published var Intake_manifold_absolute_pressure: Int = 0
-    @Published var throttle_position: Int = 0
-    
-    
-    @Published var command: String = ""
-
-
     @Published var history: [String] = []
     
-    @Published var supportedPIDsByECU: [String] = []
+    @Published var supportedPIDsByECU: [ELM327.PIDs?] = []
     
     
     
     @Published var pidDescriptions: [String] = []
     
-    private var timeoutTimer: Timer?
-    private var pendingMessage: String?
+    var timeoutTimer: Timer?
     var requestingPids: Bool = false
     var PIDsReady: Bool = false
     var isProcessingRequest: Bool = false
-    var pidRequestQueue: [String] = []
-
-    var requestQueue: [String] = []
-
         
-    
+    var sendMessageCompletion: ((String, String?) -> Void)?
+    var currentPIDGroupIndex = 0
 
-    override init() {
-        super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
-    }
     
+    
+    
+    
+    enum SendMessageError: Error {
+        case missingPeripheralOrCharacteristic
+        case timeout
+    }
     
     func sendMessage(_ message: String, logMessage: String = "Sending message", timeout: TimeInterval = 5.0, completion: @escaping (String, String?) -> Void) {
         let message = "\(message)\r"
         print("Sending: \(message)")
-
+        
         guard let connectedPeripheral = self.connectedPeripheral,
               let ecuCharacteristic = self.ecuCharacteristic,
               let data = message.data(using: .ascii) else {
@@ -139,335 +309,102 @@ class BluetoothViewModel: NSObject, ObservableObject, CBPeripheralDelegate {
             completion("Error: Missing peripheral or characteristic.", nil)
             return
         }
-
-        // Store the completion handler
-        sendMessageCompletion = completion
         
         // Store the sent message and start a timer if needed
-        _ = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
             // Handle timeout
             print("Error: Message sending timed out.")
             self.sendMessageCompletion?("Timeout", nil)
-            self.sendMessageCompletion = nil
+            self.timeoutTimer?.invalidate()
         }
-            
+        // Store the completion handler
+        sendMessageCompletion = completion
+        
         // Store the sent message and start a timer
         connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
     }
+    
+    
 
     
     func requestPids() {
-
-        if requestingPids && initialized {
+        
+        if requestingPids {
             return
         }
         self.requestingPids = true
-        self.rpmTimer = Timer.scheduledTimer(timeInterval: 0.3, target: self, selector: #selector(setupTimedPIDQueries), userInfo: nil, repeats: true)
-    }
-    
-    @objc func setupTimedPIDQueries() {
-        if readyToSend && PIDsReady {
-            let pidsGroups = supportedPIDsByECU.chunked(into: 6)
-            for group in pidsGroups {
-                let pidsStr = group.joined(separator: "")
-                let cmd = "01\(pidsStr)"
-                print(cmd)
-                enqueueMessage(cmd, logMessage: "Enqueuing PID request")
-            }
-            processNextMessage()
-        }
-    }
-    
-    func enqueueMessage(_ message: String, logMessage: String) {
-        requestQueue.append(message)
-        print(logMessage)
-    }
-    
-    func processNextMessage() {
-        guard !isProcessingRequest, let nextMessage = requestQueue.first else {
-            return
-        }
 
-        sendMessage(nextMessage, logMessage: "Sending PID request") { message, response  in
-            
-        }
-        self.isProcessingRequest = true
-        requestQueue.removeFirst()
+        self.pidTimer = Timer.scheduledTimer(timeInterval: 0.3, target: self, selector: #selector(setupTimedPIDQueries), userInfo: nil, repeats: true)
     }
     
-    func messageSentSuccessfully() {
-        self.isProcessingRequest = false
-        processNextMessage()
-    }
     
-    func parseResponse(for response: [String])  {
-        let linesAsStr = linesToStr(response)
-        if self.initialized {
-            handlePIDResponse(response: response)
-            self.messageSentSuccessfully()
-        } else {
-            switch self.currentQuery {
-                
-            case .Q_ATD, .Q_ATE0, .Q_ATH0, .Q_ATH1, .Q_ATSPC, .Q_ATSPB, .Q_ATSPA,
-                    .Q_ATSP9, .Q_ATSP8, .Q_ATSP7, .Q_ATSP6, .Q_ATSP5, .Q_ATSP4, .Q_ATSP3,
-                    .Q_ATSP2, .Q_ATSP1, .Q_ATSP0:
-                if linesAsStr.contains("OK") {
-                    guard let setupStatus = evaluateResponse(for: setupStatus,response: (true,[])) else { return }
-                    self.setupStatus = setupStatus
-                    
-                    
-                } else {
-                    setupStatus = evaluateResponse(for: setupStatus,response: (false, [])) ?? .none
-                }
-            case .Q_ATZ:
-                parserResponse = (true, []) // TODO
-                setupStatus = evaluateResponse(for: setupStatus,response: parserResponse) ?? .none
-                
-            case .Q_ATDPN:
-                setupStatus = evaluateResponse(for: setupStatus,response: (true, [])) ?? .none
-            case .Q_0100:
-                if linesAsStr.contains("41"){
-                    setupStatus = evaluateResponse(for: setupStatus, response: (true,[])) ?? .none
-                    pidDescriptions = getSupportedPIDs(response: response)
-                } else {
-                    setupStatus = evaluateResponse(for: setupStatus,response: (false, [])) ?? .none
-                }
-            case .Q_0101:
-                numberOfDTCs = parser.parse_0101(response, obdProtocol: obdProtocol)
-                setupStatus = evaluateResponse(for: setupStatus,response: parserResponse) ?? .none
-                
-            case .Q_03:
-                parserResponse = parser.parseDTCs(self.numberOfDTCs, linesToParse: response, obdProtocol: self.obdProtocol)
-                
-                
-            case .Q_0902:
-                parserResponse = (true, response.dropLast())
-                if linesAsStr.contains("49"){
-                    setupStatus = evaluateResponse(for: setupStatus,response: parserResponse) ?? .none
-                } else {
-                    print("no vin")
-                }
-                
-            case .Q_07:
-                parserResponse = (false, [])
-                
-            default:
-                parserResponse = (false, [])
+    @objc func setupTimedPIDQueries() async {
+        guard readyToSend else {
+                return
             }
+        let pidsGroups = supportedPIDsByECU.chunked(into: 6)
+        
+        // Calculate the current group index
+        let currentIndex = currentPIDGroupIndex % pidsGroups.count
+        let group = pidsGroups[currentIndex]
+        
+        
+        guard !isProcessingRequest else {
+                return
         }
         
-        func handlePIDResponse(response: [String]) {
-            let string = linesToStr(response)
-            let hexValues = string.components(separatedBy: " ").dropLast()
-            
-            print("hex",hexValues)
-            print("hex count",hexValues.count)
-            
-            var index = hexValues.firstIndex(of: "41") ?? 0
-            while index < hexValues.count {
-                guard index + 1 < hexValues.count else { continue }
-                
-                let commandCodeHex = hexValues[index + 1]
-                print(commandCodeHex)
-                if let commandCode = ELM327.PIDs(rawValue: commandCodeHex) {
-                    switch commandCode {
-                        
-                    case .pid03:
-                        if index + 3 < hexValues.count {
-                            let fuelSystemStatusStr = (hexValues[index + 2...index + 3]).joined(separator: "")
-                            guard let fuelSystemStatus = UInt(fuelSystemStatusStr, radix: 16) else {return}
-                            self.Fuel_system_status = Int(fuelSystemStatus)
-                        }
-                        index += 3
-                        
-                    case .pid04:
-                        if index + 2 < hexValues.count {
-                            guard let engineload = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.engine_load = Int(engineload)
-                        }
-                        index += 2
-                        
-                    case .pid05:
-                        if index + 2 < hexValues.count {
-                            guard let coolantValue = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.coolant_temp = Int(coolantValue) - 40
-                        }
-                        index += 2
-                        
-                    case .pid06:
-                        if index + 2 < hexValues.count {
-                            guard let ShorttermfueltrimBank1 = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.Short_term_fuel_trim_Bank_1 = Int(ShorttermfueltrimBank1)
-                        }
-                        index += 2
-                        
-                    case .pid07:
-                        if index + 2 < hexValues.count {
-                            guard let LongtermfueltrimBank1 = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.Long_term_fuel_trim_Bank_1 = Int(LongtermfueltrimBank1)
-                        }
-                        index += 2
-                        
-                    case .pid08:
-                        if index + 2 < hexValues.count {
-                            guard let ShorttermfueltrimBank2 = UInt(hexValues[index + 2], radix: 16) else {return}
-                            
-                            self.Short_term_fuel_trim_Bank_2 = Int(ShorttermfueltrimBank2)
-                        }
-                        index += 2
-                        
-                    case .pid09:
-                        if index + 2 < hexValues.count {
-                            let coolantValue = hexValues[index + 2]
-                            self.coolant_temp = Int(coolantValue)!
-                        }
-                        index += 2
-                        
-                    case .pid11:
-                        if index + 2 < hexValues.count {
-                            guard let throttlePosition = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.throttle_position = Int(throttlePosition)
-                        }
-                        index += 2
-                        
-                    case .pid0B:
-                        if index + 2 < hexValues.count {
-                            guard let IntakeManifoldAbsolutePressure = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.Intake_manifold_absolute_pressure = Int(IntakeManifoldAbsolutePressure)
-                            index += 2
-                        }
-                    case .pid0C:
-                        if index + 3 < hexValues.count {
-                            guard let rpmValue = UInt(hexValues[index + 2...index + 3].joined(), radix: 16) else {
-                                print("Invalid RPM value")
-                                return
-                            }
-                            self.rpm = Int(rpmValue) / 4
-                            index += 3
-                        }
-                    case .pid0E:
-                        if index + 2 < hexValues.count {
-                            guard let timingAdvance = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.timing_Advance = Int(timingAdvance) / 2 - 64                                  }
-                        index += 2
-                        
-                    case .pid0F:
-                        if index + 2 < hexValues.count {
-                            guard let intakeAirTemperature = UInt(hexValues[index + 2], radix: 16) else {return}
-                            self.intake_air_temperature = Int(intakeAirTemperature)                              }
-                        index += 2
-                    case .pid10:
-                        if index + 4 < hexValues.count {
-                            guard let MAF = UInt(hexValues[index + 2...index + 4].joined(), radix: 16) else {return}
-                            print("MAF", MAF)
-                            self.MAF = Int(MAF)                              }
-                        index += 4
-                        
-                    case .pid13:
-                        if index + 2 < hexValues.count {
-                            print("02 sensors", hexValues[index + 2])                       }
-                        index += 2
-                        
-                    case .pid15:
-                        if index + 4 < hexValues.count {
-                            guard let oxygenSensor2 = UInt(hexValues[index + 2...index + 4].joined(), radix: 16) else {return}
-                            print("oxygenSensor2", oxygenSensor2)
-                            self.oxygen_Sensor_2 = Int(oxygenSensor2)                              }
-                        index += 4
-                    case .pid1C:
-                        if index + 2 < hexValues.count {
-                            print("OBD standards this vehicle conforms to", hexValues[index + 2])                             }
-                        index += 2
-                        
-                    case .pid1F:
-                        if index + 2 < hexValues.count {
-                            guard let timeSinceEnginestart = Int(hexValues[index + 2], radix: 16) else {return}
-                            print("timeSinceEnginestart", timeSinceEnginestart)
-                            self.time_Since_Engine_start = timeSinceEnginestart
-                            
-                        }
-                        index += 2
-                    case .pid0D:
-                        if index + 2 < hexValues.count {
-                            guard let speedValue = Int(hexValues[index + 2], radix: 16) else {return}
-                            print("Speed Value:", speedValue)
-                            self.speed = speedValue
-                        }
-                        index += 2
-                        
-                    default:
-                        index += 2
-                    }
-                } else {
-                    index += 2
-                }
-            }
+        let _ = group.compactMap { $0?.rawValue }.joined(separator: " ")
+//        let cmd = "01\(pidsStr)"
+        
+        if isProcessingRequest {
+            return
         }
-    }
+        
+        self.isProcessingRequest = true
+//        sendMessage(cmd, logMessage: "Sending PID request") { message, response in
+//            if let responseCopy = response?.components(separatedBy: " ") {
+//                guard let indexOf41 = responseCopy.firstIndex(of: "41") else {
+//                    return
+//                }
+//                var responseArray = Array(responseCopy[(indexOf41 + 1)...])
+//                var pidcmdsCopy = String(cmd.dropFirst(2)).components(separatedBy: " ")
+//
+//                self.extractPIDs(pidcmds: &pidcmdsCopy, response: &responseArray)
+//            }
+//            
+//        }
+        // Increment the group index for the next cycle
+        currentPIDGroupIndex += 1
+        }
+    
+    
+    
+    
     func discoverDescriptors(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
         peripheral.discoverDescriptors(for: characteristic)
     }
+    
+    
+    
     
 }
 
 
 
-extension BluetoothViewModel: CBCentralManagerDelegate {
+extension BLEManager: CBCentralManagerDelegate {
+   
     
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .poweredOn:
-            // Scan for peripherals if BLE is turned on
-            self.centralManager?.scanForPeripherals(withServices: nil)
-        case .poweredOff:
-            // Alert user to turn on Bluetooth
-            break
-            
-        case .resetting:
-            // Wait for next state update and consider logging interruption of Bluetooth service
-            break
-        case .unauthorized:
-            // Alert user to enable Bluetooth permission in app Settings
-            break
-        case .unsupported:
-            // Alert user their device does not support Bluetooth and app will not work as expected
-            break
-            
-        case .unknown:
-            // Wait for next state update
-            break
-        @unknown default:
-            fatalError()
-        }
-    }
-    
-    
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        // Check if the peripheral is BLE (advertisement data contains the CBAdvertisementDataIsConnectable key with a value of true)
-        if let peripheralName = peripheral.name?.lowercased(), peripheralName.hasPrefix("carly") {
-            centralManager.stopScan()
-            obd2Device = peripheral
-            centralManager.connect(peripheral, options: nil)
-        }
-    }
-    
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
-        connectedPeripheral = peripheral
-        peripheral.delegate = self // Set the delegate of the connected peripheral
-        self.connected = true
-        self.deviceName = peripheral.name ?? ""
-        peripheral.discoverServices(nil) // Start discovering all services of the connected peripheral
-    }
+   
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        print("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
+        logMessage("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
         connectedPeripheral = nil
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         self.connected = false
         self.initialized = false
+        logMessage("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
     }
     
     func connect(to peripheral: CBPeripheral) {

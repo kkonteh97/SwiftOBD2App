@@ -6,15 +6,15 @@
 //
 
 import Foundation
-extension HomeScreen {
-    class ViewModel: ObservableObject {
-        @Published var messages: [Message] = []
-        @Published var currentMessage:String = ""
 
+class ChatViewModel: ObservableObject {
+        @Published var messages: [Message] = []
+        @Published var currentMessage: String = ""
+    
         private let openAIService = OpenAIService()
-        func sendMessage() {
-                let newMessage = Message(id: UUID(), role: .user, content: currentMessage, createdAt: Date())
-                messages.append(newMessage)            
+        func sendMessage(message: String) {
+                let newMessage = Message(id: UUID(), role: .user, content: message, createdAt: Date())
+                messages.append(newMessage)
                 currentMessage = ""
             
             Task {
@@ -28,12 +28,11 @@ extension HomeScreen {
                 let receivedMessage = Message(id: UUID(), role: receivedOpenAIMessage.role, content: receivedOpenAIMessage.content, createdAt: Date())
                 await MainActor.run {
                     messages.append(receivedMessage)
-                }
             }
         }
-    
     }
 }
+
 
 struct Message: Encodable, Identifiable {
     let id: UUID

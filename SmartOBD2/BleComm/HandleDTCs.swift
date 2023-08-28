@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension BluetoothViewModel {
+extension BLEManager {
     func requestDTCs(){
         if requestingDTCs {
             return
@@ -18,7 +18,8 @@ extension BluetoothViewModel {
         self.requestingDTCs = true
         self.currentQuery = .Q_0101
         self.getDTCsStatus = .send_0101
-        sendMessage("0101", logMessage: "0101")
+        sendMessage("0101", logMessage: "0101") { message, response in
+        }
     }
     
     
@@ -28,8 +29,10 @@ extension BluetoothViewModel {
             currentGetDTCsQueryReady = false
             
             switch (getDTCsStatus) {
-            case .send_0101: self.currentQuery = .Q_0101; sendMessage("0101", logMessage: "0101")
-            case .send_03: self.currentQuery = .Q_03; sendMessage("03", logMessage: "0101")
+            case .send_0101: self.currentQuery = .Q_0101; sendMessage("0101", logMessage: "0101") { message, response in
+            }
+            case .send_03: self.currentQuery = .Q_03; sendMessage("03", logMessage: "0101") { message, response in
+            }
             case .finished: self.currentQuery = .NONE
                 self.requestingDTCs = false
                 //Kill the timer if the protocol has been determined

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+
 enum ELM327 {
     
     enum RESPONSE {
@@ -35,6 +36,8 @@ enum ELM327 {
         }
     }
     
+
+    
     
     
     enum QUERY: String {
@@ -63,46 +66,7 @@ enum ELM327 {
         Q_0902 = "0902",
         Q_03 = "03",
         Q_07 = "07",
-        Q_pid01 = "01",
-        Q_pid02 = "02",
-        Q_pid04 = "04",
-        Q_pid05 = "05",
-        Q_pid06 = "06",
-        Q_pid08 = "08",
-        Q_pid09 = "09",
-        Q_pid0A = "0A",
-        Q_pid0B = "0B",
-        Q_pid0C = "0C",
-        Q_pid0D = "0D",
-        Q_pid0E = "0E",
-        Q_pid0F = "0F",
-        Q_pid10 = "10",
-        Q_pid11 = "11",
-        Q_pid12 = "12",
-        Q_pid13 = "13",
-        Q_pid14 = "14",
-        Q_pid15 = "15",
-        Q_pid16 = "16",
-        Q_pid17 = "17",
-        Q_pid18 = "18",
-        Q_pid19 = "19",
-        Q_pid1A = "1A",
-        Q_pid1B = "1B",
-        Q_pid1C = "1C",
-        Q_pid1D = "1D",
-        Q_pid1E = "1E",
-        Q_pid1F = "1F",
-        Q_pid21 = "21",
-        Q_pid22 = "22",
-        Q_pid23 = "23",
-        Q_pid24 = "24",
-        Q_pid25 = "25",
-        Q_pid26 = "26",
-        Q_pid27 = "27",
-        Q_pid28 = "28",
-        Q_pid29 = "29",
-        Q_pid2A = "2A",
-        Q_pid2B = "2B",
+
         NONE = "None"
         
         static let asArray: [QUERY] = [Q_ATD, Q_ATZ, Q_ATE0,Q_ATH0,
@@ -110,65 +74,66 @@ enum ELM327 {
                                        Q_ATSPA,Q_ATSP9, Q_ATSP8,Q_ATSP7,
                                        Q_ATSP6,Q_ATSP5, Q_ATSP4,Q_ATSP3,
                                        Q_ATSP2,Q_ATSP1, Q_ATSP0,Q_0100,
-                                       Q_0101 ,Q_0902, Q_03, Q_07, Q_pid01, Q_pid02,
-                                    Q_pid04, Q_pid05, Q_pid06, Q_pid08, Q_pid09, Q_pid0A, Q_pid0B, Q_pid0C,
-                                        Q_pid0D, Q_pid0E, Q_pid0F, Q_pid10, Q_pid11,
-                                        Q_pid12, Q_pid13, Q_pid14, Q_pid15, Q_pid16,
-                                        Q_pid17, Q_pid18, Q_pid19, Q_pid1A, Q_pid1B,
-                                        Q_pid1C, Q_pid1D, Q_pid1E, Q_pid1F, Q_pid21,
-                                        Q_pid22, Q_pid23, Q_pid24, Q_pid25, Q_pid26,
-                                        Q_pid27, Q_pid28, Q_pid29, Q_pid2A, Q_pid2B, NONE]
+                                       Q_0101 ,Q_0902, Q_03, Q_07, NONE]
         
                                        
                                        
         
-        enum SETUP_STEP{
+        enum SETUP_STEP: String{
             
             case
-            send_ATD,
-            send_ATZ,
-            send_ATE0,
-            send_ATH0_1,
-            send_ATH1_1,
-            send_ATDPN,
-            send_ATSPC,
-            send_ATSPB,
-            send_ATSPA,
-            send_ATSP9,
-            send_ATSP8,
-            send_ATSP7,
-            send_ATSP6,
-            send_ATSP5,
-            send_ATSP4,
-            send_ATSP3,
-            send_ATSP2,
-            send_ATSP1,
-            send_ATSP0,
-            send_ATH1_2,
-            send_ATH0_2,
-            send_0902,
+            send_ATD =  "ATD",
+            send_ATZ =  "ATZ",
+            send_ATE1 =  "ATE0",
+            send_ATH0 =  "ATH0",
+            send_ATH1 =  "ATH1",
+            send_ATDPN =  "ATDPN",
+            send_ATSPC =  "ATSPC",
+            send_ATSPB =  "ATSPB",
+            send_ATSPA =  "ATSPA",
+            send_ATSP9 =  "ATSP9",
+            send_ATSP8 =  "ATSP8",
+            send_ATSP7 =  "ATSP7",
+            send_ATSP6 =  "ATSP6",
+            send_ATSP5 =  "ATSP5",
+            send_ATSP4 =  "ATSP4",
+            send_ATSP3 =  "ATSP3",
+            send_ATSP2 =  "ATSP2",
+            send_ATSP1 =  "ATSP1",
+            send_ATSP0 =  "ATSP0",
+            send_0902 =  "0902",
+            send_ATL0 =  "ATL0",
+            send_ATAT1 =  "ATAT1",
+            send_ATSTFF =  "ATSTFF",
+            send_ATCRA =  "ATCRA",
             test_SELECTED_PROTOCOL_1,
             test_SELECTED_PROTOCOL_2,
             test_SELECTED_PROTOCOL_FINISHED,
             finished,
             none
-            
+            /* currently getting response from 2 ecus, 10 is engine control
+              other is transmission, not standard
+             can filter out ecu 10 with AT CRA <Header>10
+             ATH1 save value of 0100 command
+             ATH0 save value of 0100 command diff is the header..
+            lets do it!!
+            */
             func next() -> SETUP_STEP{
                 switch (self) {
                     
                 case .send_ATD: return .send_ATZ
-                case .send_ATZ: return .send_ATE0
-                case .send_ATE0: return .send_ATH0_1
-                case .send_ATH0_1: return .send_ATH1_1
-                case .send_ATH1_1: return .send_ATDPN
+                case .send_ATZ: return .send_ATL0
+                case .send_ATL0 : return .send_ATE1
+                case .send_ATE1: return .send_ATH1
+                case .send_ATH1: return .send_ATAT1
+                case .send_ATAT1: return .send_ATSTFF
+                case .send_ATSTFF: return .send_ATDPN
                 case .send_ATDPN: return .send_ATSPC
-                case .send_ATSPC, .send_ATSPB, .send_ATSPA, .send_ATSP9, .send_ATSP8, .send_ATSP7,
-                        .send_ATSP6, .send_ATSP5, .send_ATSP4, .send_ATSP3, .send_ATSP2, .send_ATSP1, .send_ATSP0:
-                    return .test_SELECTED_PROTOCOL_1
-                case .send_ATH1_2: return .send_ATH0_2
-                case .send_ATH0_2: return .finished
+                case .send_ATSPC, .send_ATSPB, .send_ATSPA, .send_ATSP9, .send_ATSP8, .send_ATSP7,.send_ATSP6, .send_ATSP5, .send_ATSP4, .send_ATSP3, .send_ATSP2, .send_ATSP1, .send_ATSP0: return .test_SELECTED_PROTOCOL_1
                 case .finished: return .none
-                case .test_SELECTED_PROTOCOL_1: return .test_SELECTED_PROTOCOL_2
+                case .test_SELECTED_PROTOCOL_1: return .send_ATCRA
+                case .send_ATCRA: return .send_ATH0
+                case .send_ATH0: return .test_SELECTED_PROTOCOL_2
                 case .test_SELECTED_PROTOCOL_2: return .send_0902
                 case .send_0902: return .test_SELECTED_PROTOCOL_FINISHED
                 case .test_SELECTED_PROTOCOL_FINISHED: return .test_SELECTED_PROTOCOL_FINISHED
@@ -213,7 +178,7 @@ enum ELM327 {
         P9 = "9: ISO 15765-4 CAN (29 bit ID,250 Kbaud)",
         PA = "A: SAE J1939 CAN (11* bit ID, 250* kbaud)",
         PB = "B: USER1 CAN (11* bit ID, 125* kbaud)",
-        PC = "B: USER1 CAN (11* bit ID, 50* kbaud)",
+        PC = "C: USER1 CAN (11* bit ID, 50* kbaud)",
         NONE = "None"
         
         static let asArray: [PROTOCOL] = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
@@ -250,10 +215,26 @@ enum ELM327 {
         }
     }//END PROTOCOL
     
+    static func fromResponseNumber(_ responseNumber: String) -> PROTOCOL {
+            switch responseNumber {
+            case "0": return .P0
+            case "1": return .P1
+            case "2": return .P2
+            case "3": return .P3
+            case "4": return .P4
+            case "5": return .P5
+            case "6": return .P6
+            case "7": return .P7
+            case "8": return .P8
+            case "9": return .P9
+            case "A": return .PA
+            case "B": return .PB
+            case "C": return .PC
+            default: return .NONE
+            }
+        }
+    
     enum PIDs: String {
-        case pid01 = "01"
-        case pid02 = "02"
-        case pid03 = "03"
         case pid04 = "04"
         case pid05 = "05"
         case pid06 = "06"
@@ -269,7 +250,6 @@ enum ELM327 {
         case pid10 = "10"
         case pid11 = "11"
         case pid12 = "12"
-        case pid13 = "13"
         case pid14 = "14"
         case pid15 = "15"
         case pid16 = "16"
@@ -278,9 +258,7 @@ enum ELM327 {
         case pid19 = "19"
         case pid1A = "1A"
         case pid1B = "1B"
-        case pid1C = "1C"
         case pid1D = "1D"
-        case pid1E = "1E"
         case pid1F = "1F"
         case pid21 = "21"
         case pid22 = "22"
@@ -297,15 +275,6 @@ enum ELM327 {
         
         func nextPID() -> PIDs{
             switch self {
-                
-            case .pid01:
-                return .pid02
-            case .pid02:
-                return .pid03
-
-            case .pid03:
-                return .pid04
-
             case .pid04:
                 return .pid05
 
@@ -336,8 +305,6 @@ enum ELM327 {
             case .pid11:
                 return .pid12
             case .pid12:
-                return .pid13
-            case .pid13:
                 return .pid14
             case .pid14:
                 return .pid15
@@ -354,12 +321,8 @@ enum ELM327 {
             case .pid1A:
                 return .pid1B
             case .pid1B:
-                return .pid1C
-            case .pid1C:
                 return .pid1D
             case .pid1D:
-                return .pid1E
-            case .pid1E:
                 return .pid1F
             case .pid1F:
                 return .pid21
@@ -393,12 +356,6 @@ enum ELM327 {
         
         var description: String {
             switch self {
-            case .pid01:
-                return "Monitor status since DTCs cleared"
-            case .pid02:
-                return "DTC that caused freeze frame to be stored"
-            case .pid03:
-                return "Fuel system status"
             case .pid04:
                 return "Calculated engine load"
             case .pid05:
@@ -429,8 +386,6 @@ enum ELM327 {
                 return "Throttle position"
             case .pid12:
                 return "Commanded secondary air status"
-            case .pid13:
-                return "Oxygen sensors present (in 2 banks)"
             case .pid14:
                 return "Oxygen Sensor 1\n   AB: Voltage\n   B: Short term fuel trim"
             case .pid15:
@@ -447,12 +402,8 @@ enum ELM327 {
                 return "Oxygen Sensor 7\n   AB: Voltage\n   B: Short term fuel trim"
             case .pid1B:
                 return "Oxygen Sensor 8\n   AB: Voltage\n   B: Short term fuel trim"
-            case .pid1C:
-                return "OBD standards this vehicle conforms to"
             case .pid1D:
                 return "Oxygen sensors present (in 4 banks)"
-            case .pid1E:
-                return "Auxiliary input status"
             case .pid1F:
                 return "Run time since engine start"
             case .pid21:

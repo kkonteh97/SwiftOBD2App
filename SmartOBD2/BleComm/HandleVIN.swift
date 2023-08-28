@@ -7,14 +7,15 @@
 
 import Foundation
 
-extension BluetoothViewModel {
+extension BLEManager {
     
     func decodeVIN(for status: ELM327.QUERY.SETUP_STEP, response: (Bool, [String]))  -> ELM327.QUERY.SETUP_STEP? {
         // Unpack the response tuple
         let (_, responseStrings) = response
         
         // Join the response strings into a single string
-        let responseString = responseStrings.joined(separator: "")
+        let responseString = responseStrings.joined(separator: " ")
+        print(responseString)
         // Find the index of the occurrence of "49 02"
         if let prefixIndex = responseString.range(of: "49 02")?.upperBound {
             // Extract the VIN hex string after "49 02"
@@ -55,14 +56,15 @@ extension BluetoothViewModel {
                                 self.carModel = vinInfo.Results[0].Model
                                 self.carYear = vinInfo.Results[0].ModelYear
                                 self.carCylinders = vinInfo.Results[0].EngineCylinders
-                    
+//                        self.requestPids()
+
                             }
                     print(vinInfo)
+
                 } catch {
                     print(error)
                 }
             }
-
             print(vinNumber)
         } else {
             print("Prefix not found in the response")
@@ -73,8 +75,6 @@ extension BluetoothViewModel {
     
     func getVINInfo(vin: String) async throws -> VINResults {
         let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
-        print(endpoint)
-        
         
         guard let url = URL(string: endpoint) else {
             throw URLError(.badURL)
@@ -90,7 +90,6 @@ extension BluetoothViewModel {
         do {
             let decoder = JSONDecoder()
             let decoded = try decoder.decode(VINResults.self, from: data)
-            print(decoded)
             return decoded
         } catch {
             print(error)
