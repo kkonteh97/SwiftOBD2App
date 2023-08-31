@@ -8,15 +8,6 @@
 import Foundation
 import CoreBluetooth
 
-
-extension String {
-    func leftPadding(toLength: Int, withPad character: Character) -> String {
-        let paddingAmount = max(0, toLength - count)
-        let padding = String(repeating: character, count: paddingAmount)
-        return padding + self
-    }
-}
-
 protocol BLEManaging {
     // Define the methods and properties required by your elm327
     func connectToPeripheral()
@@ -27,7 +18,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     func connectToPeripheral() {
         fatalError("Not implemented")
     }
-    
     
     // MARK: Properties
     

@@ -386,3 +386,11 @@ var description: String {
 }
 }
 
+
+extension String {
+    func leftPadding(toLength: Int, withPad character: Character) -> String {
+        let paddingAmount = max(0, toLength - count)
+        let padding = String(repeating: character, count: paddingAmount)
+        return padding + self
+    }
+}
