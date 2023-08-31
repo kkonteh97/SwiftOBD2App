@@ -26,7 +26,6 @@
 		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
 		38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */; };
 		38C93E902A7CBE440044C7E4 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */; };
-		38EF41F22A87F74100EF9E66 /* HandleVIN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F12A87F74100EF9E66 /* HandleVIN.swift */; };
 		38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */; };
 		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
 		38F6B3752A7F24990040F928 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3742A7F24990040F928 /* MainView.swift */; };
@@ -61,7 +60,6 @@
 		38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2App.swift; sourceTree = "<group>"; };
 		38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		38EF41F12A87F74100EF9E66 /* HandleVIN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleVIN.swift; sourceTree = "<group>"; };
 		38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleDTCs.swift; sourceTree = "<group>"; };
 		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
 		38F6B3742A7F24990040F928 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -126,7 +124,6 @@
 				38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */,
 				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
-				38EF41F12A87F74100EF9E66 /* HandleVIN.swift */,
 				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
 			);
 			path = BleComm;
@@ -168,10 +165,10 @@
 		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
 			isa = PBXGroup;
 			children = (
-				381071012A8FDAAF000A9540 /* ttests */,
-				381071022A8FDAC8000A9540 /* ViewModels */,
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
+				381071012A8FDAAF000A9540 /* ttests */,
+				381071022A8FDAC8000A9540 /* ViewModels */,
 				38ABF9FB2A7CC0B800433A18 /* BleComm */,
 				38ABF9FF2A7CC0B800433A18 /* Views */,
 				38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */,
@@ -266,7 +263,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38EF41F22A87F74100EF9E66 /* HandleVIN.swift in Sources */,
 				381070F92A8FC5A2000A9540 /* ChatViewVM.swift in Sources */,
 				38F6B3752A7F24990040F928 /* MainView.swift in Sources */,
 				38C60CCB2A9AF3EF008C748E /* StartButton.swift in Sources */,
@@ -427,7 +423,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SmartOBD2/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -461,7 +457,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SmartOBD2/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

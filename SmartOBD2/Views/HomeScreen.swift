@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-
-
 struct typeWriterAnimation: View {
     @State var text: String = ""
     var finalText: String
@@ -61,45 +59,6 @@ struct typeWriterAnimation: View {
             }
     }
 }
-
-enum Obd2Devices {
-    case carlyObd
-    var BLE_ELM_SERVICE_CHARACTERISTIC_UUID: Int {
-            switch self {
-            case .carlyObd:
-                return 65505
-            }
-        }
-    
-    var BLE_CHARACTERISTIC_DESCRIPTOR_UUID: Int {
-            switch self {
-            case .carlyObd:
-                return 10498
-            }
-        }
-    
-    var BLE_DEVICE_FIRMWARE_CHARACTERISTIC_UUID: Int {
-            switch self {
-            case .carlyObd:
-                return 10790
-            }
-        }
-    
-    var BLE_DEVICE_FIRMWARE_UUID: Int {
-            switch self {
-            case .carlyObd:
-                return 6154
-            }
-        }
-    var BLE_ELM_SERVICE_UUID: Int {
-            switch self {
-            case .carlyObd:
-                return 65504
-            }
-        }
-    
-}
-
 
 
 struct HomeScreen: View {
@@ -245,6 +204,8 @@ struct ButtonBackground<S: Shape>: View {
         }
     }
 }
+
+
 struct ButtonBackground2<S: Shape>: View {
     var isHighlighted: Bool
     var shape: S

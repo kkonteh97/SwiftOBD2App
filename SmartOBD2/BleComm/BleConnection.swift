@@ -20,34 +20,32 @@ extension String {
 protocol BLEManaging {
     // Define the methods and properties required by your elm327
     func connectToPeripheral()
-    func sendMessageAsync(_ message: String) async throws -> String
+    func sendMessageAsync(_ message: String, withTimeoutSecs: Int) async throws -> String
 }
 
-class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject {
+class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject, CBCentralManagerDelegate {
     func connectToPeripheral() {
         fatalError("Not implemented")
     }
     
-    var readyToSend = true
-    @Published var VIN: String = ""
-    var craFilter: String = ""
     
-    @Published var setupInProgress = false
-    fileprivate var numberOfDTCs: Int = 0
-    
-    //ELM327 PROTOCOL
+    // MARK: Properties
     
     //PARSING
     fileprivate let parser = OBDParser.sharedInstance
     
     //BLUETOOTH
     @Published var connectedPeripheral: CBPeripheral?
-    @Published var characteristicsFound: [CBCharacteristic] = []
+    @Published var characteristics: [CBCharacteristic] = []
     @Published var peripherals: [CBPeripheral] = []
+    @Published var services: [CBPeripheral] = []
     @Published var ecuCharacteristic: CBCharacteristic?
+    @Published var elmAdapter: CBPeripheral?
+    private var centralManager: CBCentralManager?
+    var craFilter: String = ""
+
     
     @Published var connected: Bool = false
-    @Published var initialized: Bool = false
     
     @Published var history: [String] = []
     
@@ -56,19 +54,12 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
     @Published var pidDescriptions: [String] = []
     
     var timeoutTimer: Timer?
-    var requestingPids: Bool = false
-    var PIDsReady: Bool = false
-    var isProcessingRequest: Bool = false
     
-    var sendMessageCompletion: ((String, String?) -> Void)?
-    var currentPIDGroupIndex = 0
     
     let BLE_ELM_SERVICE_UUID: CBUUID
     let BLE_ELM_CHARACTERISTIC_UUID: CBUUID
-    private var centralManager: CBCentralManager?
     var linesToParse = [String]()
     var adapterReady = false
-    @Published var elmAdapter: CBPeripheral?
     
     
     func logMessage(_ message: String) {
@@ -76,7 +67,8 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         // Update a text view or label in the UI if needed
     }
     
-    
+    // MARK: Initialization
+
     init(serviceUUID: CBUUID, characteristicUUID: CBUUID) {
         self.BLE_ELM_SERVICE_UUID = serviceUUID
         self.BLE_ELM_CHARACTERISTIC_UUID = characteristicUUID
@@ -84,7 +76,8 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    
+    // MARK: Central Manager Delegate Methods
+
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
@@ -102,9 +95,9 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         }
     }
     
-    
+
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        
+        // ... (peripheral discovery logic)
         if let name = peripheral.name {
             if name.contains("Carly") {
                 logMessage("Found Carly Adapter")
@@ -115,13 +108,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         }
     }
     
-    
-    func connect(to peripheral: CBPeripheral) {
-        centralManager?.connect(peripheral, options: nil)
-        connectedPeripheral = peripheral
-    }
-    
-
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logMessage("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
         connectedPeripheral = peripheral
@@ -130,8 +116,27 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         peripheral.discoverServices(nil) // Start discovering all services of the connected peripheral
     }
     
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        logMessage("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
+        connectedPeripheral = nil
+    }
+    
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        self.connected = false
+        logMessage("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
+    }
+    
+    // MARK: Peripheral Delegate Methods
+
+    func connect(to peripheral: CBPeripheral) {
+        // ... (peripheral connection logic)
+        centralManager?.connect(peripheral, options: nil)
+        connectedPeripheral = peripheral
+    }
+    
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        // ... (discovering services logic)
         if let error = error {
             print("Error discovering services: \(error.localizedDescription)")
             return
@@ -156,6 +161,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
             return
         }
         for characteristic in characteristics {
+            self.characteristics.append(characteristic)
             if characteristic.properties.contains(.notify) {
                 peripheral.setNotifyValue(true, for: characteristic)
             }
@@ -221,8 +227,18 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         }
     }
     
-    func sendMessageAsync(_ message: String) async throws -> String {
-        
+    func discoverDescriptors(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
+        peripheral.discoverDescriptors(for: characteristic)
+    }
+    
+
+    
+    // MARK: Sending Messages
+    var sendMessageCompletion: ((String?, Error?) -> Void)?
+
+    
+    func sendMessageAsync(_ message: String, withTimeoutSecs: Int = 5) async throws -> String {
+        // ... (sending message logic)
         let message = "\(message)\r"
         logMessage("Sending: \(message)")
         
@@ -233,36 +249,34 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
             throw SendMessageError.missingPeripheralOrCharacteristic
         }
         
-        do {
-            let result = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+        connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
+        
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+            // Set up a timeout timer
                 self.sendMessageCompletion = { response, error in
-                    if let _ = error {
-                        continuation.resume(throwing: SendMessageError.timeout)
-                    } else {
+                    if let response = response {
                         continuation.resume(returning: response)
+
+                    } else if let error = error {
+                        continuation.resume(throwing: error)
+
+                    } else {
+                        continuation.resume(throwing: SendMessageError.timeout)
                     }
                 }
-                connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
-            }
-            return result
-        } catch {
-            throw error
         }
     }
     
     
-    func handleResponse(completion: ((String, String) -> Void)?) {
-        logMessage(linesToParse.joined(separator: " "))
+    func handleResponse(completion: ((String, Error) -> Void)?) {
         let strippedResponse = linesToParse.map { $0.replacingOccurrences(of: ">", with: "") }.joined()
-        print("Response: ",strippedResponse)
+        logMessage("Response: \(strippedResponse)")
         sendMessageCompletion?(strippedResponse, nil)
-        
-        self.timeoutTimer?.invalidate()
         linesToParse.removeAll()
     }
     
     
-    func processReceivedData(_ data: Data, completion: ((String, String) -> Void)?) {
+    func processReceivedData(_ data: Data, completion: ((String, Error) -> Void)?) {
         guard let cleanedResponse = String(data: data, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) else {
             return
         }
@@ -288,27 +302,5 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject 
         case missingPeripheralOrCharacteristic
         case timeout
     }
-    
-    
-    func discoverDescriptors(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
-        peripheral.discoverDescriptors(for: characteristic)
-    }
-    
 }
 
-
-extension BLEManager: CBCentralManagerDelegate {
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        logMessage("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
-        connectedPeripheral = nil
-    }
-    
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        self.connected = false
-        self.initialized = false
-        logMessage("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
-    }
-    
-    
-    
-}
