@@ -45,11 +45,6 @@ class ELM327: ObservableObject, ElmManager {
     
     // MARK: - Message Sending
     
-    enum ResultEnum {
-        case success(String)
-        case failed(SetupError)
-    }
-    
     // Send a message asynchronously
     func sendMessageAsync(_ message: String, withTimeoutSecs: Int = 5) async throws -> String  {
         do {
@@ -132,6 +127,8 @@ class ELM327: ObservableObject, ElmManager {
                             setupOrderCopy.append(setupStep)                            // append next protocol fi setupOrderCopy
                         }
                     }
+                    
+                // Setup Complete will attempt to get the VIN Number
                 case .AT0100:
                     do {
                         let vinResponse = try await sendMessageAsync("0902")             // Try to get VIN
@@ -155,7 +152,6 @@ class ELM327: ObservableObject, ElmManager {
             }
             currentIndex += 1
         }
-        // Setup Complete will attempt to get the VIN Number
     }
     
     // MARK: - Protocol Testing
