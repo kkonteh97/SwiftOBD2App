@@ -47,7 +47,6 @@ struct MainView: View {
         _elm327 = StateObject(wrappedValue: newElm327)
     }
     
-    @StateObject private var chatViewModel = ChatViewModel()
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -55,11 +54,6 @@ struct MainView: View {
             LinearGradient(colorScheme == .dark ? Color.darkStart : Color.lightStart, colorScheme == .dark ? Color.darkEnd : Color.lightEnd)
                 .edgesIgnoringSafeArea(.all)
             TabView {
-                
-                HomeScreen(chatViewModel: chatViewModel)
-                    .tabItem {
-                        Label("Home", systemImage: "house")
-                    }
                 SettingsScreen(viewModel: SettingsScreenViewModel(elmManager: elm327))
         
                     .tabItem {
@@ -73,6 +67,27 @@ struct MainView: View {
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .never))
         }
+    }
+}
+
+extension Color {
+    static let darkStart = Color(red: 50 / 255, green: 60 / 255, blue: 65 / 255)
+    static let darkEnd = Color(red: 25 / 255, green: 25 / 255, blue: 30 / 255)
+    static let lightStart = Color(red: 240 / 255, green: 240 / 255, blue: 246 / 255)
+    static let lightEnd = Color(red: 120 / 255, green: 120 / 255, blue: 123 / 255)
+
+    static func startColor(for colorScheme: ColorScheme) -> Color {
+        return colorScheme == .dark ? .darkStart : .lightStart
+    }
+
+    static func endColor(for colorScheme: ColorScheme) -> Color {
+        return colorScheme == .dark ? .darkEnd : .lightEnd
+    }
+}
+
+extension LinearGradient {
+    init(_ colors: Color...) {
+        self.init(gradient: Gradient(colors: colors), startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
