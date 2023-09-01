@@ -82,6 +82,7 @@
 		381071012A8FDAAF000A9540 /* ttests */ = {
 			isa = PBXGroup;
 			children = (
+				381070FF2A8FCA97000A9540 /* Constants.swift */,
 				381071032A8FDB22000A9540 /* TabNavigation */,
 				381EF82C2A971AB700A13E2E /* Animate.swift */,
 				387697342A984AF6008E2728 /* AsyncBootcamp.swift */,
@@ -131,7 +132,6 @@
 				38F6B3742A7F24990040F928 /* MainView.swift */,
 				38F75AE22A89D51800F7533B /* SettingsScreen.swift */,
 				38F75AE02A89D37600F7533B /* CarScreen.swift */,
-				381070FF2A8FCA97000A9540 /* Constants.swift */,
 				3852BE492A97304D00E1024D /* SplashScreenView.swift */,
 			);
 			path = Views;
@@ -156,9 +156,9 @@
 		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
 			isa = PBXGroup;
 			children = (
+				381071012A8FDAAF000A9540 /* ttests */,
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
-				381071012A8FDAAF000A9540 /* ttests */,
 				38ABF9FB2A7CC0B800433A18 /* BleComm */,
 				381071022A8FDAC8000A9540 /* ViewModels */,
 				38ABF9FF2A7CC0B800433A18 /* Views */,

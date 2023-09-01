@@ -14,9 +14,9 @@ class SettingsScreenViewModel: ObservableObject {
         self.elmManager = elmManager
     }
     
-    func setupAdapter(setupOrder: [SetupStep]) async throws {
+    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
         do {
-            try await elmManager.setupAdapter(setupOrder: setupOrder)
+            return try await elmManager.setupAdapter(setupOrder: setupOrder)
         } catch {
             throw error
         }

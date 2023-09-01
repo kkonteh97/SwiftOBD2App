@@ -15,15 +15,13 @@ protocol BLEManaging {
 }
 
 class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject, CBCentralManagerDelegate {
+    
     func connectToPeripheral() {
         fatalError("Not implemented")
     }
     
     // MARK: Properties
-    
-    //PARSING
-    fileprivate let parser = OBDParser.sharedInstance
-    
+        
     //BLUETOOTH
     @Published var connectedPeripheral: CBPeripheral?
     @Published var characteristics: [CBCharacteristic] = []
@@ -32,18 +30,11 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     @Published var ecuCharacteristic: CBCharacteristic?
     @Published var elmAdapter: CBPeripheral?
     private var centralManager: CBCentralManager?
-    var craFilter: String = ""
 
     
     @Published var connected: Bool = false
     
     @Published var history: [String] = []
-    
-    @Published var supportedPIDsByECU: [PIDs?] = []
-    
-    @Published var pidDescriptions: [String] = []
-    
-    var timeoutTimer: Timer?
     
     
     let BLE_ELM_SERVICE_UUID: CBUUID

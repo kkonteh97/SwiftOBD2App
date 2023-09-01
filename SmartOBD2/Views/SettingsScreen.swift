@@ -18,6 +18,8 @@ struct SettingsScreen: View {
     
     @State private var isModalPresented = false
     @State private var newItem: SetupStep = .ATD // New item to add
+    @State private var obdInfo: OBDInfo?
+
 
     
     
@@ -73,10 +75,19 @@ struct SettingsScreen: View {
                 }
             })
             
+            if let obdInfo = obdInfo {
+                Text("VIN: \(obdInfo.vin ?? "N/A")")
+                   
+                    Text("OBD Protocol: \(obdInfo.obdProtocol.description)")
+                }
+            
+            
+            
             Button(action: {
                 Task {
                     do {
-                        try await viewModel.setupAdapter(setupOrder: setupOrder)
+                        let result = try await viewModel.setupAdapter(setupOrder: setupOrder)
+                        obdInfo = result
                     } catch {
                         print("Error setting up adapter: \(error)")
                     }
@@ -91,6 +102,8 @@ struct SettingsScreen: View {
                     .background(Color.blue)
                     .cornerRadius(10)
             })
+            
+            
             TextField("Enter Command", text: $command)
                 .padding()
                 .background(Color(.systemGray6))

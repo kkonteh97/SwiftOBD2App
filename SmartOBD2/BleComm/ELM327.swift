@@ -10,14 +10,21 @@ import CoreBluetooth
 
 
 protocol ElmManager {
-    // Define the methods and properties required by your elm327
+    // Define the methods and properties required by elm327
     func sendMessageAsync(_ message: String,  withTimeoutSecs: Int) async throws -> String
-    func setupAdapter(setupOrder: [SetupStep]) async throws
+    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo
 }
+
+struct OBDInfo {
+    var vin: String?
+    var ecus: [String] = []
+    var obdProtocol: PROTOCOL = .NONE
+}
+
 
 class ELM327: ObservableObject, ElmManager {
     // MARK: - Properties
-    
+
     
     // Bluetooth UUIDs
     var BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
@@ -26,16 +33,9 @@ class ELM327: ObservableObject, ElmManager {
     // Bluetooth manager
     let bleManager: BLEManaging
     
-    
     // OBD protocol
     var obdProtocol: PROTOCOL = .NONE
-    
-    // VIN Number
-    var vinNumber = ""
-    
-    // ECU's Found
-    @Published var ecuFound: [[String]] = []
-
+        
     
     // MARK: - Initialization
     
@@ -81,11 +81,15 @@ class ELM327: ObservableObject, ElmManager {
         }
     }
     
-    func setupAdapter(setupOrder: [SetupStep]) async throws {
+    // want to return vin if available, header status, echo status, ecu, currently selected ecu
+    
+    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
         /*
          Perform the setup process
          
          */
+        var obdInfo = OBDInfo()
+
         var setupOrderCopy = setupOrder
         var currentIndex = 0
         
@@ -98,6 +102,7 @@ class ELM327: ObservableObject, ElmManager {
                     
                 case .ATZ:
                     _ = try await sendMessageAsync("ATZ")                               // reset command Responds with Device Info
+                    
                 case .ATRV:
                     _ = try await sendMessageAsync("ATRV")                              // get the voltage
                     
@@ -111,30 +116,36 @@ class ELM327: ObservableObject, ElmManager {
                     
                 case .ATSP0, .ATSP1, .ATSP2, .ATSP3, .ATSP4, .ATSP5, .ATSP6, .ATSP7, .ATSP8, .ATSP9, .ATSPA, .ATSPB, .ATSPC:
                     do {
-                        try await testProtocol(step: step)                              // test the protocol
-                        // we in this
-                        if let setupStep = SetupStep(rawValue: "AT0100") {
+                        obdInfo.ecus = try await testProtocol(step: step)
+                        
+                        // test the protocol
+                        obdInfo.obdProtocol = obdProtocol
+                        if let setupStep = SetupStep(rawValue: "AT0902") {
                             setupOrderCopy.append(setupStep)
                         }
+                        
                         print("Setup Completed successfulleh")
+                        
                     } catch {
                         obdProtocol = obdProtocol.nextProtocol()
                         print("well that didn't work lets try \(obdProtocol.description)")
                         if obdProtocol == .NONE {
                             throw error
                         }
+                        
                         if let setupStep = SetupStep(rawValue: "ATSP\(obdProtocol.rawValue)") {
                             setupOrderCopy.append(setupStep)                            // append next protocol fi setupOrderCopy
                         }
                     }
                     
                 // Setup Complete will attempt to get the VIN Number
-                case .AT0100:
+                case .AT0902:
                     do {
                         let vinResponse = try await sendMessageAsync("0902")             // Try to get VIN
-                        vinNumber = try await decodeVIN(response: vinResponse)
+                        let vin = try await decodeVIN(response: vinResponse)
+                        obdInfo.vin = vin
                         do {
-                            let vinInfo = try await getVINInfo(vin: vinNumber)
+                            let vinInfo = try await getVINInfo(vin: vin)
                             print(vinInfo)
                             
                         } catch {
@@ -152,11 +163,12 @@ class ELM327: ObservableObject, ElmManager {
             }
             currentIndex += 1
         }
+        return obdInfo
     }
     
     // MARK: - Protocol Testing
     
-    func testProtocol(step: SetupStep) async throws {
+    func testProtocol(step: SetupStep) async throws -> [String] {
         do {
             // test protocol by sending 0100 and checking for 41 00 response
             /*
@@ -169,17 +181,22 @@ class ELM327: ObservableObject, ElmManager {
             let _ = try await sendMessageAsync("0100")
             let response2 = try await sendMessageAsync("0100")
  
-            await getECUs(response: response2)
+            let headers = await getECUs(response: response2)
+
             // Turn header off now
             _ = try await okResponse(message: "ATH0")
+            return headers
+
         } catch {
             throw error
         }
     }
     
-    func getECUs(response: String) async {
+    func getECUs(response: String) async -> [String] {
         // Find the indices of "41 00" in the response
         let ecuSegments = response.components(separatedBy: " ")
+        var headers: [String] = []
+
 
         var indicesOf41: [Int] = []
         for (index, segment) in ecuSegments.enumerated() {
@@ -196,17 +213,19 @@ class ELM327: ObservableObject, ElmManager {
 
             // Extract the header segments
             let header = Array(ecuSegments[headerStartIndex..<headerEndIndex - 1])
-            await getSupportedPIDs(header: header)
-            // get supported pids
-            await MainActor.run {
-                self.ecuFound.append(header)
-            }
-            print(ecuFound)
+            headers.append(header.joined(separator: " "))
+            let _ = await getSupportedPIDs(header: header)
         }
+        return headers
     }
     
-    func getSupportedPIDs(header: [String]) async  {
+    func getSupportedPIDs(header: [String]) async -> [String] {
+        var supportedPIDs: [String] = []
         do {
+            if !header.contains("10") {
+                print("not ecu")
+                return []
+            }
             _ = try await okResponse(message: "AT CRA\(header.joined())")
 
             let response = try await sendMessageAsync("0100").components(separatedBy: " ")
@@ -225,7 +244,7 @@ class ELM327: ObservableObject, ElmManager {
             let binaryData = bytes.flatMap { Array(String($0, radix: 2).leftPadding(toLength: 8, withPad: "0")) }
             
             // Define the PID numbers based on the binary data
-            let supportedPIDs = binaryData.enumerated()
+            supportedPIDs = binaryData.enumerated()
                 .compactMap { index, bit -> String? in
                     if bit == "1" {
                         let pidNumber = String(format: "%02X", index + 1)
@@ -235,22 +254,15 @@ class ELM327: ObservableObject, ElmManager {
                     
                 }
             
-            let _ = supportedPIDs.map { pid in
-                PIDs(rawValue: pid)
-            }
             
-            
-            //        // remove nils
-            //        self.supportedPIDsByECU = supportedPIDsByECU
-            //                                    .map { $0 }
-            //                                    .compactMap { $0 }
-            //
-            //        self.pidDescriptions = supportedPIDsByECU
-            //                                    .map { $0?.description }
-            //                                    .compactMap { $0 }
-            
+            // remove nils
+            let _ = supportedPIDs
+                                        .map { $0 }
+                                        .compactMap { $0 }
+    
         } catch {
         }
+        return supportedPIDs
     }
     
     // MARK: - Decoding VIN

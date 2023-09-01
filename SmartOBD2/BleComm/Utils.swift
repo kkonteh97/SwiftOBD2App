@@ -63,7 +63,7 @@ enum SetupStep: String, CaseIterable, Identifiable {
     case ATSPA
     case ATSPB
     case ATSPC
-    case AT0100
+    case AT0902
     var id: String { self.rawValue }
 }
 

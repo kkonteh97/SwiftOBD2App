@@ -55,7 +55,6 @@ struct MainView: View {
                 .edgesIgnoringSafeArea(.all)
             TabView {
                 SettingsScreen(viewModel: SettingsScreenViewModel(elmManager: elm327))
-        
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
