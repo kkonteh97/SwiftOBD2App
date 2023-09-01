@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */; };
 		380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F12AA245A300931BBF /* SetupOrderModal.swift */; };
+		380E90F52AA247C000931BBF /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F42AA247C000931BBF /* extensions.swift */; };
 		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
 		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
 		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
@@ -41,6 +42,7 @@
 /* Begin PBXFileReference section */
 		380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreenViewModel.swift; sourceTree = "<group>"; };
 		380E90F12AA245A300931BBF /* SetupOrderModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupOrderModal.swift; sourceTree = "<group>"; };
+		380E90F42AA247C000931BBF /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
 		381070FF2A8FCA97000A9540 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		38147C7B2A8A70840086F293 /* Generics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generics.swift; sourceTree = "<group>"; };
 		38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewBuildertest.swift; sourceTree = "<group>"; };
@@ -89,6 +91,14 @@
 				380E90F12AA245A300931BBF /* SetupOrderModal.swift */,
 			);
 			path = Modals;
+			sourceTree = "<group>";
+		};
+		380E90F32AA2479800931BBF /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				380E90F42AA247C000931BBF /* extensions.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		381071012A8FDAAF000A9540 /* ttests */ = {
@@ -169,6 +179,7 @@
 		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
 			isa = PBXGroup;
 			children = (
+				380E90F32AA2479800931BBF /* Extensions */,
 				381071012A8FDAAF000A9540 /* ttests */,
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
@@ -275,6 +286,7 @@
 				3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */,
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
 				387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */,
+				380E90F52AA247C000931BBF /* extensions.swift in Sources */,
 				38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */,
 				38E0CC962AA116AB00C4309D /* SettingsScreenViewModel.swift in Sources */,
 				38E0CC942AA114FC00C4309D /* Utils.swift in Sources */,
