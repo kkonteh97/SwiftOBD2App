@@ -1,0 +1,526 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
+		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
+		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
+		38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */; };
+		381EF82D2A971AB800A13E2E /* Animate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381EF82C2A971AB700A13E2E /* Animate.swift */; };
+		3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3852BE492A97304D00E1024D /* SplashScreenView.swift */; };
+		387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387697342A984AF6008E2728 /* AsyncBootcamp.swift */; };
+		3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715A2A8BF6AD00D6F5EB /* PKBC.swift */; };
+		3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */; };
+		3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */; };
+		387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387871602A8D2A3B00D6F5EB /* TabBarItem.swift */; };
+		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
+		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
+		38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */; };
+		38C93E902A7CBE440044C7E4 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */; };
+		38E0CC942AA114FC00C4309D /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E0CC932AA114FC00C4309D /* Utils.swift */; };
+		38E0CC962AA116AB00C4309D /* SettingsScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */; };
+		38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */; };
+		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
+		38F6B3752A7F24990040F928 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3742A7F24990040F928 /* MainView.swift */; };
+		38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */; };
+		38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3852A80E0880040F928 /* OBDModel.swift */; };
+		38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 38F6B3882A80E0FC0040F928 /* SwiftyJSON */; };
+		38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE02A89D37600F7533B /* CarScreen.swift */; };
+		38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE22A89D51800F7533B /* SettingsScreen.swift */; };
+		38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF1822A8834F700EABC60 /* CustomTabView.swift */; };
+		38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF18A2A8897DE00EABC60 /* NavButton.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		381070FF2A8FCA97000A9540 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		38147C7B2A8A70840086F293 /* Generics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generics.swift; sourceTree = "<group>"; };
+		38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewBuildertest.swift; sourceTree = "<group>"; };
+		381EF82C2A971AB700A13E2E /* Animate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animate.swift; sourceTree = "<group>"; };
+		3852BE492A97304D00E1024D /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		387697342A984AF6008E2728 /* AsyncBootcamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncBootcamp.swift; sourceTree = "<group>"; };
+		3878715A2A8BF6AD00D6F5EB /* PKBC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKBC.swift; sourceTree = "<group>"; };
+		3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
+		3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItemsPK.swift; sourceTree = "<group>"; };
+		387871602A8D2A3B00D6F5EB /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
+		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
+		38ABFA0C2A7CC87700433A18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartOBD2.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2App.swift; sourceTree = "<group>"; };
+		38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		38E0CC932AA114FC00C4309D /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenViewModel.swift; sourceTree = "<group>"; };
+		38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleDTCs.swift; sourceTree = "<group>"; };
+		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
+		38F6B3742A7F24990040F928 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2Parser.swift; sourceTree = "<group>"; };
+		38F6B3852A80E0880040F928 /* OBDModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDModel.swift; sourceTree = "<group>"; };
+		38F75AE02A89D37600F7533B /* CarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreen.swift; sourceTree = "<group>"; };
+		38F75AE22A89D51800F7533B /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		38FEF1822A8834F700EABC60 /* CustomTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabView.swift; sourceTree = "<group>"; };
+		38FEF18A2A8897DE00EABC60 /* NavButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButton.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		38C93E822A7CBE3D0044C7E4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				381070FE2A8FC825000A9540 /* Alamofire in Frameworks */,
+				38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		381071012A8FDAAF000A9540 /* ttests */ = {
+			isa = PBXGroup;
+			children = (
+				381071032A8FDB22000A9540 /* TabNavigation */,
+				381EF82C2A971AB700A13E2E /* Animate.swift */,
+				387697342A984AF6008E2728 /* AsyncBootcamp.swift */,
+				38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */,
+				38147C7B2A8A70840086F293 /* Generics.swift */,
+				3878715A2A8BF6AD00D6F5EB /* PKBC.swift */,
+			);
+			path = ttests;
+			sourceTree = "<group>";
+		};
+		381071022A8FDAC8000A9540 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		381071032A8FDB22000A9540 /* TabNavigation */ = {
+			isa = PBXGroup;
+			children = (
+				38FEF1822A8834F700EABC60 /* CustomTabView.swift */,
+				387871602A8D2A3B00D6F5EB /* TabBarItem.swift */,
+				3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */,
+				3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */,
+				38FEF18A2A8897DE00EABC60 /* NavButton.swift */,
+			);
+			path = TabNavigation;
+			sourceTree = "<group>";
+		};
+		38ABF9FB2A7CC0B800433A18 /* BleComm */ = {
+			isa = PBXGroup;
+			children = (
+				38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */,
+				38F6B3702A7EA99D0040F928 /* ELM327.swift */,
+				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
+				38F6B3852A80E0880040F928 /* OBDModel.swift */,
+				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
+				38E0CC932AA114FC00C4309D /* Utils.swift */,
+			);
+			path = BleComm;
+			sourceTree = "<group>";
+		};
+		38ABF9FF2A7CC0B800433A18 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				38F6B3742A7F24990040F928 /* MainView.swift */,
+				38F75AE22A89D51800F7533B /* SettingsScreen.swift */,
+				38F75AE02A89D37600F7533B /* CarScreen.swift */,
+				381070FF2A8FCA97000A9540 /* Constants.swift */,
+				3852BE492A97304D00E1024D /* SplashScreenView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		38C93E7C2A7CBE3D0044C7E4 = {
+			isa = PBXGroup;
+			children = (
+				38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */,
+				38C93E862A7CBE3D0044C7E4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		38C93E862A7CBE3D0044C7E4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
+			isa = PBXGroup;
+			children = (
+				38ABFA0C2A7CC87700433A18 /* Info.plist */,
+				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
+				381071012A8FDAAF000A9540 /* ttests */,
+				38ABF9FB2A7CC0B800433A18 /* BleComm */,
+				381071022A8FDAC8000A9540 /* ViewModels */,
+				38ABF9FF2A7CC0B800433A18 /* Views */,
+				38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */,
+				38C93E8E2A7CBE440044C7E4 /* Preview Content */,
+			);
+			path = SmartOBD2;
+			sourceTree = "<group>";
+		};
+		38C93E8E2A7CBE440044C7E4 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		38C93E842A7CBE3D0044C7E4 /* SmartOBD2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38C93E932A7CBE450044C7E4 /* Build configuration list for PBXNativeTarget "SmartOBD2" */;
+			buildPhases = (
+				38C93E812A7CBE3D0044C7E4 /* Sources */,
+				38C93E822A7CBE3D0044C7E4 /* Frameworks */,
+				38C93E832A7CBE3D0044C7E4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SmartOBD2;
+			packageProductDependencies = (
+				38F6B3882A80E0FC0040F928 /* SwiftyJSON */,
+				381070FD2A8FC825000A9540 /* Alamofire */,
+			);
+			productName = SmartOBD2;
+			productReference = 38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		38C93E7D2A7CBE3D0044C7E4 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1430;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					38C93E842A7CBE3D0044C7E4 = {
+						CreatedOnToolsVersion = 14.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 38C93E802A7CBE3D0044C7E4 /* Build configuration list for PBXProject "SmartOBD2" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 38C93E7C2A7CBE3D0044C7E4;
+			packageReferences = (
+				38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
+				381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */,
+			);
+			productRefGroup = 38C93E862A7CBE3D0044C7E4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				38C93E842A7CBE3D0044C7E4 /* SmartOBD2 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		38C93E832A7CBE3D0044C7E4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38C93E902A7CBE440044C7E4 /* Preview Assets.xcassets in Resources */,
+				38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		38C93E812A7CBE3D0044C7E4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38F6B3752A7F24990040F928 /* MainView.swift in Sources */,
+				381EF82D2A971AB800A13E2E /* Animate.swift in Sources */,
+				381071002A8FCA97000A9540 /* Constants.swift in Sources */,
+				3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */,
+				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
+				387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */,
+				38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */,
+				38E0CC962AA116AB00C4309D /* SettingsScreenViewModel.swift in Sources */,
+				38E0CC942AA114FC00C4309D /* Utils.swift in Sources */,
+				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
+				3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */,
+				38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */,
+				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
+				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
+				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
+				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
+				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
+				38147C7C2A8A70840086F293 /* Generics.swift in Sources */,
+				38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */,
+				38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */,
+				38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */,
+				38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */,
+				3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		38C93E912A7CBE440044C7E4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		38C93E922A7CBE450044C7E4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		38C93E942A7CBE450044C7E4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SmartOBD2/Preview Content\"";
+				DEVELOPMENT_TEAM = AA9JVLXUZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SmartOBD2/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		38C93E952A7CBE450044C7E4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"SmartOBD2/Preview Content\"";
+				DEVELOPMENT_TEAM = AA9JVLXUZS;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SmartOBD2/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "";
+				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38C93E802A7CBE3D0044C7E4 /* Build configuration list for PBXProject "SmartOBD2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38C93E912A7CBE440044C7E4 /* Debug */,
+				38C93E922A7CBE450044C7E4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38C93E932A7CBE450044C7E4 /* Build configuration list for PBXNativeTarget "SmartOBD2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38C93E942A7CBE450044C7E4 /* Debug */,
+				38C93E952A7CBE450044C7E4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+		38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		381070FD2A8FC825000A9540 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		38F6B3882A80E0FC0040F928 /* SwiftyJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
+			productName = SwiftyJSON;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 38C93E7D2A7CBE3D0044C7E4 /* Project object */;
+}
