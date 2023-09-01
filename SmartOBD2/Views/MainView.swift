@@ -58,7 +58,7 @@ struct MainView: View {
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
-                CarScreen()
+                CarScreen(viewModel: CarScreenViewModel(elmManager: elm327))
                     .tabItem {
                         Label("Car", systemImage: "car")
                     }

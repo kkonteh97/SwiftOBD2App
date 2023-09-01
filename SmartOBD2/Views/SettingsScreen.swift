@@ -7,32 +7,46 @@
 
 import SwiftUI
 import CoreBluetooth
-
-
-
+   
 
 struct SettingsScreen: View {
-    @ObservedObject var viewModel: SettingsScreenViewModel // Declare the view model as a property
-    @State var command: String = ""
-    @State var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATDPN]
-    
+    @ObservedObject var viewModel: SettingsScreenViewModel
+    @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATDPN]
     @State private var isModalPresented = false
-    @State private var newItem: SetupStep = .ATD // New item to add
     @State private var obdInfo: OBDInfo?
 
 
-    
-    
-    func move(from source: IndexSet, to destination: Int) {
-        setupOrder.move(fromOffsets: source, toOffset: destination)
-    }
-    
     var body: some View {
         VStack {
+            
+            if let obdInfo = obdInfo {
+                Text("VIN: \(obdInfo.vin ?? "N/A")")
+                    .font(.headline)
+                    .frame(alignment: .leading)
+                Text("OBD Protocol: \(obdInfo.obdProtocol.description)")
+                    .font(.headline)
+                    .frame(alignment: .leading)
+
+                
+                List {
+                    ForEach(obdInfo.ecuData.keys.sorted(), id: \.self) { header in
+                        if let supportedPIDs = obdInfo.ecuData[header] {
+                            VStack(alignment: .leading) {
+                                Text("Header: \(header)")
+                                    .font(.headline)
+                                Text("Supported PIDs: \(supportedPIDs.joined(separator: ", "))")
+                                    .font(.subheadline)
+                            }
+                        }
+                    }
+                }
+                .opacity(0.8)
+            }
+
             Button(action: {
                 isModalPresented.toggle()
             }, label: {
-                Text("Open Modal")
+                Text("Change Setup Order")
                     .font(.headline)
                     .foregroundColor(.white)
                     .padding()
@@ -41,47 +55,8 @@ struct SettingsScreen: View {
                     .cornerRadius(10)
             })
             .sheet(isPresented: $isModalPresented, content: {
-                NavigationView {
-                    VStack {
-                        List {
-                            ForEach(setupOrder) { step in
-                                Text(step.rawValue.uppercased())
-                                    .font(.title)
-                                    .foregroundColor(.blue)
-                            }
-                            .onMove(perform: move)
-                            .onDelete(perform: { indexSet in
-                                                            setupOrder.remove(atOffsets: indexSet)
-                                                        })
-                        }
-                        .navigationBarItems(trailing: Button("Done", action: {
-                            isModalPresented.toggle()
-                        }))
-                        HStack {
-                            Picker("Add Step", selection: $newItem) {
-                                ForEach(SetupStep.allCases, id: \.self) { step in
-                                    Text(step.rawValue.uppercased())
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            Button("Add", action: {
-                                setupOrder.append(newItem)
-                                newItem = .ATD // Reset the new item for the next addition
-                            })
-                        }
-                        .padding(.horizontal)
-                                
-                    }
-                }
+                SetupOrderModal(isModalPresented: $isModalPresented, setupOrder: $setupOrder)
             })
-            
-            if let obdInfo = obdInfo {
-                Text("VIN: \(obdInfo.vin ?? "N/A")")
-                   
-                    Text("OBD Protocol: \(obdInfo.obdProtocol.description)")
-                }
-            
-            
             
             Button(action: {
                 Task {
@@ -104,36 +79,7 @@ struct SettingsScreen: View {
             })
             
             
-            TextField("Enter Command", text: $command)
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-                .padding(.bottom, 20)
             
-            
-            Button(action: {
-                Task {
-                    do {
-                        let response = try await viewModel.sendMessage(command)
-                        print(response)
-                        
-                    } catch {
-                        print("Error setting up adapter: \(error)")
-                    }
-                }
-                
-                self.command = ""
-                
-            }, label: {
-                Text("Send")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
-            })
-            //            .disabled(!viewModel.adapterReady)
         }
         
     }

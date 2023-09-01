@@ -17,14 +17,13 @@ protocol ElmManager {
 
 struct OBDInfo {
     var vin: String?
-    var ecus: [String] = []
+    var ecuData: [String: [String]] = [:]
     var obdProtocol: PROTOCOL = .NONE
 }
 
 
 class ELM327: ObservableObject, ElmManager {
     // MARK: - Properties
-
     
     // Bluetooth UUIDs
     var BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
@@ -55,7 +54,7 @@ class ELM327: ObservableObject, ElmManager {
             return response
         } catch {
             print("Error: \(error)")
-            throw error // Re-throw the error to the caller if needed
+            throw SetupError.timeout
         }
     }
     
@@ -81,7 +80,7 @@ class ELM327: ObservableObject, ElmManager {
         }
     }
     
-    // want to return vin if available, header status, echo status, ecu, currently selected ecu
+    // want to return vin if available, header status, echo status and ecudata
     
     func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
         /*
@@ -116,9 +115,8 @@ class ELM327: ObservableObject, ElmManager {
                     
                 case .ATSP0, .ATSP1, .ATSP2, .ATSP3, .ATSP4, .ATSP5, .ATSP6, .ATSP7, .ATSP8, .ATSP9, .ATSPA, .ATSPB, .ATSPC:
                     do {
-                        obdInfo.ecus = try await testProtocol(step: step)
-                        
                         // test the protocol
+                        obdInfo.ecuData = try await testProtocol(step: step)
                         obdInfo.obdProtocol = obdProtocol
                         if let setupStep = SetupStep(rawValue: "AT0902") {
                             setupOrderCopy.append(setupStep)
@@ -168,7 +166,7 @@ class ELM327: ObservableObject, ElmManager {
     
     // MARK: - Protocol Testing
     
-    func testProtocol(step: SetupStep) async throws -> [String] {
+    func testProtocol(step: SetupStep) async throws -> [String: [String]] {
         do {
             // test protocol by sending 0100 and checking for 41 00 response
             /*
@@ -181,22 +179,28 @@ class ELM327: ObservableObject, ElmManager {
             let _ = try await sendMessageAsync("0100")
             let response2 = try await sendMessageAsync("0100")
  
-            let headers = await getECUs(response: response2)
+            let ecuData = await getECUs(response: response2)
+
 
             // Turn header off now
             _ = try await okResponse(message: "ATH0")
-            return headers
+            var result: [String: [String]] = [:]
+
+            for ecu in ecuData {
+                result[ecu.header] = ecu.supportedPIDs
+            }
+
+            return result
 
         } catch {
             throw error
         }
     }
     
-    func getECUs(response: String) async -> [String] {
+    func getECUs(response: String) async -> [(header: String, supportedPIDs: [String])] {
         // Find the indices of "41 00" in the response
         let ecuSegments = response.components(separatedBy: " ")
-        var headers: [String] = []
-
+        var ecuData: [(header: String, supportedPIDs: [String])] = []
 
         var indicesOf41: [Int] = []
         for (index, segment) in ecuSegments.enumerated() {
@@ -204,8 +208,8 @@ class ELM327: ObservableObject, ElmManager {
                 indicesOf41.append(index)
             }
         }
-        
-        // Extract headers for each "41 00" response
+
+        // Extract headers and supported PIDs for each "41 00" response
         for indexOf41 in indicesOf41 {
             // Determine the start and end of the header based on the context
             let headerStartIndex = max(indexOf41 - 5, 0) // Adjust the backward window size as needed
@@ -213,11 +217,13 @@ class ELM327: ObservableObject, ElmManager {
 
             // Extract the header segments
             let header = Array(ecuSegments[headerStartIndex..<headerEndIndex - 1])
-            headers.append(header.joined(separator: " "))
-            let _ = await getSupportedPIDs(header: header)
+            let supportedPIDs = await getSupportedPIDs(header: header)
+
+            ecuData.append((header: header.joined(separator: " "), supportedPIDs: supportedPIDs))
         }
-        return headers
+        return ecuData
     }
+
     
     func getSupportedPIDs(header: [String]) async -> [String] {
         var supportedPIDs: [String] = []

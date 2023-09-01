@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */; };
+		380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F12AA245A300931BBF /* SetupOrderModal.swift */; };
 		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
 		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
 		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
@@ -37,6 +39,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreenViewModel.swift; sourceTree = "<group>"; };
+		380E90F12AA245A300931BBF /* SetupOrderModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupOrderModal.swift; sourceTree = "<group>"; };
 		381070FF2A8FCA97000A9540 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		38147C7B2A8A70840086F293 /* Generics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generics.swift; sourceTree = "<group>"; };
 		38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewBuildertest.swift; sourceTree = "<group>"; };
@@ -79,6 +83,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		380E90F02AA2457B00931BBF /* Modals */ = {
+			isa = PBXGroup;
+			children = (
+				380E90F12AA245A300931BBF /* SetupOrderModal.swift */,
+			);
+			path = Modals;
+			sourceTree = "<group>";
+		};
 		381071012A8FDAAF000A9540 /* ttests */ = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */,
+				380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -159,6 +172,7 @@
 				381071012A8FDAAF000A9540 /* ttests */,
 				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
+				380E90F02AA2457B00931BBF /* Modals */,
 				38ABF9FB2A7CC0B800433A18 /* BleComm */,
 				381071022A8FDAC8000A9540 /* ViewModels */,
 				38ABF9FF2A7CC0B800433A18 /* Views */,
@@ -255,6 +269,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				38F6B3752A7F24990040F928 /* MainView.swift in Sources */,
+				380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */,
 				381EF82D2A971AB800A13E2E /* Animate.swift in Sources */,
 				381071002A8FCA97000A9540 /* Constants.swift in Sources */,
 				3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */,
@@ -275,6 +290,7 @@
 				38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */,
 				38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */,
 				38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */,
+				380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */,
 				38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */,
 				3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */,
 			);
