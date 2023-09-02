@@ -8,7 +8,6 @@
 import Foundation
 import CoreBluetooth
 import OSLog
-import AsyncBluetooth
 
 
 
@@ -39,6 +38,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     var linesToParse = [String]()
     var adapterReady = false
     
+    
     // MARK: Initialization
 
     init(serviceUUID: CBUUID, characteristicUUID: CBUUID) {
@@ -67,7 +67,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             fatalError()
         }
     }
-    
 
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
