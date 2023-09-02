@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreBluetooth
+import OSLog
 
 
 protocol ElmManager {
@@ -25,35 +26,43 @@ struct OBDInfo {
 class ELM327: ObservableObject, ElmManager {
     // MARK: - Properties
     
+    let logger = Logger.elmCom
+    
     // Bluetooth UUIDs
     var BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
     var BLE_ELM_CHARACTERISTIC_UUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
     
     // Bluetooth manager
-    let bleManager: BLEManaging
+    let bleManager: BLEManager
+
     
     // OBD protocol
     var obdProtocol: PROTOCOL = .NONE
         
     
     // MARK: - Initialization
-    
-    init(bleManager: BLEManaging) {
-        self.bleManager = bleManager
+    init() {
+        BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
+        BLE_ELM_CHARACTERISTIC_UUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
+        
+        // Configure the BLEManager instance with the appropriate UUIDs
+        bleManager = BLEManager(serviceUUID: BLE_ELM_SERVICE_UUID, characteristicUUID: BLE_ELM_CHARACTERISTIC_UUID)
     }
+
+
     
     // MARK: - Message Sending
     
     // Send a message asynchronously
     func sendMessageAsync(_ message: String, withTimeoutSecs: Int = 5) async throws -> String  {
         do {
-            let response: String = try await withTimeout(seconds: 0.5) { [self] in
-                let res = try await bleManager.sendMessageAsync(message, withTimeoutSecs: withTimeoutSecs)
+            let response: String = try await withTimeout(seconds: 0.5) {
+                let res = try await self.bleManager.sendMessageAsync(message)
                 return res
             }
             return response
         } catch {
-            print("Error: \(error)")
+            logger.error("Error: \(error.localizedDescription)")
             throw SetupError.timeout
         }
     }
@@ -72,10 +81,11 @@ class ELM327: ObservableObject, ElmManager {
          Handle responses with ok
          Commands thats only respond with ok are processed here
          */
-        let response = try await bleManager.sendMessageAsync(message, withTimeoutSecs: 1)
+        let response = try await self.bleManager.sendMessageAsync(message)
         if response.contains("OK") {
             return response
         } else {
+            logger.error("Invalid response: \(response)")
             throw SetupError.invalidResponse
         }
     }
@@ -122,12 +132,13 @@ class ELM327: ObservableObject, ElmManager {
                             setupOrderCopy.append(setupStep)
                         }
                         
-                        print("Setup Completed successfulleh")
+                        logger.info("Setup Completed successfulleh")
                         
                     } catch {
                         obdProtocol = obdProtocol.nextProtocol()
-                        print("well that didn't work lets try \(obdProtocol.description)")
+                        
                         if obdProtocol == .NONE {
+                            logger.error("No more protocols to try")
                             throw error
                         }
                         
@@ -147,15 +158,13 @@ class ELM327: ObservableObject, ElmManager {
                             print(vinInfo)
                             
                         } catch {
-                            print(error)
+                            logger.error("\(error.localizedDescription)")
                         }
                     } catch {
-                        throw error
+                       logger.error("\(error.localizedDescription)")
+                    
                     }
                 }
-            
-                print("Completed step: \(step)")
-                
             } catch {
                 throw error
             }
@@ -173,14 +182,13 @@ class ELM327: ObservableObject, ElmManager {
              while we here might as well get the supported pids
              */
             _ = try await okResponse(message: step.rawValue)
-            print("Testing protocol: \(obdProtocol.rawValue)")
+            logger.info("Testing protocol: \(self.obdProtocol.rawValue)")
             
             // send 0100 message two times just to make sure first might contain "searching"
             let _ = try await sendMessageAsync("0100")
-            let response2 = try await sendMessageAsync("0100")
+            let response = try await sendMessageAsync("0100")
  
-            let ecuData = await getECUs(response: response2)
-
+            let ecuData = await getECUs(response: response)
 
             // Turn header off now
             _ = try await okResponse(message: "ATH0")
@@ -295,7 +303,7 @@ class ELM327: ObservableObject, ElmManager {
                 let unicodeScalar = UnicodeScalar(hexValue)
                 asciiString.append(Character(unicodeScalar))
             } else {
-                print("Error converting hex to UInt8")
+                logger.error("Error converting hex to UInt8")
             }
             
             hex.removeFirst(2)

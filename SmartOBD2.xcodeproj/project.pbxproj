@@ -10,6 +10,7 @@
 		380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */; };
 		380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F12AA245A300931BBF /* SetupOrderModal.swift */; };
 		380E90F52AA247C000931BBF /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F42AA247C000931BBF /* extensions.swift */; };
+		380E90FF2AA2671F00931BBF /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 380E90FE2AA2671F00931BBF /* SwiftyBeaver */; };
 		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
 		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
 		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
@@ -79,6 +80,7 @@
 			files = (
 				381070FE2A8FC825000A9540 /* Alamofire in Frameworks */,
 				38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */,
+				380E90FF2AA2671F00931BBF /* SwiftyBeaver in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +222,7 @@
 			packageProductDependencies = (
 				38F6B3882A80E0FC0040F928 /* SwiftyJSON */,
 				381070FD2A8FC825000A9540 /* Alamofire */,
+				380E90FE2AA2671F00931BBF /* SwiftyBeaver */,
 			);
 			productName = SmartOBD2;
 			productReference = 38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */;
@@ -252,6 +255,7 @@
 			packageReferences = (
 				38F6B3872A80E0FC0040F928 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				380E90FD2AA2671F00931BBF /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
 			);
 			productRefGroup = 38C93E862A7CBE3D0044C7E4 /* Products */;
 			projectDirPath = "";
@@ -519,6 +523,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		380E90FD2AA2671F00931BBF /* XCRemoteSwiftPackageReference "SwiftyBeaver" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyBeaver/SwiftyBeaver";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
@@ -538,6 +550,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		380E90FE2AA2671F00931BBF /* SwiftyBeaver */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 380E90FD2AA2671F00931BBF /* XCRemoteSwiftPackageReference "SwiftyBeaver" */;
+			productName = SwiftyBeaver;
+		};
 		381070FD2A8FC825000A9540 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 381070FC2A8FC825000A9540 /* XCRemoteSwiftPackageReference "Alamofire" */;

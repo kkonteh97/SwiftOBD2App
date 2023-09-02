@@ -7,21 +7,18 @@
 
 import Foundation
 import CoreBluetooth
+import OSLog
+import AsyncBluetooth
 
-protocol BLEManaging {
-    // Define the methods and properties required by your elm327
-    func connectToPeripheral()
-    func sendMessageAsync(_ message: String, withTimeoutSecs: Int) async throws -> String
-}
 
-class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject, CBCentralManagerDelegate {
-    
-    func connectToPeripheral() {
-        fatalError("Not implemented")
-    }
+
+class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralManagerDelegate {
     
     // MARK: Properties
-        
+    let logger = Logger.bleCom
+    
+
+            
     //BLUETOOTH
     @Published var connectedPeripheral: CBPeripheral?
     @Published var characteristics: [CBCharacteristic] = []
@@ -42,12 +39,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     var linesToParse = [String]()
     var adapterReady = false
     
-    
-    func logMessage(_ message: String) {
-        print(message)
-        // Update a text view or label in the UI if needed
-    }
-    
     // MARK: Initialization
 
     init(serviceUUID: CBUUID, characteristicUUID: CBUUID) {
@@ -63,34 +54,36 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
         switch central.state {
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
-            logMessage("Bluetooth is On.")
+            logger.debug("Bluetooth is On.")
             self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
             
         case .poweredOff:
-            logMessage("Bluetooth is currently powered off.")
+            logger.warning("Bluetooth is currently powered off.")
+            self.connected = false
             
         case .resetting:
-            logMessage("Bluetooth is resetting.")
+            logger.warning("Bluetooth is resetting.")
         default:
             fatalError()
         }
     }
     
 
+
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         // ... (peripheral discovery logic)
         if let name = peripheral.name {
             if name.contains("Carly") {
-                logMessage("Found Carly Adapter")
-                self.centralManager?.stopScan()
+                logger.debug("Found Carly Adapter")
+                centralManager?.stopScan()
                 elmAdapter = peripheral
-                self.centralManager?.connect(peripheral, options: nil)
+                connect(to: peripheral)
             }
         }
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        logMessage("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
+        logger.debug("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
         connectedPeripheral = peripheral
         peripheral.delegate = self // Set the delegate of the connected peripheral
         self.connected = true
@@ -98,13 +91,13 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        logMessage("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
+        logger.error("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")
         connectedPeripheral = nil
     }
     
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         self.connected = false
-        logMessage("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
+        logger.warning("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
     }
     
     // MARK: Peripheral Delegate Methods
@@ -119,17 +112,15 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         // ... (discovering services logic)
         if let error = error {
-            print("Error discovering services: \(error.localizedDescription)")
+            logger.error("Error discovering services: \(error.localizedDescription)")
             return
         }
-        print("discovered services")
         if let services = peripheral.services {
             for service in services {
+                logger.info("Found Service: \(service)")
                 if service.uuid == BLE_ELM_SERVICE_UUID {
-                    logMessage("OBD2 Service: \(service.uuid)")
                     peripheral.discoverCharacteristics(nil, for: service)
                 } else {
-                    logMessage("Found Service: \(service)")
                 }
             }
         }
@@ -138,23 +129,20 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         guard let characteristics = service.characteristics else {
-            print("No characteristics found")
+            logger.error("No characteristics found")
             return
         }
+        
         for characteristic in characteristics {
             self.characteristics.append(characteristic)
-            if characteristic.properties.contains(.notify) {
-                peripheral.setNotifyValue(true, for: characteristic)
-            }
             switch characteristic.uuid {
             case BLE_ELM_CHARACTERISTIC_UUID:
                 ecuCharacteristic = characteristic
-                logMessage("Found ECU Characteristic: \(characteristic.uuid)")
                 peripheral.setNotifyValue(true, for: characteristic)
                 self.adapterReady = true
-                logMessage("Adapter Ready")
+                logger.info("Adapter Ready")
             default:
-                logMessage("Unhandled Characteristic UUID: \(characteristic.uuid)")
+                logger.info("Unhandled Characteristic UUID: \(characteristic.uuid)")
                 if characteristic.properties.contains(.notify) {
                     peripheral.setNotifyValue(true, for: characteristic)
                     
@@ -166,11 +154,11 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         if let error = error {
-            logMessage("Error reading characteristic value: \(error.localizedDescription)")
+            logger.error("Error reading characteristic value: \(error.localizedDescription)")
             return
         }
         switch characteristic.uuid.uuidString {
-        case "FFE1":
+        case BLE_ELM_CHARACTERISTIC_UUID.uuidString:
             guard let characteristicValue = characteristic.value else {
                 return
             }
@@ -192,7 +180,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
                     print("Invalid data format")
                     return
                 }
-                logMessage("Manufacturer: \(responseString))")
+                logger.info("Manufacturer: \(responseString))")
             }
         case "2A26":
             if let response = characteristic.value {
@@ -200,11 +188,11 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
                     print("Invalid data format")
                     return
                 }
-                logMessage("Manufacturer: \(responseString))")
+                logger.info("Manufacturer: \(responseString))")
             }
             
         default:
-            logMessage("Unknown characteristic")
+            logger.info("Unknown characteristic")
         }
     }
     
@@ -218,16 +206,16 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     var sendMessageCompletion: ((String?, Error?) -> Void)?
 
     
-    func sendMessageAsync(_ message: String, withTimeoutSecs: Int = 5) async throws -> String {
+    func sendMessageAsync(_ message: String) async throws -> String {
         // ... (sending message logic)
         let message = "\(message)\r"
-        logMessage("Sending: \(message)")
+        logger.info("Sending: \(message)")
         
         guard let connectedPeripheral = self.connectedPeripheral,
               let ecuCharacteristic = self.ecuCharacteristic,
               let data = message.data(using: .ascii) else {
-            logMessage("Error: Missing peripheral or characteristic.")
-            throw SendMessageError.missingPeripheralOrCharacteristic
+                logger.error("Error: Missing peripheral or characteristic.")
+                throw SendMessageError.missingPeripheralOrCharacteristic
         }
         
         connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
@@ -251,7 +239,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, BLEManaging, ObservableObject,
     
     func handleResponse(completion: ((String, Error) -> Void)?) {
         let strippedResponse = linesToParse.map { $0.replacingOccurrences(of: ">", with: "") }.joined()
-        logMessage("Response: \(strippedResponse)")
+        logger.info("Response: \(strippedResponse)")
         sendMessageCompletion?(strippedResponse, nil)
         linesToParse.removeAll()
     }

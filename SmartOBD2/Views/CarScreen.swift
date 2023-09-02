@@ -11,6 +11,8 @@ struct CarScreen: View {
     @ObservedObject var viewModel: CarScreenViewModel
     @State private var command: String = ""
 
+
+
     var body: some View {
             VStack {
                 

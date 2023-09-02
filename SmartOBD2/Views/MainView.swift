@@ -10,11 +10,7 @@ import CoreBluetooth
 
 
 
-extension String {
-    subscript(offset: Int) -> Character {
-        self[index(startIndex, offsetBy: offset)]
-    }
-}
+
 
 struct CarlyObd {
     static let ADAPTER_SCAN_INTERVAL = 500
@@ -37,16 +33,8 @@ struct CarlyObd {
 struct MainView: View {
     let serviceUUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
     let characteristicUUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
-    @StateObject private var bleManager: BLEManager
-    @StateObject private var elm327: ELM327
+    @StateObject private var elm327 = ELM327()
 
-    init() {
-        let newBleManager = BLEManager(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-        let newElm327 = ELM327(bleManager: newBleManager)
-        _bleManager = StateObject(wrappedValue: newBleManager)
-        _elm327 = StateObject(wrappedValue: newElm327)
-    }
-    
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
