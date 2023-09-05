@@ -42,6 +42,32 @@ struct CarScreen: View {
 
                 
                 
+                
+                TextField("Enter Command", text: $command)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.bottom, 20)
+                
+                
+                ForEach(history) { history in
+                    VStack {
+                        HStack {
+                            Text(history.command)
+                                .font(.system(size: 20))
+                            Spacer()
+                            Text(history.response)
+                                .font(.system(size: 20))
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .padding(.bottom, 20)
+                    }
+                }
+
+                
+                
                 HStack {
                     
                     TextField("Enter Command", text: $command)
