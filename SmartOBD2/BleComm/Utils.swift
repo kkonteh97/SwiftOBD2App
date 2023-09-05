@@ -305,7 +305,7 @@ func nextPID() -> PIDs{
 }
 
 
-var description: String {
+var descriptions: String {
     switch self {
     case .pid04:
         return "Calculated engine load"

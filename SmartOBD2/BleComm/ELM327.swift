@@ -17,7 +17,7 @@ protocol ElmManager {
 
 struct OBDInfo {
     var vin: String?
-    var ecuData: [String: [String]] = [:]
+    var ecuData: [String: [PIDs]] = [:]
     var obdProtocol: PROTOCOL = .NONE
 }
 
@@ -53,7 +53,6 @@ class ELM327: ObservableObject, ElmManager {
     
     // Bluetooth manager
     let bleManager: BLEManager
-    
     
         
     // MARK: - Initialization
@@ -194,7 +193,7 @@ class ELM327: ObservableObject, ElmManager {
     
     // MARK: - Protocol Testing
     
-    func testProtocol(step: SetupStep) async throws -> [String: [String]] {
+    func testProtocol(step: SetupStep) async throws -> [String: [PIDs]] {
         do {
             // test protocol by sending 0100 and checking for 41 00 response
             /*
@@ -214,10 +213,11 @@ class ELM327: ObservableObject, ElmManager {
             
             // Turn header off now
             _ = try await okResponse(message: "ATH0")
-            var result: [String: [String]] = [:]
+            var result: [String: [PIDs]] = [:]
             
             for ecu in ecuData {
                 result[ecu.header] = ecu.supportedPIDs
+            
             }
             
             return result
@@ -227,10 +227,10 @@ class ELM327: ObservableObject, ElmManager {
         }
     }
     
-    func getECUs(response: String) async -> [(header: String, supportedPIDs: [String])] {
+    func getECUs(response: String) async -> [(header: String, supportedPIDs: [PIDs])] {
         // Find the indices of "41 00" in the response
         let ecuSegments = response.components(separatedBy: " ")
-        var ecuData: [(header: String, supportedPIDs: [String])] = []
+        var ecuData: [(header: String, supportedPIDs: [PIDs])] = []
         
         var indicesOf41: [Int] = []
         for (index, segment) in ecuSegments.enumerated() {
@@ -254,8 +254,55 @@ class ELM327: ObservableObject, ElmManager {
         return ecuData
     }
     
+//    func getSupportedPIDs2(response: String)  {
+//            let response = response.components(separatedBy: " ")
+//            print(response)
+//
+//            let indexof41 = response.firstIndex(of: "41") ?? response.endIndex
+//            let startIndex = response.index(indexof41, offsetBy: 2, limitedBy: response.endIndex) ?? response.endIndex
+//            // filter 55 out
+//
+//            let bytes = response[startIndex...]
+//                .filter { $0 != "55" }
+//                .compactMap { UInt8(String($0), radix: 16) }
+//
+//            print(bytes)
+//
+//
+//
+//            // Convert each byte to binary and join them together
+//            let binaryData = bytes.flatMap { Array(String($0, radix: 2).leftPadding(toLength: 8, withPad: "0")) }
+//
+//            // Define the PID numbers based on the binary data
+//            let supportedPIDs = binaryData.enumerated()
+//                .compactMap { index, bit -> String? in
+//                    if bit == "1" {
+//                        let pidNumber = String(format: "%02X", index + 1)
+//                        return pidNumber
+//                    }
+//                    return nil
+//
+//            }
+//
+//            let supportedPIDsByECU = supportedPIDs.map { pid in
+//                 PIDs(rawValue: pid)
+//            }
+//
+//
+//            // remove nils
+//            self.supportedPIDsByECU = supportedPIDsByECU
+//                                        .map { $0 }
+//                                        .compactMap { $0 }
+//
+//            self.pidDescriptions = supportedPIDsByECU
+//                                        .map { $0?.description }
+//                                        .compactMap { $0 }
+//
+//
+//        }
     
-    func getSupportedPIDs(header: [String]) async -> [String] {
+    
+    func getSupportedPIDs(header: [String]) async -> [PIDs] {
         var supportedPIDs: [String] = []
         do {
             if !header.contains("10") {
@@ -274,8 +321,6 @@ class ELM327: ObservableObject, ElmManager {
                 .filter { $0 != "55" }
                 .compactMap { UInt8(String($0), radix: 16) }
             
-            print(bytes)
-            
             // Convert each byte to binary and join them together
             let binaryData = bytes.flatMap { Array(String($0, radix: 2).leftPadding(toLength: 8, withPad: "0")) }
             
@@ -292,13 +337,21 @@ class ELM327: ObservableObject, ElmManager {
             
             
             // remove nils
-            let _ = supportedPIDs
+            let supportedPIDsByECU = supportedPIDs.map { pid in
+                PIDs(rawValue: pid)
+            }
+            
+            
+            
+            return supportedPIDsByECU
                 .map { $0 }
                 .compactMap { $0 }
             
+
+            
         } catch {
         }
-        return supportedPIDs
+        return []
     }
     
     // MARK: - Decoding VIN

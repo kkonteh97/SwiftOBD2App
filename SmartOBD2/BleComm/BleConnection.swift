@@ -29,6 +29,8 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     var linesToParse = [String]()
     var adapterReady = false
     
+    var sendMessageCompletion: ((String?, Error?) -> Void)?
+
     
     // MARK: Initialization
 
@@ -46,7 +48,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
+//            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
             
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
@@ -58,22 +60,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             fatalError()
         }
     }
-    
-    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
-        logger.debug("Restoring state")
-        
-        if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
-            logger.debug("Restoring peripherals")
-            
-            for peripheral in peripherals {
-                logger.debug("Restoring peripheral: \(peripheral.name ?? "Unnamed")")
-                self.peripherals.append(peripheral)
-                self.centralManager?.connect(peripheral, options: nil)
-            }
-        }
-    }
-
-
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         // ... (peripheral discovery logic)
@@ -124,7 +110,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     }
     
     // MARK: Sending Messages
-    var sendMessageCompletion: ((String?, Error?) -> Void)?
 
     
     func sendMessageAsync(_ message: String) async throws -> String {

@@ -40,8 +40,6 @@ struct CarScreen: View {
                 }
 
                 Spacer()
-
-                
                 
                 HStack {
                     TextField("Enter Command", text: $viewModel.command)
