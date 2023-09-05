@@ -7,14 +7,41 @@
 
 import SwiftUI
 
+struct History: Identifiable {
+    var id = UUID()
+    var command : String
+    var response : String
+}
+
 struct CarScreen: View {
     @ObservedObject var viewModel: CarScreenViewModel
     @State private var command: String = ""
+    @State private var history: [History] = []
+    
 
 
 
     var body: some View {
             VStack {
+                
+                ForEach(history) { history in
+                    VStack {
+                        HStack {
+                            Text(history.command)
+                                .font(.system(size: 20))
+                            Spacer()
+                            Text(history.response)
+                                .font(.system(size: 20))
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .padding(.bottom, 20)
+                    }
+                }
+
+                
+                
                 
                 TextField("Enter Command", text: $command)
                     .padding()
@@ -27,7 +54,9 @@ struct CarScreen: View {
                     Task {
                         do {
                             let response = try await viewModel.sendMessage(command)
-                            print(response)
+                            history.append(History(command: command, response: response))
+                        
+                        
                             
                         } catch {
                             print("Error setting up adapter: \(error)")

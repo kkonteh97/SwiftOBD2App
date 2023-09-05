@@ -11,82 +11,83 @@ import CoreBluetooth
 
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
-    @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATDPN]
+    @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
     @State private var isModalPresented = false
     @State private var obdInfo: OBDInfo?
+    @State private var isAnimating = false
 
 
     var body: some View {
         VStack {
-            
-            if let obdInfo = obdInfo {
-                Text("VIN: \(obdInfo.vin ?? "N/A")")
-                    .font(.headline)
-                    .frame(alignment: .leading)
-                Text("OBD Protocol: \(obdInfo.obdProtocol.description)")
-                    .font(.headline)
-                    .frame(alignment: .leading)
-
+            HStack {
+                Button(action: {
+                    isModalPresented.toggle()
+                }, label: {
+                    Text("Change Setup Order")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(width: 170, height: 50)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                })
+                .sheet(isPresented: $isModalPresented, content: {
+                    SetupOrderModal(isModalPresented: $isModalPresented, setupOrder: $setupOrder)
+                })
                 
-                List {
-                    ForEach(obdInfo.ecuData.keys.sorted(), id: \.self) { header in
-                        if let supportedPIDs = obdInfo.ecuData[header] {
-                            VStack(alignment: .leading) {
-                                Text("Header: \(header)")
-                                    .font(.headline)
-                                Text("Supported PIDs: \(supportedPIDs.joined(separator: ", "))")
-                                    .font(.subheadline)
+                Button(action: {
+                    Task {
+                        do {
+                            try await viewModel.setupAdapter(setupOrder: setupOrder)
+                            isAnimating.toggle()
+                        } catch {
+                            print("Error setting up adapter: \(error.localizedDescription)")
+                        }
+                    }
+                }, label: {
+                    Text("Setup")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(width: 170, height: 50)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                })
+            }
+            Text("VIN: \(viewModel.obdInfo.vin ?? "")")
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("OBD Protocol: \(viewModel.obdInfo.obdProtocol.description)")
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            
+            Spacer()
+            
+            
+            ForEach(viewModel.obdInfo.ecuData.keys.sorted(), id: \.self) { header in
+                if let supportedPIDs = viewModel.obdInfo.ecuData[header] {
+                    Section {
+                        VStack(alignment: .leading) {
+                            Section(header: Text(header)) {
+                                ForEach(supportedPIDs, id: \.self) { pid in
+                                    Text("PID: \(pid)")
+                                        .font(.subheadline)
+                                }
                             }
                         }
                     }
                 }
-                .opacity(0.8)
             }
-
-            Button(action: {
-                isModalPresented.toggle()
-            }, label: {
-                Text("Change Setup Order")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
-            })
-            .sheet(isPresented: $isModalPresented, content: {
-                SetupOrderModal(isModalPresented: $isModalPresented, setupOrder: $setupOrder)
-            })
-            
-            Button(action: {
-                Task {
-                    do {
-                        let result = try await viewModel.setupAdapter(setupOrder: setupOrder)
-                        obdInfo = result
-                    } catch {
-                        print("Error setting up adapter: \(error)")
-                    }
-                }
-                
-            }, label: {
-                Text("Setup")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
-            })
-            
             
             
         }
-        
     }
+        
 }
-
 struct SettingsScreen_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsScreen(viewModel: SettingsScreenViewModel(elmManager: ElmManager.self as! ElmManager))
+        SettingsScreen(viewModel: SettingsScreenViewModel(elm327: ELM327()))
     }
 }

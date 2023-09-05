@@ -42,7 +42,7 @@ struct MainView: View {
             LinearGradient(colorScheme == .dark ? Color.darkStart : Color.lightStart, colorScheme == .dark ? Color.darkEnd : Color.lightEnd)
                 .edgesIgnoringSafeArea(.all)
             TabView {
-                SettingsScreen(viewModel: SettingsScreenViewModel(elmManager: elm327))
+                SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327))
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
