@@ -15,7 +15,6 @@ struct History: Identifiable {
 
 struct CarScreen: View {
     @ObservedObject var viewModel: CarScreenViewModel
-    @State private var command: String = ""
     @State private var history: [History] = []
     @Environment(\.colorScheme) var colorScheme
     var shadowColor: Color { colorScheme == .dark ? .darkStart : .lightStart }
@@ -26,7 +25,7 @@ struct CarScreen: View {
                 
                 ForEach(history) { history in
                     VStack {
-                        HStack {
+                        VStack {
                             Text(history.command)
                                 .font(.system(size: 20))
                             Spacer()
@@ -40,11 +39,10 @@ struct CarScreen: View {
                     }
                 }
 
-                
+                Spacer()
                 
                 HStack {
-                    
-                    TextField("Enter Command", text: $command)
+                    TextField("Enter Command", text: $viewModel.command)
                         .font(.system(size: 16))
                         .padding()
                         .background(
@@ -59,17 +57,17 @@ struct CarScreen: View {
                     
                     
                     Button {
-                        guard !command.isEmpty else { return }
+                        guard !viewModel.command.isEmpty else { return }
                         Task {
                             do {
-                                let response = try await viewModel.sendMessage(command)
-                                history.append(History(command: command, response: response))
-                                
+                                print(viewModel.command)
+                                let response = try await viewModel.sendMessage()
+                                history.append(History(command: viewModel.command, response: response))
+                                viewModel.command = ""
                             } catch {
                                 print("Error setting up adapter: \(error)")
                             }
                         }
-                        self.command = ""
                         
                     } label: {
                         Image(systemName: "arrow.up.circle")
@@ -86,7 +84,6 @@ struct CarScreen: View {
                     }
                     .padding(.trailing)
                 }
-                .frame(minHeight: CGFloat(50))
                 .padding()
                 .background(Color.gray.opacity(0.1))
             }

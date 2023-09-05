@@ -24,9 +24,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     
     @Published var connected: Bool = false
     
-    @Published var history: [String] = []
-    
-    
     let BLE_ELM_SERVICE_UUID: CBUUID
     let BLE_ELM_CHARACTERISTIC_UUID: CBUUID
     var linesToParse = [String]()
@@ -49,7 +46,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-//            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
+            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
             
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
@@ -88,8 +85,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             }
         }
     }
-    
-    
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         logger.error("Failed to connect to peripheral: \(peripheral.name ?? "Unnamed")")

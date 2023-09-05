@@ -61,16 +61,17 @@ struct SettingsScreen: View {
             Text("OBD Protocol: \(viewModel.obdInfo.obdProtocol.description)")
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
-            
-            Spacer()
-            
+
             
             ForEach(viewModel.obdInfo.ecuData.keys.sorted(), id: \.self) { header in
                 if let supportedPIDs = viewModel.obdInfo.ecuData[header] {
                     Section {
                         VStack(alignment: .leading) {
-                            Section(header: Text(header)) {
+                            Section(header: 
+                                        Text(header)
+                                            .font(.headline)
+
+                            ) {
                                 ForEach(supportedPIDs, id: \.self) { pid in
                                     Text("PID: \(pid)")
                                         .font(.subheadline)
@@ -80,8 +81,11 @@ struct SettingsScreen: View {
                     }
                 }
             }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             
-            
+            Spacer()
         }
     }
         

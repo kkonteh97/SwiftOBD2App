@@ -11,7 +11,7 @@ import OSLog
 
 
 protocol ElmManager {
-    func sendMessageAsync(_ message: String,  withTimeoutSecs: Int) async throws -> String
+    func sendMessageAsync(_ message: String,  withTimeoutSecs: TimeInterval) async throws -> String
     func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo
 }
 
@@ -70,9 +70,9 @@ class ELM327: ObservableObject, ElmManager {
     // MARK: - Message Sending
     
     // Send a message asynchronously
-    func sendMessageAsync(_ message: String, withTimeoutSecs: Int = 5) async throws -> String  {
+    func sendMessageAsync(_ message: String, withTimeoutSecs: TimeInterval = 2) async throws -> String  {
         do {
-            let response: String = try await withTimeout(seconds: 0.5) {
+            let response: String = try await withTimeout(seconds: withTimeoutSecs) {
                 let res = try await self.bleManager.sendMessageAsync(message)
                 return res
             }
