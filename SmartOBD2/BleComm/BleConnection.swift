@@ -21,22 +21,20 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     @Published var elmAdapter: CBPeripheral?
     private var centralManager: CBCentralManager?
     @Published var discoveredServicesAndCharacteristics: [(CBService, [CBCharacteristic])] = []
-    
+    @Published var connectionState: ConnectionState = .disconnected
+
     @Published var connected: Bool = false
     
-    let BLE_ELM_SERVICE_UUID: CBUUID
-    let BLE_ELM_CHARACTERISTIC_UUID: CBUUID
+    static let shared = BLEManager()
+    
     var linesToParse = [String]()
     var adapterReady = false
     
     var sendMessageCompletion: ((String?, Error?) -> Void)?
-
     
     // MARK: Initialization
 
-    init(serviceUUID: CBUUID, characteristicUUID: CBUUID) {
-        self.BLE_ELM_SERVICE_UUID = serviceUUID
-        self.BLE_ELM_CHARACTERISTIC_UUID = characteristicUUID
+    override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
@@ -48,11 +46,15 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-//            self.centralManager?.scanForPeripherals(withServices: [BLE_ELM_SERVICE_UUID], options: nil)
+            self.centralManager?.scanForPeripherals(withServices: [CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)], options: nil)
+            connectionState = .connecting
+
             
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
             self.connected = false
+            connectionState = .disconnected
+
             
         case .resetting:
             logger.warning("Bluetooth is resetting.")
@@ -94,6 +96,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logger.debug("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
         elmAdapter = peripheral
+        connectionState = .connectedToAdapter
         peripheral.delegate = self // Set the delegate of the connected peripheral
         peripheral.discoverServices(nil) // Start discovering all services of the connected peripheral
     }
@@ -166,8 +169,8 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         self.discoveredServicesAndCharacteristics.append((service, characteristics))
         
         for characteristic in characteristics {
-            switch characteristic.uuid {
-            case BLE_ELM_CHARACTERISTIC_UUID:
+            switch characteristic.uuid.uuidString {
+            case "FFE1":
                 ecuCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
                 connectionCompletion?(peripheral)
@@ -188,7 +191,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             return
         }
         switch characteristic.uuid.uuidString {
-        case BLE_ELM_CHARACTERISTIC_UUID.uuidString:
+        case "FFE1":
             guard let characteristicValue = characteristic.value else {
                 return
             }

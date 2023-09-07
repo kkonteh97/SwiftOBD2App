@@ -6,24 +6,45 @@
 //
 
 import Foundation
+import CoreBluetooth
+import Combine
 
 class SettingsScreenViewModel: ObservableObject {
     let elm327: ELM327
     
     @Published var obdInfo = OBDInfo()
-    
-    init(elm327: ELM327) {
+    let bleManager: BLEManager
+    @Published var elmAdapter: CBPeripheral?
+    private var cancellables = Set<AnyCancellable>()
+    @Published var vinInput = ""
+    @Published var vinInfo: VINInfo?
+    @Published var selectedProtocol: PROTOCOL = .AUTO
+
+    init(elm327: ELM327, bleManager: BLEManager) {
         self.elm327 = elm327
+        self.bleManager = bleManager
+        // Subscribe to changes in elmAdapter
+        bleManager.$elmAdapter
+            .sink { [weak self] elmAdapter in
+                self?.elmAdapter = elmAdapter
+            }
+            .store(in: &cancellables)
     }
     
     func setupAdapter(setupOrder: [SetupStep]) async throws {
         let obdInfo = try await elm327.setupAdapter(setupOrder: setupOrder)
         DispatchQueue.main.async {
             self.obdInfo = obdInfo
+            self.selectedProtocol = obdInfo.obdProtocol
         }
-        if let vin = self.obdInfo.vin {
+        if let vin = obdInfo.vin {
             do {
-                let _ = try await getVINInfo(vin: vin)
+                let vinInfo = try await getVINInfo(vin: vin)
+                DispatchQueue.main.async {
+                    self.vinInput = vin
+                    self.vinInfo = vinInfo.Results[0]
+                }
+                print(vinInfo)
             } catch {
                 print(error.localizedDescription)
             }

@@ -33,27 +33,31 @@ struct CarlyObd {
 struct MainView: View {
     let serviceUUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
     let characteristicUUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
-    @StateObject private var elm327 = ELM327()
+    @ObservedObject private var elm327: ELM327
+    let sharedBLEManager = BLEManager.shared
+
+        
+    init() {
+            // Create an instance of ELM327 using the shared BLEManager
+            self.elm327 = ELM327(bleManager: sharedBLEManager)
+        }
 
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        ZStack {
-            LinearGradient(colorScheme == .dark ? Color.darkStart : Color.lightStart, colorScheme == .dark ? Color.darkEnd : Color.lightEnd)
-                .edgesIgnoringSafeArea(.all)
             TabView {
-                SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327))
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
-                    }
+                SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327, bleManager: sharedBLEManager))
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
                 CarScreen(viewModel: CarScreenViewModel(elmManager: elm327))
                     .tabItem {
                         Label("Car", systemImage: "car")
                     }
             }
+            .navigationBarHidden(true)
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .never))
-        }
     }
 }
 

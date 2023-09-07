@@ -108,7 +108,7 @@ struct CarInfoRow: View {
 
 struct CarScreen_Previews: PreviewProvider {
     static var previews: some View {
-        CarScreen(viewModel: CarScreenViewModel(elmManager: ELM327()))
+        CarScreen(viewModel: CarScreenViewModel(elmManager: ELM327(bleManager: BLEManager())))
     
     }
 }

@@ -37,13 +37,9 @@ enum SetupError: Error {
 }
 
 
-
 class ELM327: ObservableObject, ElmManager {
+    
     // MARK: - Properties
-    
-    
-    @Published var connectionState: ConnectionState = .disconnected
-
     
     let logger = Logger.elmCom
     
@@ -52,18 +48,16 @@ class ELM327: ObservableObject, ElmManager {
     var BLE_ELM_CHARACTERISTIC_UUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
     
     // Bluetooth manager
-    let bleManager: BLEManager
+    var bleManager: BLEManager
     
-        
     // MARK: - Initialization
-    init() {
+    init(bleManager: BLEManager) {
         BLE_ELM_SERVICE_UUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
         BLE_ELM_CHARACTERISTIC_UUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
         
         // Configure the BLEManager instance with the appropriate UUIDs
-        bleManager = BLEManager(serviceUUID: BLE_ELM_SERVICE_UUID, characteristicUUID: BLE_ELM_CHARACTERISTIC_UUID)
+        self.bleManager = bleManager
     }
-    
     
     
     // MARK: - Message Sending
@@ -112,12 +106,14 @@ class ELM327: ObservableObject, ElmManager {
         var obdInfo = OBDInfo()
         
         do {
-//            connectionState = .connecting
-            let _ = try await withTimeout(seconds: 30) {
-                let peripheral = try await self.bleManager.scanAndConnectAsync(services: [self.BLE_ELM_SERVICE_UUID])
-                return peripheral
+            if bleManager.connectionState != .connectedToAdapter {
+                bleManager.connectionState = .connecting
+                let _ = try await withTimeout(seconds: 30) {
+                    let peripheral = try await self.bleManager.scanAndConnectAsync(services: [self.BLE_ELM_SERVICE_UUID])
+                    return peripheral
+                }
+                bleManager.connectionState = .connectedToAdapter
             }
-//            connectionState = .connectedToAdapter
             var setupOrderCopy = setupOrder
             var currentIndex = 0
             
@@ -139,7 +135,7 @@ class ELM327: ObservableObject, ElmManager {
                         
                     case .ATDPN:
                         let currentProtocol = try await sendMessageAsync("ATDPN")           // Describe current protocol number
-                        obdProtocol = PROTOCOL(rawValue: currentProtocol) ?? .P0
+                        obdProtocol = PROTOCOL(rawValue: currentProtocol) ?? .AUTO
                         
                         if let setupStep = SetupStep(rawValue: "ATSP\(currentProtocol)") {
                             setupOrderCopy.append(setupStep)                                // append current protocol to setupOrderCopy

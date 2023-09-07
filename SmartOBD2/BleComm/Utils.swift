@@ -40,6 +40,33 @@ public func withTimeout<R>(
 }
 
 
+
+enum RESPONSE {
+    
+    enum ERROR: String {
+        
+        case QUESTION_MARK = "?",
+             ACT_ALERT = "ACT ALERT",
+             BUFFER_FULL = "BUFFER FULL",
+             BUS_BUSSY = "BUS BUSSY",
+             BUS_ERROR = "BUS ERROR",
+             CAN_ERROR = "CAN ERROR",
+             DATA_ERROR = "DATA ERROR",
+             ERRxx = "ERR",
+             FB_ERROR = "FB ERROR",
+             LP_ALERT = "LP ALERT",
+             LV_RESET = "LV RESET",
+             NO_DATA = "NO DATA",
+             RX_ERROR = "RX ERROR",
+             STOPPED = "STOPPED",
+             UNABLE_TO_CONNECT = "UNABLE TO CONNECT"
+        
+        static let asArray: [ERROR] = [QUESTION_MARK, ACT_ALERT, BUFFER_FULL, BUS_BUSSY,
+                                       BUS_ERROR, CAN_ERROR, DATA_ERROR, ERRxx, FB_ERROR,
+                                       LP_ALERT, LV_RESET, NO_DATA, RX_ERROR,STOPPED,
+                                       UNABLE_TO_CONNECT]
+    }
+}
 enum SetupStep: String, CaseIterable, Identifiable {
     case ATD
     case ATZ
@@ -68,35 +95,8 @@ enum SetupStep: String, CaseIterable, Identifiable {
 }
 
 enum PROTOCOL: String {
-    enum RESPONSE {
-        
-        enum ERROR: String {
-            
-            case QUESTION_MARK = "?",
-                 ACT_ALERT = "ACT ALERT",
-                 BUFFER_FULL = "BUFFER FULL",
-                 BUS_BUSSY = "BUS BUSSY",
-                 BUS_ERROR = "BUS ERROR",
-                 CAN_ERROR = "CAN ERROR",
-                 DATA_ERROR = "DATA ERROR",
-                 ERRxx = "ERR",
-                 FB_ERROR = "FB ERROR",
-                 LP_ALERT = "LP ALERT",
-                 LV_RESET = "LV RESET",
-                 NO_DATA = "NO DATA",
-                 RX_ERROR = "RX ERROR",
-                 STOPPED = "STOPPED",
-                 UNABLE_TO_CONNECT = "UNABLE TO CONNECT"
-            
-            static let asArray: [ERROR] = [QUESTION_MARK, ACT_ALERT, BUFFER_FULL, BUS_BUSSY,
-                                           BUS_ERROR, CAN_ERROR, DATA_ERROR, ERRxx, FB_ERROR,
-                                           LP_ALERT, LV_RESET, NO_DATA, RX_ERROR,STOPPED,
-                                           UNABLE_TO_CONNECT]
-        }
-    }
-    
     case
-    P0 = "0",
+    AUTO = "0",
     P1 = "1",
     P2 = "2",
     P3 = "3",
@@ -111,11 +111,11 @@ enum PROTOCOL: String {
     PC = "C",
     NONE = "None"
     
-    static let asArray: [PROTOCOL] = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
+    static let asArray: [PROTOCOL] = [AUTO, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
     
     var description: String {
         switch self {
-        case .P0: return "0: Automatic"
+        case .AUTO: return "0: Automatic"
         case .P1: return "1: SAE J1850 PWM (41.6 kbaud)"
         case .P2: return "2: SAE J1850 VPW (10.4 kbaud)"
         case .P3: return "3: ISO 9141-2 (5 baud init, 10.4 kbaud)"
@@ -157,7 +157,7 @@ enum PROTOCOL: String {
         case .P2:
             return .P1
         case .P1:
-            return .P0
+            return .AUTO
         default:
             return .NONE
         }
