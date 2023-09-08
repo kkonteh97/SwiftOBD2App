@@ -9,6 +9,16 @@ import Foundation
 import CoreBluetooth
 import Combine
 
+struct Manufacturer: Codable {
+    let make: String
+    let models: [CarModel]
+}
+
+struct CarModel: Codable {
+    let name: String
+    let years: [Int]
+}
+
 struct GarageVehicle: Codable, Identifiable {
     let id: UUID
     let make: String
@@ -17,15 +27,7 @@ struct GarageVehicle: Codable, Identifiable {
 }
 
 class SettingsScreenViewModel: ObservableObject {
-    let elm327: ELM327
-    let bleManager: BLEManager
-    let carData: [Manufacturer]
-
-    private var cancellables = Set<AnyCancellable>()
     @Published var garageVehicles: [GarageVehicle] = [GarageVehicle(id: UUID(), make: "Honda", model: "Civic", year: "2019")]
-    
-    
-
     @Published var obdInfo = OBDInfo()
     @Published var elmAdapter: CBPeripheral?
     @Published var vinInput = ""
@@ -37,7 +39,7 @@ class SettingsScreenViewModel: ObservableObject {
             selectedYear = -1
         }
     }
-    @Published var selectedCar: Car? = nil
+    @Published var selectedCar: GarageVehicle? = nil
     @Published var selectedManufacturer = -1 {
         didSet {
             selectedModel = -1
@@ -45,6 +47,12 @@ class SettingsScreenViewModel: ObservableObject {
             selectedCar = nil
         }
     }
+    
+    let elm327: ELM327
+    let bleManager: BLEManager
+    let carData: [Manufacturer]
+
+    private var cancellables = Set<AnyCancellable>()
 
     var models: [CarModel] {
         return (0 ..< carData.count).contains(selectedManufacturer) ? carData[selectedManufacturer].models : []
@@ -76,8 +84,6 @@ class SettingsScreenViewModel: ObservableObject {
             garageVehicles.append(selectedCar)
             print(garageVehicles)
     }
-    
-    
 
 
     func setupAdapter(setupOrder: [SetupStep]) async throws {
