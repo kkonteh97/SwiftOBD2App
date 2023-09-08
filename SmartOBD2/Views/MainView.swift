@@ -45,21 +45,25 @@ struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-            TabView {
-                SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327, bleManager: sharedBLEManager))
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
+            ZStack {
+                LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme))
+                TabView {
+                    SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327, bleManager: sharedBLEManager))
+                        .tabItem {
+                            Label("Settings", systemImage: "gear")
+                        }
+                    CarScreen(viewModel: CarScreenViewModel(elmManager: elm327))
+                        .tabItem {
+                            Label("Car", systemImage: "car")
+                        }
                 }
-                CarScreen(viewModel: CarScreenViewModel(elmManager: elm327))
-                    .tabItem {
-                        Label("Car", systemImage: "car")
-                    }
+                .navigationBarHidden(true)
+                .tabViewStyle(.page)
+                .indexViewStyle(.page(backgroundDisplayMode: .always)) // Ensure the index view has a background
             }
-            .navigationBarHidden(true)
-            .tabViewStyle(.page)
-            .indexViewStyle(.page(backgroundDisplayMode: .never))
+            .ignoresSafeArea() // Extend the background color to the edges
+        }
     }
-}
 
 
 
