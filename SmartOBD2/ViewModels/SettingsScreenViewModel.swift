@@ -11,23 +11,25 @@ import Combine
 
 struct Manufacturer: Codable {
     let make: String
-    let models: [CarModel]
+    let models: [Model]
 }
 
-struct CarModel: Codable {
+struct Model: Codable {
     let name: String
     let years: [Int]
 }
 
 struct GarageVehicle: Codable, Identifiable {
     let id: UUID
+    var vin: String = ""
     let make: String
     let model: String
     let year: String
+    var obdinfo: OBDInfo? = nil
 }
 
 class SettingsScreenViewModel: ObservableObject {
-    @Published var garageVehicles: [GarageVehicle] = [GarageVehicle(id: UUID(), make: "Honda", model: "Civic", year: "2019")]
+    @Published var garageVehicles: [GarageVehicle] = []
     @Published var obdInfo = OBDInfo()
     @Published var elmAdapter: CBPeripheral?
     @Published var vinInput = ""
@@ -39,6 +41,7 @@ class SettingsScreenViewModel: ObservableObject {
             selectedYear = -1
         }
     }
+
     @Published var selectedCar: GarageVehicle? = nil
     @Published var selectedManufacturer = -1 {
         didSet {
@@ -54,7 +57,7 @@ class SettingsScreenViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    var models: [CarModel] {
+    var models: [Model] {
         return (0 ..< carData.count).contains(selectedManufacturer) ? carData[selectedManufacturer].models : []
     }
 
@@ -69,6 +72,11 @@ class SettingsScreenViewModel: ObservableObject {
         self.elm327 = elm327
         self.bleManager = bleManager
         subscribeToElmAdapterChanges()
+        // Load garageVehicles from UserDefaults
+       if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
+          let decodedVehicles = try? JSONDecoder().decode([GarageVehicle].self, from: data) {
+           self.garageVehicles = decodedVehicles
+       }
     }
 
     private func subscribeToElmAdapterChanges() {
@@ -83,6 +91,13 @@ class SettingsScreenViewModel: ObservableObject {
         let selectedCar = GarageVehicle(id: UUID(), make: carData[selectedManufacturer].make, model: models[selectedModel].name, year: String(years[selectedYear]))
             garageVehicles.append(selectedCar)
             print(garageVehicles)
+        saveGarageVehicles()
+    }
+    
+    func saveGarageVehicles() {
+        if let encodedData = try? JSONEncoder().encode(garageVehicles) {
+            UserDefaults.standard.set(encodedData, forKey: "garageVehicles")
+        }
     }
 
 

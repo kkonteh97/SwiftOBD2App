@@ -59,7 +59,7 @@ struct MainView: View {
                 }
                 .navigationBarHidden(true)
                 .tabViewStyle(.page)
-                .indexViewStyle(.page(backgroundDisplayMode: .always)) // Ensure the index view has a background
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
             }
             .ignoresSafeArea() // Extend the background color to the edges
         }

@@ -8,24 +8,45 @@
 import SwiftUI
 import CoreBluetooth
 
-
-
-
-
-
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
     
     var body: some View {
-        Picker("Select Protocol", selection: $selectedProtocol) {
-            ForEach(PROTOCOL.asArray, id: \.self) { protocolItem in
-                Text(protocolItem.description).tag(protocolItem)
+        HStack {
+
+        Text("OBD Protocol: ")
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+        
+            Picker("Select Protocol", selection: $selectedProtocol) {
+                ForEach(PROTOCOL.asArray, id: \.self) { protocolItem in
+                    Text(protocolItem.description).tag(protocolItem)
+                }
             }
         }
     }
 }
 
 
+extension Color {
+    static let darkStart = Color(red: 50 / 255, green: 60 / 255, blue: 65 / 255)
+    static let darkEnd = Color(red: 25 / 255, green: 25 / 255, blue: 30 / 255)
+    static let lightStart = Color(red: 240 / 255, green: 240 / 255, blue: 246 / 255)
+    static let lightEnd = Color(red: 120 / 255, green: 120 / 255, blue: 123 / 255)
+    
+    static let automotivePrimary = Color(red: 27 / 255, green: 109 / 255, blue: 207 / 255)
+    static let automotiveSecondary = Color(red: 241 / 255, green: 143 / 255, blue: 1 / 255)
+    static let automotiveAccent = Color(red: 228 / 255, green: 57 / 255, blue: 60 / 255)
+    static let automotiveBackground = Color(red: 245 / 255, green: 245 / 255, blue: 245 / 255)
+    
+    static func startColor(for colorScheme: ColorScheme) -> Color {
+        return colorScheme == .dark ? .darkStart : .lightStart
+    }
+
+    static func endColor(for colorScheme: ColorScheme) -> Color {
+        return colorScheme == .dark ? .darkEnd : .lightEnd
+    }
+}
 
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
@@ -34,13 +55,14 @@ struct SettingsScreen: View {
     @State private var isVehicleModelPresented = false
     
     var body: some View {
-        NavigationView{
+        VStack {
             ScrollView(.vertical, showsIndicators: false){
                 VStack {
                     bluetoothSection
+                    pidSection
                     garageSection
                     elmSection
-                    
+                
                 }
             }
             .navigationBarTitle(Text("Settings"), displayMode: .automatic)
@@ -49,39 +71,183 @@ struct SettingsScreen: View {
         }
     }
     
-    // Bluetooth Section
-    private var bluetoothSection: some View {
-        GroupBox(label: SettingsLabelView(labelText: "Bluetooth", labelImage: "wifi.circle")) {
-            Divider().padding(.vertical, 4)
-            AdapterInfoView(viewModel: viewModel)
-                .padding()
+    @State private var isLoading = false
+    
+    private var pidSection: some View {
+        GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
+            
+            Button {
+                let pids = viewModel.obdInfo.ecuData.first?.value
+                Task {
+                    do {
+                        try await viewModel.elm327.requestPIDs(pids: pids!)
+                    }
+                }
+                
+            } label: {
+                RoundedRectangle(cornerRadius: 40)
+                .fill(LinearGradient(isLoading  ? Color.darkEnd : Color.automotivePrimary, isLoading  ? Color.darkStart : Color.darkEnd))
+                    .frame(width: 90, height: 90)
+
+                    .overlay {
+
+                            VStack {
+                                Image(systemName: "car.front.waves.up.fill")
+                                    .font(.system(size: 35))
+                                    .foregroundColor(.gray)
+                                Text("Resquest Pids")
+                
+                    }
+                
+            }
+            }
         }
     }
     
+
+    // Bluetooth Section
+    private var bluetoothSection: some View {
+        HStack {
+            GroupBox(label: SettingsLabelView(labelText: "Bluetooth", labelImage: "wifi.circle")) {
+                Divider().padding(.vertical, 4)
+                VStack {
+                    Text("\(viewModel.elmAdapter?.name ?? "")")
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .center)
+
+
+            Button {
+                let impactLight = UIImpactFeedbackGenerator(style: .medium)
+                impactLight.impactOccurred()
+                self.isLoading = true
+                Task {
+                    do {
+                        try await viewModel.setupAdapter(setupOrder: setupOrder)
+                    } catch {
+                        print("Error setting up adapter: \(error.localizedDescription)")
+                    }
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    self.isLoading = false
+
+                }
+            } label: {
+                    RoundedRectangle(cornerRadius: 60)
+                    .fill(LinearGradient(isLoading  ? Color.darkEnd : Color.darkStart, isLoading  ? Color.darkStart : Color.darkEnd))
+                        .frame(width: 120, height: 120)
+                        .shadow(color: isLoading ? Color.darkStart : Color.darkEnd, radius: 10,  x: isLoading  ? -5 : 10, y: isLoading  ? -5 : 10)
+                        .shadow(color: isLoading ? Color.darkEnd : Color.darkStart, radius: 10, x: isLoading  ? 10 : -5, y: isLoading  ? 10 : -5)
+                        .overlay {
+                            if isLoading {
+                                ProgressView()
+                            }  else {
+                                VStack {
+                                    Image(systemName: "car.front.waves.up.fill")
+                                        .font(.system(size: 35))
+                                        .foregroundColor(.gray)
+                                    Text("Connect")
+                                }
+                        }
+                    
+                }
+                
+            }
+            .frame(maxWidth: 100, alignment: .center)
+        }
+        .padding()
+
+    }
+    
+    @State private var isExpanded = false
+    @State private var addVehicle = false
+    @AppStorage("selectedCarIndex") var selectedCarIndex: Int = 0
+    
+    
+
     // Garage Section
     private var garageSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "Garage", labelImage: "car.side")) {
             Divider().padding(.vertical, 4)
-            HStack {
-                Text(viewModel.garageVehicles[0].make)
-                Text(viewModel.garageVehicles[0].model)
-                Text(viewModel.garageVehicles[0].year)
-                Spacer()
-                Button(action: {
-                }, label: {
-                    Image(systemName: "ellipsis")
-                        .font(.largeTitle)
-                })
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(Color.darkStart))
-                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
+            
+            VStack { // Wrap the content in a VStack
+                HStack {
+//                    Text(viewModel.garageVehicles[selectedCarIndex].make)
+//                    Spacer()
+//                    Text(viewModel.garageVehicles[selectedCarIndex].model)
+//                    Spacer()
+//                    Text(viewModel.garageVehicles[selectedCarIndex].year)
+                }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
                 
-            )
+                VStack {
+                    
+                    if isExpanded {
+                        VStack {
+                            ForEach(viewModel.garageVehicles.filter({ $0.id != viewModel.garageVehicles[selectedCarIndex].id })) { car in
+                                HStack {
+                                    Text(car.make)
+                                    Spacer()
+                                    Text(car.model)
+                                    Spacer()
+                                    Text(car.year)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .onTapGesture {
+                                    if selectedCarIndex != viewModel.garageVehicles.firstIndex(where: { $0.id == car.id }) {
+                                       withAnimation {
+                                           selectedCarIndex = viewModel.garageVehicles.firstIndex(where: { $0.id == car.id })!
+                                       }
+                                   }
+                                
+                                }
+                            }
+                    
+                            if addVehicle {
+                                VehiclePickerView(viewModel: viewModel)
+                            }
+                            
+                            Button {
+                                addVehicle.toggle()
+                            } label: {
+                                Text("Add Vehicle")
+                            }
+                            .buttonStyle(ShadowButtonStyle())
+
+                            
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+                .offset(y: isExpanded ? 0 : -100) // Slide down the content
+                .opacity(isExpanded ? 1 : 0) // Fade in the content
+                Spacer()
+
+               Button(action: {
+                   withAnimation(.easeInOut(duration: 0.3)) {
+                       
+                       isExpanded.toggle()
+                   }
+               }, label: {
+                   Image(systemName: "chevron.down.circle")
+                       .font(.title)
+                      .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                      .foregroundColor(.gray)
+                   
+               })
+               .padding(.top, 40)
+               }
+        
         }
     }
     
@@ -90,13 +256,8 @@ struct SettingsScreen: View {
     private var elmSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "ELM", labelImage: "info.circle")) {
             Divider().padding(.vertical, 4)
-            HStack {
-                Text("OBD Protocol: ")
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                ProtocolPicker(selectedProtocol: $viewModel.selectedProtocol)
-            }
+
+            ProtocolPicker(selectedProtocol: $viewModel.selectedProtocol)
             
             HStack {
                 Button("Setup Order") {
@@ -106,16 +267,6 @@ struct SettingsScreen: View {
                 .sheet(isPresented: $isSetupOrderPresented) {
                     SetupOrderModal(isModalPresented: $isSetupOrderPresented, setupOrder: $setupOrder)
                 }
-                Button("Start") {
-                    Task {
-                        do {
-                            try await viewModel.setupAdapter(setupOrder: setupOrder)
-                        } catch {
-                            print("Error setting up adapter: \(error.localizedDescription)")
-                        }
-                    }
-                }
-                .buttonStyle(ShadowButtonStyle())
             }
             
             // Supported PIDs
@@ -158,122 +309,7 @@ struct ShadowButtonStyle: ButtonStyle {
                     .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
                     .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
             )
-    }
-}
-
-struct BlueButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline)
-            .foregroundColor(.white)
-            .padding()
-            .frame(width: 170, height: 50)
-            .background(Color.blue)
-            .cornerRadius(10)
-    }
-}
-
-struct AdapterInfoView: View {
-    var viewModel: SettingsScreenViewModel
-    
-    var body: some View {
-        VStack {
-            Text("Adapter: \(viewModel.elmAdapter?.name ?? "")")
-            Spacer()
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct VinInfoView: View {
-    @ObservedObject var viewModel: SettingsScreenViewModel
-    @Binding var isModalPresented: Bool
-    
-    @State private var addVehicle = false
-    
-    var body: some View {
-        VStack {
-            List {
-                ForEach(viewModel.garageVehicles, id: \.id) { car in
-                    HStack {
-                        Text(car.make)
-                        Text(car.model)
-                        Text(car.year)
-                    }
-                }
-            }
-            
-            if addVehicle {
-                AddVehicleView(viewModel: viewModel)
-            } else {
-                Button {
-                    addVehicle.toggle()
-                } label: {
-                    Text("Add Vehicle")
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-}
-
-
-struct AddVehicleView: View {
-    @ObservedObject var viewModel: SettingsScreenViewModel
-    
-    var body: some View {
-        HStack {
-            Picker(selection: $viewModel.selectedManufacturer, label: Text("Brand")) {
-                Text("None")
-                    .tag(-1)
-                
-                ForEach(0 ..< viewModel.carData.count, id: \.self) { carIndex in
-                    Text(self.viewModel.carData[carIndex].make)
-                        .tag(carIndex)
-                }
-            }
-            .pickerStyle(WheelPickerStyle())
-            
-            if !viewModel.models.isEmpty {
-                Picker(selection: $viewModel.selectedModel, label: Text("Model")) {
-                    Text("None")
-                        .tag(-1)
-                    
-                    ForEach(0 ..< viewModel.models.count, id: \.self) { modelIndex in
-                        Text(self.viewModel.models[modelIndex].name)
-                            .tag(modelIndex)
-                    }
-                }
-                .pickerStyle(WheelPickerStyle())
-            }
-            
-            if !viewModel.years.isEmpty {
-                Picker(selection: $viewModel.selectedYear, label: Text("Year")) {
-                    Text("None")
-                        .tag(-1)
-                    
-                    ForEach(0 ..< viewModel.years.count, id: \.self) { yearIndex in
-                        Text("\(self.viewModel.years[yearIndex])")
-                            .tag(yearIndex)
-                    }
-                }
-                .pickerStyle(WheelPickerStyle())
-            }
-        }
-        
-        if viewModel.selectedYear != -1 && viewModel.selectedModel != -1 && viewModel.selectedManufacturer != -1 {
-            Button(action: {
-                viewModel.addVehicle()
-            }) {
-                Text("Add")
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-        }
-    }
 }
 
 
@@ -281,9 +317,6 @@ struct AddVehicleView: View {
 struct SettingsScreen_Previews: PreviewProvider {
     static var previews: some View {
         let previewViewModel = SettingsScreenViewModel(elm327: ELM327(bleManager: BLEManager()), bleManager: BLEManager())
-        
         return SettingsScreen(viewModel: previewViewModel)
-            .previewLayout(.sizeThatFits)
-
     }
 }

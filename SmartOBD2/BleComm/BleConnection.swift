@@ -9,7 +9,6 @@ import Foundation
 import CoreBluetooth
 import OSLog
 
-
 class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralManagerDelegate {
     
     // MARK: Properties
@@ -233,32 +232,34 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     }
     
 
-    func handleResponse(completion: ((String, Error) -> Void)?) {
-        let strippedResponse = linesToParse.map { $0.replacingOccurrences(of: ">", with: "") }.joined()
+    func handleResponse(completion: ((String?, Error?) -> Void)?) {
+        let strippedResponse = linesToParse
+                                    .map { $0.replacingOccurrences(of: ">", with: "") }
+                                    .joined()
         logger.info("Response: \(strippedResponse)")
-        sendMessageCompletion?(strippedResponse, nil)
+        completion?(strippedResponse, nil)
         linesToParse.removeAll()
     }
     
     
-    func processReceivedData(_ data: Data, completion: ((String, Error) -> Void)?) {
-        guard let cleanedResponse = String(data: data, encoding: .utf8)?.replacingOccurrences(of: "[\r\n]+", with: "", options: .regularExpression) else {
+    func processReceivedData(_ data: Data, completion: ((String?, Error?) -> Void)?) {
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            completion?(nil, SendMessageError.stringConversionFailed)
             return
         }
+        let endMarker = ">"
         
-        let chunkSize = 8
-        var index = cleanedResponse.startIndex
-        while index < cleanedResponse.endIndex {
-            let endIndex = cleanedResponse.index(index, offsetBy: chunkSize, limitedBy: cleanedResponse.endIndex) ?? cleanedResponse.endIndex
-            let chunk = cleanedResponse[index..<endIndex]
-            
-            self.linesToParse.append(String(chunk))
-            
-            if chunk.contains(">") {
+        // Split the response into lines using line breaks as the separator
+        let lines = responseString.components(separatedBy: .newlines)
+        
+        for line in lines {
+            // Process each line here
+            self.linesToParse.append(line)
+            // Check if the line contains the end marker
+            if line.contains(endMarker) {
+                // Handle the complete response, e.g., call handleResponse
                 handleResponse(completion: completion)
             }
-            
-            index = endIndex
         }
     }
     
@@ -266,6 +267,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     enum SendMessageError: Error {
         case missingPeripheralOrCharacteristic
         case timeout
+        case stringConversionFailed
     }
 }
 
