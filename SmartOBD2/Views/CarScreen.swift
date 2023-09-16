@@ -21,48 +21,44 @@ struct CarScreen: View {
 
 
     var body: some View {
-            VStack {
-                
+        ZStack {
+            ScrollView(.vertical, showsIndicators: false)  {
                 ForEach(history) { history in
                     VStack {
-                        VStack {
-                            Text(history.command)
-                                .font(.system(size: 20))
-                            Spacer()
-                            Text(history.response)
-                                .font(.system(size: 20))
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .padding(.bottom, 20)
+                        Text(history.command)
+                            .font(.system(size: 20))
+                        Spacer()
+                        Text(history.response)
+                            .font(.system(size: 20))
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding()
+                    
                 }
-
-                Spacer()
+            }
+            .safeAreaInset(edge: .bottom) {
                 
                 HStack {
                     TextField("Enter Command", text: $viewModel.command)
                         .font(.system(size: 16))
                         .padding()
                         .background(
-                        RoundedRectangle(cornerRadius: 25)
-                            .fill(LinearGradient(Color.startColor(for: colorScheme)))
-                            .shadow(color: Color.darkEnd,  radius: 5, x: -3, y: -3)
-                            .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
-
-                                                    )
+                            RoundedRectangle(cornerRadius: 25)
+                                .fill(LinearGradient(Color.startColor(for: colorScheme)))
+                                .shadow(color: Color.darkEnd,  radius: 5, x: -3, y: -3)
+                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
+                        )
                         .padding(.horizontal, 10)
                         .frame(height: 40)
-                    
-                    
                     Button {
                         guard !viewModel.command.isEmpty else { return }
                         Task {
                             do {
                                 print(viewModel.command)
                                 let response = try await viewModel.sendMessage()
-                                history.append(History(command: viewModel.command, response: response))
+                                history.append(History(command: viewModel.command, response: response.joined(separator: "\n")))
                                 viewModel.command = ""
                             } catch {
                                 print("Error setting up adapter: \(error)")
@@ -76,19 +72,20 @@ struct CarScreen: View {
                             .foregroundColor(.blue)
                             .padding(10)
                             .background(
-                               Circle()
-                                .fill(LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme)))
-                           .shadow(color: shadowColor, radius: 5, x: 3, y: 3)
-                           .shadow(color: shadowColor, radius: 5, x: -3, y: -3)
-                           )
+                                Circle()
+                                    .fill(LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme)))
+                                    .shadow(color: shadowColor, radius: 5, x: 3, y: 3)
+                                    .shadow(color: shadowColor, radius: 5, x: -3, y: -3)
+                            )
                     }
                     .padding(.trailing)
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
-    
+        }
 }
 
 struct CarInfoRow: View {

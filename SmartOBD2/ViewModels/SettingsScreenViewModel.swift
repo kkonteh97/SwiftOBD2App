@@ -78,6 +78,28 @@ class SettingsScreenViewModel: ObservableObject {
            self.garageVehicles = decodedVehicles
        }
     }
+    
+
+    func requestPID(pid: OBDCommand) async throws -> String {
+        
+        do {
+            let response = try await elm327.requestPID(pid: pid)
+            if let measurement = response {
+                // Convert the Measurement<Unit> to a string
+                let measurementString = "\(measurement.value) \(measurement.unit.symbol)"
+                return measurementString
+            } else {
+                // Handle the case where response is nil (e.g., no response)
+                // You can assign a default or appropriate value here
+                return "No data"
+                   
+            }
+        } catch {
+            // Handle the error, e.g., log or display an error message
+            return "Error"
+        }
+    }
+
 
     private func subscribeToElmAdapterChanges() {
         bleManager.$elmAdapter

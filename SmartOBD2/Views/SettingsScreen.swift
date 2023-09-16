@@ -55,89 +55,97 @@ struct SettingsScreen: View {
     @State private var isVehicleModelPresented = false
     
     var body: some View {
-        VStack {
             ScrollView(.vertical, showsIndicators: false){
-                VStack {
+                VStack(spacing: 20)  {
                     bluetoothSection
                     pidSection
                     garageSection
                     elmSection
-                
+                    
                 }
+                .padding(.horizontal, 20)
             }
-            .navigationBarTitle(Text("Settings"), displayMode: .automatic)
-            .padding()
-            
-        }
+            .ignoresSafeArea(.all, edges: .bottom)
     }
     
     @State private var isLoading = false
     
     private var pidSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
+            Divider().padding(.vertical, 4)
+            // Supported PIDs
+            Text("Supported PIDs")
+                .font(.headline)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
             
-            Button {
-                let pids = viewModel.obdInfo.ecuData.first?.value
-                Task {
-                    do {
-                        try await viewModel.elm327.requestPIDs(pids: pids!)
+            VStack {
+                if let supportedPIDs = viewModel.obdInfo.supportedPIDs {
+                    ForEach(supportedPIDs, id: \.self) { pid in
+                        Text(pid.description + " - " + (selectedPIDValues[pid] ?? ""))
+                            .font(.caption)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                            .onTapGesture {
+                                Task {
+                                    
+                                    do {
+                                        let pidValue = try await viewModel.requestPID(pid: pid)
+                                        selectedPIDValues[pid] = pidValue
+                                    } catch {
+                                        print("Error requesting PID: \(error)")
+                                }
+                            }
+                        }
                     }
                 }
-                
-            } label: {
-                RoundedRectangle(cornerRadius: 40)
-                .fill(LinearGradient(isLoading  ? Color.darkEnd : Color.automotivePrimary, isLoading  ? Color.darkStart : Color.darkEnd))
-                    .frame(width: 90, height: 90)
-
-                    .overlay {
-
-                            VStack {
-                                Image(systemName: "car.front.waves.up.fill")
-                                    .font(.system(size: 35))
-                                    .foregroundColor(.gray)
-                                Text("Resquest Pids")
-                
-                    }
-                
             }
-            }
+            .frame(minHeight: 200)
         }
     }
     
-
+    
     // Bluetooth Section
     private var bluetoothSection: some View {
         HStack {
-            GroupBox(label: SettingsLabelView(labelText: "Bluetooth", labelImage: "wifi.circle")) {
+            GroupBox(label: SettingsLabelView(labelText: (viewModel.elmAdapter != nil) ? "Connected" : "Not Connected", labelImage: "wifi.circle")) {
                 Divider().padding(.vertical, 4)
+                
                 VStack {
                     Text("\(viewModel.elmAdapter?.name ?? "")")
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(minWidth: 50, minHeight: 100,  alignment: .leading)
             }
             .padding()
-            .frame(maxWidth: .infinity, alignment: .center)
-
-
-            Button {
-                let impactLight = UIImpactFeedbackGenerator(style: .medium)
-                impactLight.impactOccurred()
-                self.isLoading = true
-                Task {
-                    do {
-                        try await viewModel.setupAdapter(setupOrder: setupOrder)
-                    } catch {
-                        print("Error setting up adapter: \(error.localizedDescription)")
+            
+            VStack {
+                Button {
+                    let impactLight = UIImpactFeedbackGenerator(style: .medium)
+                    impactLight.impactOccurred()
+                    self.isLoading = true
+                    Task {
+                        do {
+                            try await viewModel.setupAdapter(setupOrder: setupOrder)
+                        } catch {
+                            print("Error setting up adapter: \(error.localizedDescription)")
+                        }
                     }
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    self.isLoading = false
-
-                }
-            } label: {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self.isLoading = false
+                        
+                    }
+                } label: {
                     RoundedRectangle(cornerRadius: 60)
-                    .fill(LinearGradient(isLoading  ? Color.darkEnd : Color.darkStart, isLoading  ? Color.darkStart : Color.darkEnd))
+                        .fill(LinearGradient(isLoading  ? Color.darkEnd : Color.darkStart, isLoading  ? Color.darkStart : Color.darkEnd))
                         .frame(width: 120, height: 120)
                         .shadow(color: isLoading ? Color.darkStart : Color.darkEnd, radius: 10,  x: isLoading  ? -5 : 10, y: isLoading  ? -5 : 10)
                         .shadow(color: isLoading ? Color.darkEnd : Color.darkStart, radius: 10, x: isLoading  ? 10 : -5, y: isLoading  ? 10 : -5)
@@ -149,17 +157,20 @@ struct SettingsScreen: View {
                                     Image(systemName: "car.front.waves.up.fill")
                                         .font(.system(size: 35))
                                         .foregroundColor(.gray)
-                                    Text("Connect")
+                                    Text("START")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.gray)
                                 }
+                            }
+                            
                         }
                     
                 }
-                
+                .frame(maxWidth: 100, alignment: .center)
             }
-            .frame(maxWidth: 100, alignment: .center)
         }
         .padding()
-
+        
     }
     
     @State private var isExpanded = false
@@ -167,7 +178,7 @@ struct SettingsScreen: View {
     @AppStorage("selectedCarIndex") var selectedCarIndex: Int = 0
     
     
-
+    
     // Garage Section
     private var garageSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "Garage", labelImage: "car.side")) {
@@ -175,19 +186,19 @@ struct SettingsScreen: View {
             
             VStack { // Wrap the content in a VStack
                 HStack {
-//                    Text(viewModel.garageVehicles[selectedCarIndex].make)
-//                    Spacer()
-//                    Text(viewModel.garageVehicles[selectedCarIndex].model)
-//                    Spacer()
-//                    Text(viewModel.garageVehicles[selectedCarIndex].year)
+                    //                    Text(viewModel.garageVehicles[selectedCarIndex].make)
+                    //                    Spacer()
+                    //                    Text(viewModel.garageVehicles[selectedCarIndex].model)
+                    //                    Spacer()
+                    //                    Text(viewModel.garageVehicles[selectedCarIndex].year)
                 }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(LinearGradient(Color.darkStart,Color.darkEnd))
-                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                        .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                        .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
                 
                 VStack {
                     
@@ -205,14 +216,14 @@ struct SettingsScreen: View {
                                 .padding()
                                 .onTapGesture {
                                     if selectedCarIndex != viewModel.garageVehicles.firstIndex(where: { $0.id == car.id }) {
-                                       withAnimation {
-                                           selectedCarIndex = viewModel.garageVehicles.firstIndex(where: { $0.id == car.id })!
-                                       }
-                                   }
-                                
+                                        withAnimation {
+                                            selectedCarIndex = viewModel.garageVehicles.firstIndex(where: { $0.id == car.id })!
+                                        }
+                                    }
+                                    
                                 }
                             }
-                    
+                            
                             if addVehicle {
                                 VehiclePickerView(viewModel: viewModel)
                             }
@@ -223,7 +234,7 @@ struct SettingsScreen: View {
                                 Text("Add Vehicle")
                             }
                             .buttonStyle(ShadowButtonStyle())
-
+                            
                             
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -232,31 +243,33 @@ struct SettingsScreen: View {
                 .offset(y: isExpanded ? 0 : -100) // Slide down the content
                 .opacity(isExpanded ? 1 : 0) // Fade in the content
                 Spacer()
-
-               Button(action: {
-                   withAnimation(.easeInOut(duration: 0.3)) {
-                       
-                       isExpanded.toggle()
-                   }
-               }, label: {
-                   Image(systemName: "chevron.down.circle")
-                       .font(.title)
-                      .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                      .foregroundColor(.gray)
-                   
-               })
-               .padding(.top, 40)
-               }
-        
+                
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        
+                        isExpanded.toggle()
+                    }
+                }, label: {
+                    Image(systemName: "chevron.down.circle")
+                        .font(.title)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .foregroundColor(.gray)
+                    
+                })
+                .padding(.top, 40)
+            }
+            
         }
     }
     
-    
+    @State private var selectedPIDValues: [OBDCommand: String] = [:]
+    @State private var selectedPID: OBDCommand? = nil
+
     // ELM Section
     private var elmSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "ELM", labelImage: "info.circle")) {
             Divider().padding(.vertical, 4)
-
+            
             ProtocolPicker(selectedProtocol: $viewModel.selectedProtocol)
             
             HStack {
@@ -269,34 +282,12 @@ struct SettingsScreen: View {
                 }
             }
             
-            // Supported PIDs
-            Text("Supported PIDs")
-                .font(.headline)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
             
-            LazyVStack(alignment: .leading) {
-                ForEach(viewModel.obdInfo.ecuData.keys.sorted(), id: \.self) { header in
-                    if let supportedPIDs = viewModel.obdInfo.ecuData[header] {
-                        Section {
-                            VStack(alignment: .leading) {
-                                Section(header:
-                                            Text("ECU Header: \(header)")
-                                    .font(.subheadline)
-                                ) {
-                                    ForEach(supportedPIDs, id: \.self) { pid in
-                                        Text(pid.descriptions)
-                                            .font(.subheadline)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            
         }
     }
 }
+
 
 struct ShadowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {

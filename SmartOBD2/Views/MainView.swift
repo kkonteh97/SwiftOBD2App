@@ -45,8 +45,6 @@ struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-            ZStack {
-                LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme))
                 TabView {
                     SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327, bleManager: sharedBLEManager))
                         .tabItem {
@@ -57,12 +55,14 @@ struct MainView: View {
                             Label("Car", systemImage: "car")
                         }
                 }
+                .accentColor(.orange)
+                //universal background color
+                .background(LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme)))
+                // ignore all but keyboard
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                // hide navigation bar
                 .navigationBarHidden(true)
-                .tabViewStyle(.page)
-                .indexViewStyle(.page(backgroundDisplayMode: .always))
             }
-            .ignoresSafeArea() // Extend the background color to the edges
-        }
     }
 
 

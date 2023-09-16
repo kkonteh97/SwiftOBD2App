@@ -16,7 +16,7 @@ class CarScreenViewModel: ObservableObject {
         self.elmManager = elmManager
     }
     
-    func sendMessage() async throws -> String  {
+    func sendMessage() async throws -> [String]  {
         return try await elmManager.sendMessageAsync(command, withTimeoutSecs: 5)
     }
 }

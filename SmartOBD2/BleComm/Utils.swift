@@ -132,8 +132,8 @@ enum PROTOCOL: String, Codable {
     
     var id_bits: Int {
         switch self {
-        case .P6, .P7, .PA, .PB: return 29
-        default: return 11
+        case .P6, .P8, .PB: return 11
+        default: return 29
         }
     }
     

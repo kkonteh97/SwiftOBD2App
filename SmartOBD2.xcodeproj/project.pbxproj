@@ -19,6 +19,7 @@
 		3836CFDC2AAB8161007DF80F /* SettingsLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3836CFDB2AAB8161007DF80F /* SettingsLabelView.swift */; };
 		3836CFDE2AAB9E89007DF80F /* VehiclePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3836CFDD2AAB9E88007DF80F /* VehiclePickerView.swift */; };
 		3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3852BE492A97304D00E1024D /* SplashScreenView.swift */; };
+		38719E642AB3808A00E7E93B /* commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38719E632AB3808A00E7E93B /* commands.swift */; };
 		387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387697342A984AF6008E2728 /* AsyncBootcamp.swift */; };
 		3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715A2A8BF6AD00D6F5EB /* PKBC.swift */; };
 		3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */; };
@@ -54,6 +55,7 @@
 		3836CFDB2AAB8161007DF80F /* SettingsLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLabelView.swift; sourceTree = "<group>"; };
 		3836CFDD2AAB9E88007DF80F /* VehiclePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehiclePickerView.swift; sourceTree = "<group>"; };
 		3852BE492A97304D00E1024D /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		38719E632AB3808A00E7E93B /* commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = commands.swift; sourceTree = "<group>"; };
 		387697342A984AF6008E2728 /* AsyncBootcamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncBootcamp.swift; sourceTree = "<group>"; };
 		3878715A2A8BF6AD00D6F5EB /* PKBC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKBC.swift; sourceTree = "<group>"; };
 		3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
 				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
 				38E0CC932AA114FC00C4309D /* Utils.swift */,
+				38719E632AB3808A00E7E93B /* commands.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -311,6 +314,7 @@
 				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
 				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
 				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
+				38719E642AB3808A00E7E93B /* commands.swift in Sources */,
 				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
 				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
 				38147C7C2A8A70840086F293 /* Generics.swift in Sources */,
@@ -470,7 +474,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh97.SmartOBD2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -505,7 +509,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh97.SmartOBD2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

@@ -19,9 +19,27 @@ extension String {
         let padding = String(repeating: character, count: paddingAmount)
         return padding + self
     }
-}
-
-extension String {
+    
+    func hexToBytes() -> [UInt8]? {
+        var dataBytes: [UInt8] = []
+        for i in stride(from: 0, to: count, by: 2) {
+            let startIndex = index(self.startIndex, offsetBy: i)
+            if let endIndex = index(startIndex, offsetBy: 2, limitedBy: self.endIndex) {
+                let byteString = self[startIndex..<endIndex]
+                
+                if let byte = UInt8(byteString, radix: 16) {
+                    dataBytes.append(byte)
+                } else {
+                    return nil
+                }
+            } else {
+                return nil
+            }
+        }
+        
+        return dataBytes
+    }
+    
     subscript(offset: Int) -> Character {
         self[index(startIndex, offsetBy: offset)]
     }

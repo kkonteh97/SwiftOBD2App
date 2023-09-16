@@ -29,7 +29,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     var linesToParse = [String]()
     var adapterReady = false
     
-    var sendMessageCompletion: ((String?, Error?) -> Void)?
+    var sendMessageCompletion: (([String]?, Error?) -> Void)?
     
     // MARK: Initialization
 
@@ -114,7 +114,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     // MARK: Sending Messages
 
     
-    func sendMessageAsync(_ message: String) async throws -> String {
+    func sendMessageAsync(_ message: String) async throws -> [String] {
         // ... (sending message logic)
         let message = "\(message)\r"
         logger.info("Sending: \(message)")
@@ -128,7 +128,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         
         connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
         
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
             // Set up a timeout timer
                 self.sendMessageCompletion = { response, error in
                     if let response = response {
@@ -194,6 +194,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             guard let characteristicValue = characteristic.value else {
                 return
             }
+            
             processReceivedData(characteristicValue, completion: sendMessageCompletion)
             
             
@@ -233,34 +234,62 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     
 
     func handleResponse(completion: ((String?, Error?) -> Void)?) {
-        let strippedResponse = linesToParse
-                                    .map { $0.replacingOccurrences(of: ">", with: "") }
-                                    .joined()
-        logger.info("Response: \(strippedResponse)")
-        completion?(strippedResponse, nil)
-        linesToParse.removeAll()
+        
     }
     
-    
-    func processReceivedData(_ data: Data, completion: ((String?, Error?) -> Void)?) {
-        guard let responseString = String(data: data, encoding: .utf8) else {
-            completion?(nil, SendMessageError.stringConversionFailed)
-            return
-        }
-        let endMarker = ">"
+    var buffer = Data()
+
+    func processReceivedData(_ data: Data, completion: (([String]?, Error?) -> Void)?) {
         
-        // Split the response into lines using line breaks as the separator
-        let lines = responseString.components(separatedBy: .newlines)
         
-        for line in lines {
-            // Process each line here
-            self.linesToParse.append(line)
-            // Check if the line contains the end marker
-            if line.contains(endMarker) {
-                // Handle the complete response, e.g., call handleResponse
-                handleResponse(completion: completion)
-            }
+        buffer.append(data)
+       
+        guard var string = String(data: buffer, encoding: .utf8) else {
+                    logger.warning("Failed to convert data to a string")
+                    return
+                }
+        
+        
+        if string.contains(">") {
+            string = string.replacingOccurrences(of: "\u{00}", with: "")
+            string = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Split into lines while removing empty lines
+            var lines = string
+                .components(separatedBy: .newlines)
+                .filter { !$0.isEmpty }
+            
+            // remove the last line
+            lines.removeLast()
+            completion?(lines, nil)
+
+            print("Response: \(lines)")
+            buffer.removeAll()
+            
         }
+        
+//        guard let responseString = String(data: data, encoding: .ascii) else {
+//            completion?(nil, SendMessageError.stringConversionFailed)
+//            return
+//        }
+//        let endMarker = ">"
+//        
+//        // Split the response into lines using line breaks as the separator
+//        let lines = responseString.components(separatedBy: .newlines)
+//        
+//        for line in lines {
+//            // Process each line here
+//            self.linesToParse.append(line)
+//            // Check if the line contains the end marker
+//            if line.contains(endMarker) {
+//                // Handle the complete response, e.g., call handleResponse
+//                let strippedResponse = linesToParse
+//                                            .map { $0.replacingOccurrences(of: ">", with: "") }
+//                                            .joined()
+//                logger.info("Response: \(strippedResponse)")
+//                linesToParse.removeAll()
+//            }
+//        }
     }
     
     
