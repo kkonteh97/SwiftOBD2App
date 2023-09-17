@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreBluetooth
 
+
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
     
@@ -48,6 +49,8 @@ extension Color {
     }
 }
 
+
+
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -69,6 +72,8 @@ struct SettingsScreen: View {
     }
     
     @State private var isLoading = false
+    @State private var selectedPIDValues: [OBDCommand: String] = [:]
+    @State private var selectedPID: OBDCommand? = nil
     
     private var pidSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
@@ -82,32 +87,38 @@ struct SettingsScreen: View {
             VStack {
                 if let supportedPIDs = viewModel.obdInfo.supportedPIDs {
                     ForEach(supportedPIDs, id: \.self) { pid in
-                        Text(pid.description + " - " + (selectedPIDValues[pid] ?? ""))
-                            .font(.caption)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(LinearGradient(Color.darkStart,Color.darkEnd))
-                                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
-                            .onTapGesture {
-                                Task {
-                                    
-                                    do {
-                                        let pidValue = try await viewModel.requestPID(pid: pid)
-                                        selectedPIDValues[pid] = pidValue
-                                    } catch {
-                                        print("Error requesting PID: \(error)")
+                        HStack {
+                            
+                            Text(pid.description)
+                                .font(.caption)
+                                .padding()
+                            
+                                .onTapGesture {
+                                    Task {
+                                        await viewModel.requestPID(pid: pid)
+                                    }
                                 }
+                            if let pidData = viewModel.pidData[pid] {
+                                Text("\(pidData.value) \(pidData.unit)")
+                                    .font(.caption)
+                                    .padding()
+                                
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                        }
+                       
                     }
                 }
             }
             .frame(minHeight: 200)
-        }
     }
+    
     
     
     // Bluetooth Section
@@ -262,8 +273,6 @@ struct SettingsScreen: View {
         }
     }
     
-    @State private var selectedPIDValues: [OBDCommand: String] = [:]
-    @State private var selectedPID: OBDCommand? = nil
 
     // ELM Section
     private var elmSection: some View {

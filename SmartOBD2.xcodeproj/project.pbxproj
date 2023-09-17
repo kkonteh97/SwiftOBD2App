@@ -40,6 +40,8 @@
 		38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 38F6B3882A80E0FC0040F928 /* SwiftyJSON */; };
 		38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE02A89D37600F7533B /* CarScreen.swift */; };
 		38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE22A89D51800F7533B /* SettingsScreen.swift */; };
+		38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC410F2AB632A100098A76 /* PROTOCOL.swift */; };
+		38FC41122AB632CF00098A76 /* CANProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41112AB632CF00098A76 /* CANProtocol.swift */; };
 		38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF1822A8834F700EABC60 /* CustomTabView.swift */; };
 		38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF18A2A8897DE00EABC60 /* NavButton.swift */; };
 /* End PBXBuildFile section */
@@ -77,6 +79,8 @@
 		38F6B3852A80E0880040F928 /* OBDModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBDModel.swift; sourceTree = "<group>"; };
 		38F75AE02A89D37600F7533B /* CarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreen.swift; sourceTree = "<group>"; };
 		38F75AE22A89D51800F7533B /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		38FC410F2AB632A100098A76 /* PROTOCOL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PROTOCOL.swift; sourceTree = "<group>"; };
+		38FC41112AB632CF00098A76 /* CANProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CANProtocol.swift; sourceTree = "<group>"; };
 		38FEF1822A8834F700EABC60 /* CustomTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabView.swift; sourceTree = "<group>"; };
 		38FEF18A2A8897DE00EABC60 /* NavButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -156,6 +160,8 @@
 				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
 				38E0CC932AA114FC00C4309D /* Utils.swift */,
 				38719E632AB3808A00E7E93B /* commands.swift */,
+				38FC410F2AB632A100098A76 /* PROTOCOL.swift */,
+				38FC41112AB632CF00098A76 /* CANProtocol.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -313,8 +319,10 @@
 				38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */,
 				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
 				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
+				38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */,
 				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
 				38719E642AB3808A00E7E93B /* commands.swift in Sources */,
+				38FC41122AB632CF00098A76 /* CANProtocol.swift in Sources */,
 				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
 				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
 				38147C7C2A8A70840086F293 /* Generics.swift in Sources */,
@@ -382,7 +390,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -437,7 +445,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
