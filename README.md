@@ -2,6 +2,13 @@
 
 Welcome to the OBD2 Swift App! This app will allow you to read error codes and view Parameter IDs (PIDs) from your vehicle's OBD2 system using Swift and CoreBluetooth.
 
+## current looK
+
+
+https://github.com/kkonteh97/SmartOBD2/assets/55326260/fa31daaf-4f2d-4da9-9f6e-c27830d08980
+
+
+
 ## MileStones
 
 - Connect to an OBD2 adapter via Bluetooth Low Energy (BLE) (completed)
