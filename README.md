@@ -11,8 +11,8 @@ Welcome to the OBD2 Swift App! This app will allow you to read error codes and v
 
 ## Current Requirements
 
-- iOS 14.0+
-- Xcode 12.0+
+- iOS 15.0+
+- Xcode 15.0+
 - Swift 5.5+
 
 ## Setup
