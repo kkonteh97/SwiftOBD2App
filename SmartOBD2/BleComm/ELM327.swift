@@ -418,6 +418,7 @@ class ELM327: ObservableObject, ElmManager {
         for message in messages {
             print(message.frames[0])
 =======
+<<<<<<< HEAD
     
 
     
@@ -525,6 +526,8 @@ class ELM327: ObservableObject, ElmManager {
     
     
    
+=======
+>>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
     
     func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {
         guard let lengthHex = UInt8(response[startIndex - 1], radix: 16) else {

@@ -39,7 +39,10 @@ enum ECU {
 }
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
 extension Unit {
     static let percent = Unit(symbol: "%")
     static let count = Unit(symbol: "count")
