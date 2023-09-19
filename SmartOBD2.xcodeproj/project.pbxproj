@@ -7,24 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3804A9992ABA1FB100B47576 /* ELM327GetVehiclePIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3804A9982ABA1FB100B47576 /* ELM327GetVehiclePIDs.swift */; };
+		3804A99B2ABA1FFE00B47576 /* ELM327Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3804A99A2ABA1FFE00B47576 /* ELM327Parser.swift */; };
 		380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */; };
 		380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F12AA245A300931BBF /* SetupOrderModal.swift */; };
 		380E90F52AA247C000931BBF /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380E90F42AA247C000931BBF /* extensions.swift */; };
 		380E90FF2AA2671F00931BBF /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 380E90FE2AA2671F00931BBF /* SwiftyBeaver */; };
 		381070FE2A8FC825000A9540 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 381070FD2A8FC825000A9540 /* Alamofire */; };
-		381071002A8FCA97000A9540 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381070FF2A8FCA97000A9540 /* Constants.swift */; };
-		38147C7C2A8A70840086F293 /* Generics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7B2A8A70840086F293 /* Generics.swift */; };
-		38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */; };
-		381EF82D2A971AB800A13E2E /* Animate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381EF82C2A971AB700A13E2E /* Animate.swift */; };
 		3836CFDC2AAB8161007DF80F /* SettingsLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3836CFDB2AAB8161007DF80F /* SettingsLabelView.swift */; };
 		3836CFDE2AAB9E89007DF80F /* VehiclePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3836CFDD2AAB9E88007DF80F /* VehiclePickerView.swift */; };
 		3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3852BE492A97304D00E1024D /* SplashScreenView.swift */; };
-		38719E642AB3808A00E7E93B /* commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38719E632AB3808A00E7E93B /* commands.swift */; };
-		387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387697342A984AF6008E2728 /* AsyncBootcamp.swift */; };
-		3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715A2A8BF6AD00D6F5EB /* PKBC.swift */; };
-		3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */; };
-		3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */; };
-		387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387871602A8D2A3B00D6F5EB /* TabBarItem.swift */; };
+		38719E642AB3808A00E7E93B /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38719E632AB3808A00E7E93B /* Commands.swift */; };
+		3878D03B2AB91D0C009934D6 /* test.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3878D03A2AB91D0C009934D6 /* test.swift */; };
+		388BFBCB2AB9791500E4794E /* Decoders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388BFBCA2AB9791500E4794E /* Decoders.swift */; };
 		38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */; };
 		38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */; };
 		38C93E8D2A7CBE440044C7E4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */; };
@@ -32,7 +27,6 @@
 		38E0CC942AA114FC00C4309D /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E0CC932AA114FC00C4309D /* Utils.swift */; };
 		38E0CC962AA116AB00C4309D /* SettingsScreenViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */; };
 		38EEA1B02AA9574000CE5B9B /* Cars.json in Resources */ = {isa = PBXBuildFile; fileRef = 38EEA1AF2AA9573F00CE5B9B /* Cars.json */; };
-		38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */; };
 		38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3702A7EA99D0040F928 /* ELM327.swift */; };
 		38F6B3752A7F24990040F928 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3742A7F24990040F928 /* MainView.swift */; };
 		38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */; };
@@ -41,30 +35,36 @@
 		38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE02A89D37600F7533B /* CarScreen.swift */; };
 		38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F75AE22A89D51800F7533B /* SettingsScreen.swift */; };
 		38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC410F2AB632A100098A76 /* PROTOCOL.swift */; };
-		38FC41122AB632CF00098A76 /* CANProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41112AB632CF00098A76 /* CANProtocol.swift */; };
-		38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF1822A8834F700EABC60 /* CustomTabView.swift */; };
-		38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF18A2A8897DE00EABC60 /* NavButton.swift */; };
+		38FC41142AB7B13200098A76 /* GaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41132AB7B13100098A76 /* GaugeView.swift */; };
+		38FC41162AB7B19900098A76 /* PIDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41152AB7B19900098A76 /* PIDView.swift */; };
+		38FC41212AB8009500098A76 /* SmartOBD2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */; };
+		38FC41282AB801A600098A76 /* ELM327_Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41272AB801A500098A76 /* ELM327_Tests.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		38FC41222AB8009500098A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 38C93E7D2A7CBE3D0044C7E4 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 38C93E842A7CBE3D0044C7E4;
+			remoteInfo = SmartOBD2;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		3804A9982ABA1FB100B47576 /* ELM327GetVehiclePIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327GetVehiclePIDs.swift; sourceTree = "<group>"; };
+		3804A99A2ABA1FFE00B47576 /* ELM327Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327Parser.swift; sourceTree = "<group>"; };
 		380E90EE2AA243D500931BBF /* CarScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreenViewModel.swift; sourceTree = "<group>"; };
 		380E90F12AA245A300931BBF /* SetupOrderModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupOrderModal.swift; sourceTree = "<group>"; };
 		380E90F42AA247C000931BBF /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
-		381070FF2A8FCA97000A9540 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		38147C7B2A8A70840086F293 /* Generics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generics.swift; sourceTree = "<group>"; };
-		38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewBuildertest.swift; sourceTree = "<group>"; };
-		381EF82C2A971AB700A13E2E /* Animate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animate.swift; sourceTree = "<group>"; };
 		3836CFDB2AAB8161007DF80F /* SettingsLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsLabelView.swift; sourceTree = "<group>"; };
 		3836CFDD2AAB9E88007DF80F /* VehiclePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehiclePickerView.swift; sourceTree = "<group>"; };
 		3852BE492A97304D00E1024D /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
-		38719E632AB3808A00E7E93B /* commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = commands.swift; sourceTree = "<group>"; };
-		387697342A984AF6008E2728 /* AsyncBootcamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncBootcamp.swift; sourceTree = "<group>"; };
-		3878715A2A8BF6AD00D6F5EB /* PKBC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKBC.swift; sourceTree = "<group>"; };
-		3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
-		3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItemsPK.swift; sourceTree = "<group>"; };
-		387871602A8D2A3B00D6F5EB /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
+		38719E632AB3808A00E7E93B /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
+		3878D03A2AB91D0C009934D6 /* test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = test.swift; sourceTree = "<group>"; };
+		388BFBCA2AB9791500E4794E /* Decoders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Decoders.swift; sourceTree = "<group>"; };
 		38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleConnection.swift; sourceTree = "<group>"; };
-		38ABFA0C2A7CC87700433A18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		38ABFA0C2A7CC87700433A18 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartOBD2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2App.swift; sourceTree = "<group>"; };
 		38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -72,7 +72,6 @@
 		38E0CC932AA114FC00C4309D /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		38E0CC952AA116AB00C4309D /* SettingsScreenViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenViewModel.swift; sourceTree = "<group>"; };
 		38EEA1AF2AA9573F00CE5B9B /* Cars.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = Cars.json; sourceTree = "<group>"; };
-		38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleDTCs.swift; sourceTree = "<group>"; };
 		38F6B3702A7EA99D0040F928 /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
 		38F6B3742A7F24990040F928 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2Parser.swift; sourceTree = "<group>"; };
@@ -80,9 +79,11 @@
 		38F75AE02A89D37600F7533B /* CarScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarScreen.swift; sourceTree = "<group>"; };
 		38F75AE22A89D51800F7533B /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		38FC410F2AB632A100098A76 /* PROTOCOL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PROTOCOL.swift; sourceTree = "<group>"; };
-		38FC41112AB632CF00098A76 /* CANProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CANProtocol.swift; sourceTree = "<group>"; };
-		38FEF1822A8834F700EABC60 /* CustomTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabView.swift; sourceTree = "<group>"; };
-		38FEF18A2A8897DE00EABC60 /* NavButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButton.swift; sourceTree = "<group>"; };
+		38FC41132AB7B13100098A76 /* GaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GaugeView.swift; sourceTree = "<group>"; };
+		38FC41152AB7B19900098A76 /* PIDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIDView.swift; sourceTree = "<group>"; };
+		38FC411E2AB8009400098A76 /* SmartOBD2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartOBD2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2Tests.swift; sourceTree = "<group>"; };
+		38FC41272AB801A500098A76 /* ELM327_Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327_Tests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +94,13 @@
 				381070FE2A8FC825000A9540 /* Alamofire in Frameworks */,
 				38F6B3892A80E0FC0040F928 /* SwiftyJSON in Frameworks */,
 				380E90FF2AA2671F00931BBF /* SwiftyBeaver in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		38FC411B2AB8009400098A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,20 +123,6 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
-		381071012A8FDAAF000A9540 /* ttests */ = {
-			isa = PBXGroup;
-			children = (
-				381070FF2A8FCA97000A9540 /* Constants.swift */,
-				381071032A8FDB22000A9540 /* TabNavigation */,
-				381EF82C2A971AB700A13E2E /* Animate.swift */,
-				387697342A984AF6008E2728 /* AsyncBootcamp.swift */,
-				38147C7D2A8A843E0086F293 /* ViewBuildertest.swift */,
-				38147C7B2A8A70840086F293 /* Generics.swift */,
-				3878715A2A8BF6AD00D6F5EB /* PKBC.swift */,
-			);
-			path = ttests;
-			sourceTree = "<group>";
-		};
 		381071022A8FDAC8000A9540 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -138,30 +132,19 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
-		381071032A8FDB22000A9540 /* TabNavigation */ = {
-			isa = PBXGroup;
-			children = (
-				38FEF1822A8834F700EABC60 /* CustomTabView.swift */,
-				387871602A8D2A3B00D6F5EB /* TabBarItem.swift */,
-				3878715C2A8D210900D6F5EB /* CustomTabBarContainerView.swift */,
-				3878715E2A8D24F700D6F5EB /* TabBarItemsPK.swift */,
-				38FEF18A2A8897DE00EABC60 /* NavButton.swift */,
-			);
-			path = TabNavigation;
-			sourceTree = "<group>";
-		};
 		38ABF9FB2A7CC0B800433A18 /* BleComm */ = {
 			isa = PBXGroup;
 			children = (
 				38ABF9FC2A7CC0B800433A18 /* BleConnection.swift */,
 				38F6B3702A7EA99D0040F928 /* ELM327.swift */,
+				3804A9982ABA1FB100B47576 /* ELM327GetVehiclePIDs.swift */,
+				3804A99A2ABA1FFE00B47576 /* ELM327Parser.swift */,
 				38F6B3832A80DE3C0040F928 /* OBD2Parser.swift */,
 				38F6B3852A80E0880040F928 /* OBDModel.swift */,
-				38EF41F32A87F81600EF9E66 /* HandleDTCs.swift */,
 				38E0CC932AA114FC00C4309D /* Utils.swift */,
-				38719E632AB3808A00E7E93B /* commands.swift */,
+				38719E632AB3808A00E7E93B /* Commands.swift */,
 				38FC410F2AB632A100098A76 /* PROTOCOL.swift */,
-				38FC41112AB632CF00098A76 /* CANProtocol.swift */,
+				388BFBCA2AB9791500E4794E /* Decoders.swift */,
 			);
 			path = BleComm;
 			sourceTree = "<group>";
@@ -176,6 +159,9 @@
 				3852BE492A97304D00E1024D /* SplashScreenView.swift */,
 				3836CFDB2AAB8161007DF80F /* SettingsLabelView.swift */,
 				3836CFDD2AAB9E88007DF80F /* VehiclePickerView.swift */,
+				38FC41132AB7B13100098A76 /* GaugeView.swift */,
+				38FC41152AB7B19900098A76 /* PIDView.swift */,
+				3878D03A2AB91D0C009934D6 /* test.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -184,6 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */,
+				38FC411F2AB8009400098A76 /* SmartOBD2Tests */,
 				38C93E862A7CBE3D0044C7E4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -192,6 +179,7 @@
 			isa = PBXGroup;
 			children = (
 				38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */,
+				38FC411E2AB8009400098A76 /* SmartOBD2Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -199,15 +187,14 @@
 		38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */ = {
 			isa = PBXGroup;
 			children = (
-				380E90F32AA2479800931BBF /* Extensions */,
-				381071012A8FDAAF000A9540 /* ttests */,
-				38ABFA0C2A7CC87700433A18 /* Info.plist */,
 				38C93E882A7CBE3D0044C7E4 /* SmartOBD2App.swift */,
-				380E90F02AA2457B00931BBF /* Modals */,
-				38ABF9FB2A7CC0B800433A18 /* BleComm */,
-				381071022A8FDAC8000A9540 /* ViewModels */,
-				38ABF9FF2A7CC0B800433A18 /* Views */,
 				38C93E8C2A7CBE440044C7E4 /* Assets.xcassets */,
+				38ABFA0C2A7CC87700433A18 /* Info.plist */,
+				38ABF9FF2A7CC0B800433A18 /* Views */,
+				381071022A8FDAC8000A9540 /* ViewModels */,
+				38ABF9FB2A7CC0B800433A18 /* BleComm */,
+				380E90F02AA2457B00931BBF /* Modals */,
+				380E90F32AA2479800931BBF /* Extensions */,
 				38C93E8E2A7CBE440044C7E4 /* Preview Content */,
 			);
 			path = SmartOBD2;
@@ -221,6 +208,15 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
+		38FC411F2AB8009400098A76 /* SmartOBD2Tests */ = {
+			isa = PBXGroup;
+			children = (
+				38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */,
+				38FC41272AB801A500098A76 /* ELM327_Tests.swift */,
+			);
+			path = SmartOBD2Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -231,6 +227,7 @@
 				38C93E812A7CBE3D0044C7E4 /* Sources */,
 				38C93E822A7CBE3D0044C7E4 /* Frameworks */,
 				38C93E832A7CBE3D0044C7E4 /* Resources */,
+				388BFBC72AB9485B00E4794E /* SwiftLint */,
 			);
 			buildRules = (
 			);
@@ -246,6 +243,24 @@
 			productReference = 38C93E852A7CBE3D0044C7E4 /* SmartOBD2.app */;
 			productType = "com.apple.product-type.application";
 		};
+		38FC411D2AB8009400098A76 /* SmartOBD2Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38FC41242AB8009500098A76 /* Build configuration list for PBXNativeTarget "SmartOBD2Tests" */;
+			buildPhases = (
+				38FC411A2AB8009400098A76 /* Sources */,
+				38FC411B2AB8009400098A76 /* Frameworks */,
+				38FC411C2AB8009400098A76 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				38FC41232AB8009500098A76 /* PBXTargetDependency */,
+			);
+			name = SmartOBD2Tests;
+			productName = SmartOBD2Tests;
+			productReference = 38FC411E2AB8009400098A76 /* SmartOBD2Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -253,11 +268,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1430;
+				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					38C93E842A7CBE3D0044C7E4 = {
 						CreatedOnToolsVersion = 14.3.1;
+					};
+					38FC411D2AB8009400098A76 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 38C93E842A7CBE3D0044C7E4;
 					};
 				};
 			};
@@ -280,6 +299,7 @@
 			projectRoot = "";
 			targets = (
 				38C93E842A7CBE3D0044C7E4 /* SmartOBD2 */,
+				38FC411D2AB8009400098A76 /* SmartOBD2Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -295,7 +315,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		38FC411C2AB8009400098A76 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		388BFBC72AB9485B00E4794E /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		38C93E812A7CBE3D0044C7E4 /* Sources */ = {
@@ -303,40 +352,50 @@
 			buildActionMask = 2147483647;
 			files = (
 				38F6B3752A7F24990040F928 /* MainView.swift in Sources */,
+				3878D03B2AB91D0C009934D6 /* test.swift in Sources */,
 				380E90F22AA245A300931BBF /* SetupOrderModal.swift in Sources */,
-				381EF82D2A971AB800A13E2E /* Animate.swift in Sources */,
 				3836CFDC2AAB8161007DF80F /* SettingsLabelView.swift in Sources */,
-				381071002A8FCA97000A9540 /* Constants.swift in Sources */,
-				3878715B2A8BF6AD00D6F5EB /* PKBC.swift in Sources */,
 				38F6B3712A7EA99D0040F928 /* ELM327.swift in Sources */,
-				387697352A984AF6008E2728 /* AsyncBootcamp.swift in Sources */,
+				38FC41162AB7B19900098A76 /* PIDView.swift in Sources */,
 				380E90F52AA247C000931BBF /* extensions.swift in Sources */,
-				38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */,
+				3804A9992ABA1FB100B47576 /* ELM327GetVehiclePIDs.swift in Sources */,
 				38E0CC962AA116AB00C4309D /* SettingsScreenViewModel.swift in Sources */,
 				38E0CC942AA114FC00C4309D /* Utils.swift in Sources */,
 				38F6B3862A80E0880040F928 /* OBDModel.swift in Sources */,
 				3852BE4A2A97304D00E1024D /* SplashScreenView.swift in Sources */,
+				38FC41142AB7B13200098A76 /* GaugeView.swift in Sources */,
+				388BFBCB2AB9791500E4794E /* Decoders.swift in Sources */,
 				38F75AE12A89D37600F7533B /* CarScreen.swift in Sources */,
-				387871612A8D2A3B00D6F5EB /* TabBarItem.swift in Sources */,
-				38EF41F42A87F81600EF9E66 /* HandleDTCs.swift in Sources */,
 				38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */,
-				3878715D2A8D210900D6F5EB /* CustomTabBarContainerView.swift in Sources */,
-				38719E642AB3808A00E7E93B /* commands.swift in Sources */,
-				38FC41122AB632CF00098A76 /* CANProtocol.swift in Sources */,
-				38147C7E2A8A843E0086F293 /* ViewBuildertest.swift in Sources */,
+				38719E642AB3808A00E7E93B /* Commands.swift in Sources */,
 				38C93E892A7CBE3D0044C7E4 /* SmartOBD2App.swift in Sources */,
-				38147C7C2A8A70840086F293 /* Generics.swift in Sources */,
-				38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */,
 				38F75AE32A89D51800F7533B /* SettingsScreen.swift in Sources */,
 				38F6B3842A80DE3C0040F928 /* OBD2Parser.swift in Sources */,
+				3804A99B2ABA1FFE00B47576 /* ELM327Parser.swift in Sources */,
 				380E90EF2AA243D500931BBF /* CarScreenViewModel.swift in Sources */,
 				38ABFA052A7CC0B900433A18 /* BleConnection.swift in Sources */,
-				3878715F2A8D24F700D6F5EB /* TabBarItemsPK.swift in Sources */,
 				3836CFDE2AAB9E89007DF80F /* VehiclePickerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		38FC411A2AB8009400098A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38FC41212AB8009500098A76 /* SmartOBD2Tests.swift in Sources */,
+				38FC41282AB801A600098A76 /* ELM327_Tests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		38FC41232AB8009500098A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 38C93E842A7CBE3D0044C7E4 /* SmartOBD2 */;
+			targetProxy = 38FC41222AB8009500098A76 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		38C93E912A7CBE440044C7E4 /* Debug */ = {
@@ -465,6 +524,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"SmartOBD2/Preview Content\"";
 				DEVELOPMENT_TEAM = AA9JVLXUZS;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SmartOBD2/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SMARTOBD2;
@@ -500,6 +560,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"SmartOBD2/Preview Content\"";
 				DEVELOPMENT_TEAM = AA9JVLXUZS;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SmartOBD2/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SMARTOBD2;
@@ -525,6 +586,51 @@
 			};
 			name = Release;
 		};
+		38FC41252AB8009500098A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AA9JVLXUZS;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SmartOBD2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SmartOBD2";
+			};
+			name = Debug;
+		};
+		38FC41262AB8009500098A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AA9JVLXUZS;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kkonteh.SmartOBD2Tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SmartOBD2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SmartOBD2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -542,6 +648,15 @@
 			buildConfigurations = (
 				38C93E942A7CBE450044C7E4 /* Debug */,
 				38C93E952A7CBE450044C7E4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		38FC41242AB8009500098A76 /* Build configuration list for PBXNativeTarget "SmartOBD2Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38FC41252AB8009500098A76 /* Debug */,
+				38FC41262AB8009500098A76 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

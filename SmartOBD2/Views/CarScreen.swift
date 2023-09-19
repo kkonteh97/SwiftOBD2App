@@ -9,8 +9,8 @@ import SwiftUI
 
 struct History: Identifiable {
     var id = UUID()
-    var command : String
-    var response : String
+    var command: String
+    var response: String
 }
 
 struct CarScreen: View {
@@ -18,11 +18,9 @@ struct CarScreen: View {
     @State private var history: [History] = []
     @Environment(\.colorScheme) var colorScheme
     var shadowColor: Color { colorScheme == .dark ? .darkStart : .lightStart }
-
-
     var body: some View {
         ZStack {
-            ScrollView(.vertical, showsIndicators: false)  {
+            ScrollView(.vertical, showsIndicators: false) {
                 ForEach(history) { history in
                     VStack {
                         Text(history.command)
@@ -35,11 +33,10 @@ struct CarScreen: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(10)
                     .padding()
-                    
+
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                
                 HStack {
                     TextField("Enter Command", text: $viewModel.command)
                         .font(.system(size: 16))
@@ -47,7 +44,7 @@ struct CarScreen: View {
                         .background(
                             RoundedRectangle(cornerRadius: 25)
                                 .fill(LinearGradient(Color.startColor(for: colorScheme)))
-                                .shadow(color: Color.darkEnd,  radius: 5, x: -3, y: -3)
+                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
                                 .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
                         )
                         .padding(.horizontal, 10)
@@ -58,13 +55,15 @@ struct CarScreen: View {
                             do {
                                 print(viewModel.command)
                                 let response = try await viewModel.sendMessage()
-                                history.append(History(command: viewModel.command, response: response.joined(separator: "\n")))
+                                history.append(History(command: viewModel.command,
+                                                       response: response.joined(separator: "\n"))
+                                )
                                 viewModel.command = ""
                             } catch {
                                 print("Error setting up adapter: \(error)")
                             }
                         }
-                        
+
                     } label: {
                         Image(systemName: "arrow.up.circle")
                             .resizable()
@@ -73,7 +72,8 @@ struct CarScreen: View {
                             .padding(10)
                             .background(
                                 Circle()
-                                    .fill(LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme)))
+                                    .fill(LinearGradient(Color.startColor(for: colorScheme),
+                                                         Color.endColor(for: colorScheme)))
                                     .shadow(color: shadowColor, radius: 5, x: 3, y: 3)
                                     .shadow(color: shadowColor, radius: 5, x: -3, y: -3)
                             )
@@ -84,28 +84,14 @@ struct CarScreen: View {
                 .background(Color.gray.opacity(0.1))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
-        }
-        }
-}
 
-struct CarInfoRow: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 20))
-            Spacer()
-            Text(value)
-                .font(.system(size: 20))
         }
     }
 }
 
 struct CarScreen_Previews: PreviewProvider {
     static var previews: some View {
-        CarScreen(viewModel: CarScreenViewModel(elmManager: ELM327(bleManager: BLEManager())))
-    
+        CarScreen(viewModel: CarScreenViewModel(elm327: ELM327(bleManager: BLEManager())))
+
     }
 }

@@ -10,13 +10,13 @@ import Foundation
 class CarScreenViewModel: ObservableObject {
     @Published var command: String = ""
 
-    let elmManager: ElmManager
-    
-    init(elmManager: ElmManager) {
-        self.elmManager = elmManager
+    let elm327: ELM327
+
+    init(elm327: ELM327) {
+        self.elm327 = elm327
     }
-    
-    func sendMessage() async throws -> [String]  {
-        return try await elmManager.sendMessageAsync(command, withTimeoutSecs: 5)
+
+    func sendMessage() async throws -> [String] {
+        return try await elm327.sendMessageAsync(command, withTimeoutSecs: 5)
     }
 }

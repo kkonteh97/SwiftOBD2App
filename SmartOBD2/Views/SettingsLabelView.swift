@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct SettingsLabelView: View {
-    //    MARK: Properties
-    var labelText : String
-    var labelImage : String
-    
-    //    MARK: Body
+    // MARK: Properties
+    var labelText: String
+    var labelImage: String
+
+    // MARK: Body
     var body: some View {
-        HStack{
+        HStack {
             Text(labelText.uppercased()).fontWeight(.bold)
             Spacer()
             Image(systemName: labelImage)

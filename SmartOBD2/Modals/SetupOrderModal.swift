@@ -52,6 +52,7 @@ struct SetupOrderModal: View {
 }
 
 #Preview {
-    SetupOrderModal(isModalPresented: .constant(true), setupOrder: .constant([.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATDPN]))
+    SetupOrderModal(isModalPresented: .constant(true),
+                    setupOrder: .constant([.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATDPN]))
 
 }

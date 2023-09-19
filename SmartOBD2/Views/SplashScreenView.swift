@@ -13,7 +13,7 @@ private class Smoking: SKScene {
         size = CGSize(width: 500, height: 500)
         scaleMode = .fill
         anchorPoint = CGPoint(x: 0.5, y: 0.5)
-        
+
         backgroundColor = .clear
     }
 
@@ -33,11 +33,11 @@ struct SplashScreenView: View {
     @State private var carX =  -100.0
     let size1: CGFloat = 250
     var offset: CGFloat = 200
-    
+
     var body: some View {
         if isActive {
             MainView()
-            
+
         } else {
             VStack {
                 VStack {
@@ -48,7 +48,7 @@ struct SplashScreenView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
-                            
+
                             Text("Your Car's Health Companion")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
@@ -57,7 +57,7 @@ struct SplashScreenView: View {
                         }
                         .opacity(opacity)
                         .scaleEffect(size, anchor: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
-                        
+
                         GeometryReader { geometry in
                             let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
                             Image("car")
@@ -66,7 +66,7 @@ struct SplashScreenView: View {
                                 .frame(width: 100, height: 100)
                                 // forefround color gradient
                                 .foregroundStyle(
-                                    LinearGradient(gradient: Gradient(colors: [Color.red, Color.blue]), startPoint: .leading, endPoint: .trailing)
+                                    LinearGradient(Color.red, Color.blue)
                                 )
                                 .position(x: carX + center.x, y: center.y + 10)
 
@@ -79,13 +79,11 @@ struct SplashScreenView: View {
                                 self.size = 1.2
                                 self.opacity = 0.9
                             }
-                        
-
 
                     }
-              
+
                 }
-                
+
                 }
             }
             .onAppear {

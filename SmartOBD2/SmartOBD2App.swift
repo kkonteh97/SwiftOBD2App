@@ -19,13 +19,14 @@ extension Logger {
     static let bleCom = Logger(subsystem: subsystem, category: "BLEComms")
 }
 
-
 @main
 struct SmartOBD2App: App {
+    @StateObject private var elm327 = ELM327(bleManager: BLEManager.shared)
 
     var body: some Scene {
         WindowGroup {
             MainView()
+                .environmentObject(elm327)
         }
     }
 }

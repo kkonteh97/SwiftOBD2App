@@ -8,35 +8,17 @@
 import SwiftUI
 import CoreBluetooth
 
-
-
-
-
 struct CarlyObd {
-    static let ADAPTER_SCAN_INTERVAL = 500
-    static let ADAPTER_SCAN_TIMEOUT = 30000
-    static let ADAPTER_UPDATE_DELAY_BETWEEN_CHUNKS = 50
-    static let BLE_BINARY_CONTINUOUS_MSG_FLAG = 187
-    static let BLE_BINARY_LAST_MSG_FLAG = 190
-    static var BLE_ELM_CHARACTERISTIC_UUID = "FFE1"
-    static let BLE_DEEPDEBUG = false
-    static var BLE_CHARACTERISTIC_DESCRIPTOR_UUID = 10498
-    static let BLE_DEVICE_FIRMWARE_CHARACTERISTIC_UUID = 10790
-    static let BLE_DEVICE_FIRMWARE_UUID = 6154
-    static let BLE_ELM_SERVICE_UUID = "FFE0"
-    static let BLE_WRITE_MAX_CHUNK_SIZE_BYTES = 20
-    static let CODING_DELAY_BETWEEN_CHUNKS = 40
-    static let RECEIVE_BUFFER_SIZE = 4096
-    static let RECEIVE_BUFFER_SIZE_DDC = 8192
+    static let elmServiceUUID = "FFE0"
+    static let elmCharactericUUID = "FFE1"
 }
 
 struct MainView: View {
-    let serviceUUID = CBUUID(string: CarlyObd.BLE_ELM_SERVICE_UUID)
-    let characteristicUUID = CBUUID(string: CarlyObd.BLE_ELM_CHARACTERISTIC_UUID)
+    let serviceUUID = CBUUID(string: CarlyObd.elmServiceUUID)
+    let characteristicUUID = CBUUID(string: CarlyObd.elmCharactericUUID)
     @ObservedObject private var elm327: ELM327
     let sharedBLEManager = BLEManager.shared
 
-        
     init() {
             // Create an instance of ELM327 using the shared BLEManager
             self.elm327 = ELM327(bleManager: sharedBLEManager)
@@ -46,36 +28,36 @@ struct MainView: View {
 
     var body: some View {
                 TabView {
-                    SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327, bleManager: sharedBLEManager))
+                    SettingsScreen(viewModel: SettingsScreenViewModel(elm327: elm327))
                         .tabItem {
                             Label("Settings", systemImage: "gear")
                         }
-                    CarScreen(viewModel: CarScreenViewModel(elmManager: elm327))
+                    CarScreen(viewModel: CarScreenViewModel(elm327: elm327))
+                        .tabItem {
+                            Label("Car", systemImage: "car")
+                        }
+
+                    PIDView(viewModel: PIDViewModel(elm327: elm327))
                         .tabItem {
                             Label("Car", systemImage: "car")
                         }
                 }
                 .accentColor(.orange)
-                //universal background color
                 .background(LinearGradient(Color.startColor(for: colorScheme), Color.endColor(for: colorScheme)))
-                // ignore all but keyboard
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                // hide navigation bar
                 .navigationBarHidden(true)
             }
-    }
-
-
+}
 
 struct VINResults: Codable {
-    let Results: [VINInfo]
+    let results: [VINInfo]
 }
 
 struct VINInfo: Codable, Hashable {
-    let Make: String
-    let Model: String
-    let ModelYear: String
-    let EngineCylinders: String
+    let make: String
+    let model: String
+    let modelYear: String
+    let engineCylinders: String
 }
 
 struct ContentView_Previews: PreviewProvider {

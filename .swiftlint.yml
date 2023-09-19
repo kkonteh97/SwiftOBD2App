@@ -1,0 +1,3 @@
+disabled_rules:
+  - multiple_closures_with_trailing_closure
+  - function_body_length
