@@ -141,6 +141,7 @@ enum PROTOCOL: String, Codable {
         return protocolMap[self] ?? .NONE
     }
 
+<<<<<<< HEAD
     var cmd: String {
         switch self {
 
@@ -148,6 +149,9 @@ enum PROTOCOL: String, Codable {
             return "ATSP0"
         case .protocol1:
             return "ATSP1"
+=======
+}
+>>>>>>> main
 
         case .protocol2:
             return "ATSP2"

@@ -7,6 +7,7 @@
 
 import Foundation
 
+<<<<<<< HEAD
  enum ECU: UInt8, Codable {
     case ALL = 0b11111111
     case ALLKNOWN = 0b11111110
@@ -15,6 +16,86 @@ import Foundation
     case TRANSMISSION = 0b00000100
 }
 
+=======
+enum ECU {
+    static let ENGINE = "00000010"
+    static let TRANSMISSION = "00000100"
+    static let ABS = "ABS"
+    static let AIRBAG = "AIRBAG"
+    static let CLIMATE = "CLIMATE"
+    static let BODY = "BODY"
+    static let CHASSIS = "CHASSIS"
+    static let INFO = "INFO"
+    static let ALL = "11111111"
+}
+
+
+extension Unit {
+    static let percent = Unit(symbol: "%")
+    static let count = Unit(symbol: "count")
+    static let degreeCelsius = Unit(symbol: "°C")
+    static let kph = Unit(symbol: "kph")
+    static let rpm = Unit(symbol: "rpm")
+}
+
+func bytesToInt(_ byteArray: [UInt8]) -> Int {
+    var value = 0
+    var power = 0
+
+    for byte in byteArray.reversed() {
+        value += Int(byte) << power
+        power += 8
+    }
+
+    return value
+}
+
+struct UAS {
+    let signed: Bool
+    let scale: Double
+    let unit: Unit
+    let offset: Double
+
+    init(signed: Bool, scale: Double, unit: Unit, offset: Double = 0.0) {
+        self.signed = signed
+        self.scale = scale
+        self.unit = unit
+        self.offset = offset
+    }
+    
+    func twosComp(_ value: Int, length: Int) -> Int {
+        let mask = (1 << length) - 1
+        return value & mask
+    }
+
+
+    func decode(bytes: [UInt8]) -> Measurement<Unit>? {
+            var value = bytesToInt(bytes)
+
+            if signed {
+                value = twosComp(value, length: bytes.count * 8)
+            }
+
+            let scaledValue = Double(value) * scale + offset
+            return Measurement(value: scaledValue, unit: unit)
+    }
+}
+let UAS_IDS: [UInt8: UAS] = [
+    // Unsigned
+    0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
+    0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
+    0x09: UAS(signed: false, scale: 1, unit: Unit.kph),
+    0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
+
+    // Add more entries for other IDs...
+
+    // Signed
+    0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
+    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count),
+    // Add more entries for other IDs...
+]
+
+>>>>>>> main
 struct OBDCommand: Codable, Hashable {
     enum Decoder: Codable {
         case pid
@@ -64,7 +145,7 @@ struct OBDCommand: Codable, Hashable {
     var cmd: String
     var bytes: Int
     var decoder: Decoder
-    var ecu: ECU
+    var ecu: String
     var fast: Bool
 
     init(_ name: String, description: String, cmd: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) {

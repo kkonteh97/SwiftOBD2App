@@ -9,7 +9,46 @@ import Foundation
 import CoreBluetooth
 import OSLog
 
+<<<<<<< HEAD
 struct ECUHeader {
+=======
+protocol ElmManager {
+    func sendMessageAsync(_ message: String,  withTimeoutSecs: TimeInterval) async throws -> [String]
+    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo
+}
+
+struct OBDInfo: Codable {
+    var vin: String?
+    var supportedPIDs: [OBDCommand]?
+    var obdProtocol: PROTOCOL = .NONE
+}
+
+enum FrameType: UInt8, Codable {
+    case SF = 0x00
+    case FF = 0x10
+    case CF = 0x20
+}
+
+enum TxId: UInt8, Codable {
+    case engine = 0x00
+    case transmission = 0x01
+}
+
+//struct Frame: Hashable, Codable {
+//    var raw: String
+//    var ecuheader: String?
+//    var data: [UInt8]
+//    var priority: UInt8?
+//    var addrMode: UInt8?
+//    var txId: TxId?
+//    var type: FrameType?
+//    var dataLen: UInt16?
+//    var pids: [PIDs]?
+//    
+//}
+struct ECU_HEADER {
+ // Values for the ECU headers
+>>>>>>> main
     static let ENGINE = "7E0"
 }
 
@@ -26,8 +65,47 @@ enum DataValidationError: Error {
     case insufficientDataLength
 }
 
+<<<<<<< HEAD
 class ELM327: ObservableObject {
 
+=======
+struct Status {
+    var MIL: Bool?
+    var DTC_count: UInt8?
+    var ignition_type: IgnitionType?
+    // Define other properties as needed
+}
+
+struct StatusTest {
+    var name: String
+    var available: Bool
+    var complete: Bool
+
+    init(name: String = "", available: Bool = false, complete: Bool = false) {
+        self.name = name
+        self.available = available
+        self.complete = complete
+    }
+
+    var description: String {
+        let a = available ? "Available" : "Unavailable"
+        let c = complete ? "Complete" : "Incomplete"
+        return "Test \(name): \(a), \(c)"
+    }
+}
+
+
+enum IgnitionType: Int {
+    case spark = 0
+    case compression = 1
+}
+
+
+
+
+class ELM327: ObservableObject, ElmManager {
+    
+>>>>>>> main
     // MARK: - Properties
 
     let logger = Logger.elmCom
@@ -37,6 +115,7 @@ class ELM327: ObservableObject {
 
     // Bluetooth manager
     var bleManager: BLEManager
+<<<<<<< HEAD
     let singleFrame: UInt8 = 0x00  // single frame
     let firstFrame: UInt8 = 0x10  // first frame of multi-frame message
     let consecutiveFrame: UInt8 = 0x20  // consecutive frame(s) of multi-frame message
@@ -44,6 +123,9 @@ class ELM327: ObservableObject {
     let transmissionTXID = 1
     var obdProtocol: PROTOCOL = .NONE
 
+=======
+    
+>>>>>>> main
     // MARK: - Initialization
     init(bleManager: BLEManager) {
         self.bleManager = bleManager
@@ -86,6 +168,7 @@ class ELM327: ObservableObject {
 
     func setupAdapter(setupOrder: [SetupStep], autoProtocol: Bool = true) async throws -> OBDInfo {
         var obdInfo = OBDInfo()
+<<<<<<< HEAD
 
         if bleManager.connectionState != .connectedToAdapter {
             try await connectToAdapter()
@@ -110,6 +193,89 @@ class ELM327: ObservableObject {
                     obdProtocol = PROTOCOL(rawValue: currentProtocol[0]) ?? .AUTO
                 default:
                     logger.error("Invalid Setup Step")
+=======
+        
+        do {
+            if bleManager.connectionState != .connectedToAdapter {
+                bleManager.connectionState = .connecting
+                let _ = try await withTimeout(seconds: 30) {
+                    let peripheral = try await self.bleManager.scanAndConnectAsync(services: [self.BLE_ELM_SERVICE_UUID])
+                    return peripheral
+                }
+                bleManager.connectionState = .connectedToAdapter
+            }
+            var setupOrderCopy = setupOrder
+            var currentIndex = 0
+            
+            while currentIndex < setupOrderCopy.count {
+                let step = setupOrderCopy[currentIndex]
+                do {
+                    switch step {
+                    case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF:
+                        _ = try await okResponse(message: step.rawValue)
+                        
+                        
+                    case .ATZ:
+                        _ = try await sendMessageAsync("ATZ")                               // reset command Responds with Device Info
+                        
+                    case .ATRV:
+                        let voltage = try await sendMessageAsync("ATRV")                    // get the voltage
+                        // make sure car is on
+                        logger.info("Voltage: \(voltage)")
+                        
+                    case .ATDPN:
+                        let currentProtocol = try await sendMessageAsync("ATDPN")           // Describe current protocol number
+                        
+                        obdProtocol = PROTOCOL(rawValue: currentProtocol[0]) ?? .AUTO
+                        
+                        if let setupStep = SetupStep(rawValue: "ATSP\(currentProtocol[0])") {
+                            setupOrderCopy.append(setupStep)                                // append current protocol to setupOrderCopy
+                        }
+                        
+                    case .ATSP0, .ATSP1, .ATSP2, .ATSP3, .ATSP4, .ATSP5, .ATSP6, .ATSP7, .ATSP8, .ATSP9, .ATSPA, .ATSPB, .ATSPC:
+                        do {
+                            // test the protocol
+                            obdInfo.supportedPIDs = try await testProtocol(step: step, obdProtocol: obdProtocol)
+                            
+                            bleManager.connectionState = .connectedToVehicle
+                            
+                            obdInfo.obdProtocol = obdProtocol
+                            
+                            // Turn header off now
+                            _ = try await okResponse(message: "ATH0")
+                            
+                            if let setupStep = SetupStep(rawValue: "AT0902") {
+                                setupOrderCopy.append(setupStep)
+                            }
+                            
+                            logger.info("Setup Completed successfulleh")
+                            
+                        } catch {
+                            obdProtocol = obdProtocol.nextProtocol()
+                            
+                            if obdProtocol == .NONE {
+                                logger.error("No more protocols to try")
+                                throw error
+                            }
+                            
+                            if let setupStep = SetupStep(rawValue: "ATSP\(obdProtocol.rawValue)") {
+                                setupOrderCopy.append(setupStep)                            // append next protocol fi setupOrderCopy
+                            }
+                        }
+                        
+                        // Setup Complete will attempt to get the VIN Number
+                    case .AT0902:
+                        do {
+                            let vinResponse = try await sendMessageAsync("0902")             // Try to get VIN
+                            let vin = await decodeVIN(response: vinResponse[0])
+                            obdInfo.vin = vin
+                        } catch {
+                            logger.error("\(error.localizedDescription)")
+                        }
+                    }
+                } catch {
+                    throw error
+>>>>>>> main
                 }
             } catch {
                 throw error
@@ -123,17 +289,54 @@ class ELM327: ObservableObject {
         } catch {
             logger.error("\(error.localizedDescription)")
         }
+<<<<<<< HEAD
 
         // Setup Complete will attempt to get the VIN Number
         do {
             let vinResponse = try await sendMessageAsync("0902")
             let vin = await decodeVIN(response: vinResponse.joined())
             obdInfo.vin = vin
+=======
+        return obdInfo
+    }
+    
+    // MARK: - Protocol Testing
+    
+    func testProtocol(step: SetupStep, obdProtocol: PROTOCOL) async throws -> [OBDCommand] {
+        do {
+            // test protocol by sending 0100 and checking for 41 00 response
+            /*
+             while we here might as well get the supported pids
+             */
+            _ = try await okResponse(message: step.rawValue)
+        
+            let firstResponse = try await sendMessageAsync("0100")
+            if firstResponse.contains("searching") {
+                // wait a bit and try again
+                sleep(5)
+                
+                _ = try await sendMessageAsync("0100")
+            }
+            
+            await setHeader(header: ECU_HEADER.ENGINE)
+            
+            let response = try await sendMessageAsync("0100")
+            
+            guard response[0].contains("41 00") else {
+                logger.error("Invalid response: \(response)")
+                throw SetupError.invalidResponse
+            }
+            
+            
+            return await getSupportedPIDs(obdProtocol)
+            
+>>>>>>> main
         } catch {
             logger.error("\(error.localizedDescription)")
         }
         return obdInfo
     }
+<<<<<<< HEAD
 
 //    func autoProtocolDetection() async throws -> PROTOCOL {
 //        var protocolNumber: UInt8 = 0
@@ -202,11 +405,103 @@ class ELM327: ObservableObject {
         let messages = call(response, idBits: obdProtocol.idBits)
         for message in messages {
             print(message.frames[0])
+=======
+    
+    func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {
+        guard let lengthHex = UInt8(response[startIndex - 1], radix: 16) else {
+            return nil
+        }
+        // Extract frame data, type, and dataLen
+        // Ex.
+        //     ||
+        // 7E8 06 41 00 BE 7F B8 13
+        
+        let frameType = FrameType(rawValue: lengthHex & 0xF0)
+        
+        switch frameType {
+        case .SF:
+            return Int(lengthHex) & 0x0F
+        case .FF:
+            guard let secondLengthHex = UInt8(response[startIndex - 2], radix: 16) else {
+                throw NSError(domain: "Invalid data format", code: 0, userInfo: nil)
+            }
+            return Int(lengthHex) + Int(secondLengthHex)
+        case .CF:
+            return Int(lengthHex)
+        default:
+            return nil
+        }
+    }
+    
+    func getSupportedPIDs(_ obdProtocol: PROTOCOL) async -> [OBDCommand] {
+        let pid_getters = Modes.pid_getters
+        var supportedPIDsSet: Set<OBDCommand> = Set()
+
+        for pid in pid_getters {
+            do {
+                let response = try await sendMessageAsync(pid.cmd)[0].components(separatedBy: " ")
+                // find first instance of 41 plus command sent, from there we determine the position of everything else
+                // Ex.
+                //        || ||
+                // 7E8 06 41 00 BE 7F B8 13
+                guard let startIndex = response.firstIndex(of: "41"), startIndex + 1 < response.count && response[startIndex + 1] == pid.cmd.dropFirst(2) else {
+                    return []
+                }
+                
+                do {
+                    guard let dataLen = try extractDataLength(startIndex, response),
+                          let endIndex = response.index(startIndex, offsetBy: dataLen, limitedBy: response.endIndex) else {
+                        // Invalid data length or out-of-bounds, skip this iteration
+                        continue
+                    }
+                    //
+                    //             PCI
+                    // [  header ] ||       [   data  ]
+                    // 00 00 07 E8 06 41 00 BE 7F B8 13 00
+                    //                ||                ||
+                    //            startIndex        endIndex
+                    
+                    
+                    var data = Array(response[...endIndex]).joined()
+                    let ecuData = Array(response[(startIndex + 2)...(endIndex - 1)])
+
+                    
+                    if obdProtocol.id_bits == 11 {
+                        data = "00000" + data
+                    }
+                    
+                    // Convert ecuData to binary and extract supported PIDs
+                    guard let binaryData = hexToBinary(ecuData.joined()) else {
+                           continue
+                    }
+                    let supportedPIDsByECU = extractSupportedPIDs(binaryData)
+                    print("pid", supportedPIDsByECU)
+                    // Check if the supported PIDs are present in the predefined OBD commands
+                    let modeCommands = Modes.mode1
+                    // map supportedPIDsByECU to the modeCommands
+                    for modeCommand in modeCommands {
+                        if supportedPIDsByECU.contains(String(modeCommand.cmd.dropFirst(2))) {
+                               supportedPIDsSet.insert(modeCommand) // Add to supported PIDs set
+                           }
+                       }
+                    
+
+                
+                } catch {
+                    logger.error("\(error.localizedDescription)")
+                
+                }
+            } catch {
+                logger.error("\(error.localizedDescription)")
+            
+            }
+>>>>>>> main
         }
 
         let ecuMap = populateECUMap(messages)
         return ecuMap
     }
+<<<<<<< HEAD
 
     func autoProtocol() {
 
@@ -221,6 +516,20 @@ class ELM327: ObservableObject {
             last = indice
         }
         return true
+=======
+    
+
+    
+    func extractSupportedPIDs(_ binaryData: String) -> [String] {
+        return binaryData.enumerated()
+            .compactMap { index, bit -> String? in
+                if bit == "1" {
+                    let pidNumber = String(format: "%02X", index + 1)
+                    return pidNumber
+                }
+                return nil
+            }
+>>>>>>> main
     }
 
     func hexToBinary(_ hexString: String) -> String? {

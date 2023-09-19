@@ -40,6 +40,7 @@ struct RoundedRectangleStyle: ViewModifier {
     }
 }
 
+<<<<<<< HEAD
 struct DraggableContentView: View {
     @Binding var isExpanded: Bool
 
@@ -79,6 +80,8 @@ struct DraggableContentView: View {
     }
 }
 
+=======
+>>>>>>> main
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -91,6 +94,7 @@ struct SettingsScreen: View {
     @State private var isExpandedOtherCars = false
 
     @State private var isLoading = false
+<<<<<<< HEAD
     @State private var addVehicle = false
 
     @AppStorage("selectedCarIndex") var selectedCarIndex = 0
@@ -132,6 +136,50 @@ struct SettingsScreen: View {
 
 // MARK: Bluetooth Section
 
+=======
+    
+    private var pidSection: some View {
+        GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
+            Divider().padding(.vertical, 4)
+            // Supported PIDs
+            Text("Supported PIDs")
+                .font(.headline)
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            VStack {
+                if let supportedPIDs = viewModel.obdInfo.supportedPIDs {
+                    ForEach(supportedPIDs, id: \.self) { pid in
+                        Text(pid.description + " - " + (selectedPIDValues[pid] ?? ""))
+                            .font(.caption)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                            .onTapGesture {
+                                Task {
+                                    
+                                    do {
+                                        let pidValue = try await viewModel.requestPID(pid: pid)
+                                        selectedPIDValues[pid] = pidValue
+                                    } catch {
+                                        print("Error requesting PID: \(error)")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(minHeight: 200)
+        }
+    }
+    
+    
+    // Bluetooth Section
+>>>>>>> main
     private var bluetoothSection: some View {
         VStack {
             GroupBox(label: SettingsLabelView(labelText: "Adapter", labelImage: "wifi.circle")) {
@@ -185,6 +233,12 @@ struct SettingsScreen: View {
             }
         }
     }
+<<<<<<< HEAD
+=======
+    
+    @State private var selectedPIDValues: [OBDCommand: String] = [:]
+    @State private var selectedPID: OBDCommand? = nil
+>>>>>>> main
 
     private func carDetailsView() -> some View {
         VStack(spacing: 20) {

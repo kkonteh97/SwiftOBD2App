@@ -41,12 +41,6 @@ struct GarageVehicle: Codable, Identifiable {
     var obdinfo: OBDInfo?
 }
 
-struct PIDData {
-    let pid: OBDCommand
-    var value: Double
-    var unit: String
-}
-
 class SettingsScreenViewModel: ObservableObject {
     @Published var garageVehicles: [GarageVehicle] = []
     @Published var obdInfo = OBDInfo()
@@ -94,6 +88,7 @@ class SettingsScreenViewModel: ObservableObject {
            self.garageVehicles = decodedVehicles
        }
     }
+<<<<<<< HEAD
     private func loadGarageVehicles() {
         do {
             let url = Bundle.main.url(forResource: "Cars", withExtension: "json")!
@@ -127,6 +122,27 @@ class SettingsScreenViewModel: ObservableObject {
                     }
                 }
             }
+=======
+    
+
+    func requestPID(pid: OBDCommand) async throws -> String {
+        
+        do {
+            let response = try await elm327.requestPID(pid: pid)
+            if let measurement = response {
+                // Convert the Measurement<Unit> to a string
+                let measurementString = "\(measurement.value) \(measurement.unit.symbol)"
+                return measurementString
+            } else {
+                // Handle the case where response is nil (e.g., no response)
+                // You can assign a default or appropriate value here
+                return "No data"
+                   
+            }
+        } catch {
+            // Handle the error, e.g., log or display an error message
+            return "Error"
+>>>>>>> main
         }
     }
 
