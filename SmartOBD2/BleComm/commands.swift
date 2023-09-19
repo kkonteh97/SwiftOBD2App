@@ -29,7 +29,6 @@ enum ECU {
     static let ALL = "11111111"
 }
 
-
 extension Unit {
     static let percent = Unit(symbol: "%")
     static let count = Unit(symbol: "count")

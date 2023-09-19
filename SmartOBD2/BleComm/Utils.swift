@@ -144,6 +144,36 @@ enum PROTOCOL: String, Codable {
 <<<<<<< HEAD
     var cmd: String {
         switch self {
+        case .PC:
+            return .PB
+        case .PB:
+            return .PA
+        case .PA:
+            return .P9
+        case .P9:
+            return .P8
+        case .P8:
+            return .P7
+        case .P7:
+            return .P6
+        case .P6:
+            return .P5
+        case .P5:
+            return .P4
+        case .P4:
+            return .P3
+        case .P3:
+            return .P2
+        case .P2:
+            return .P1
+        case .P1:
+            return .AUTO
+        default:
+            return .NONE
+        }
+    }
+    
+    static let asArray: [PROTOCOL] = [AUTO, P1, P2, P3, P4, P5, P6, P7, P8, P9, PA, PB, PC, NONE]
 
         case .AUTO:
             return "ATSP0"

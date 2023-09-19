@@ -332,80 +332,9 @@ class ELM327: ObservableObject, ElmManager {
             
 >>>>>>> main
         } catch {
-            logger.error("\(error.localizedDescription)")
-        }
-        return obdInfo
-    }
-<<<<<<< HEAD
-
-//    func autoProtocolDetection() async throws -> PROTOCOL {
-//        var protocolNumber: UInt8 = 0
-//        var protocol: PROTOCOL = .NONE
-//        do {
-//            let response = try await sendMessageAsync("ATSP0")
-//            logger.info("Auto Protocol Response: \(response)")
-//            protocolNumber = UInt8(response[0], radix: 16) ?? 0
-//            protocol = PROTOCOL(rawValue: protocolNumber) ?? .AUTO
-//        } catch {
-//            logger.error("\(error.localizedDescription)")
-//        }
-//        return protocol
-//    }
-//
-
-    func connectToVehicle() async throws {
-        while obdProtocol != .NONE {
-            switch obdProtocol {
-            case .protocol1, .protocol2, .protocol3, .protocol4, .protocol5, .protocol6,
-                    .protocol7, .protocol8, .protocol9, .protocolA, .protocolB, .protocolC:
-                do {
-                    _ = try await okResponse(message: obdProtocol.cmd)
-
-                    // test the protocol
-                    _ = try await testProtocol(obdProtocol: obdProtocol)
-                    bleManager.connectionState = .connectedToVehicle
-
-                    await setHeader(header: ECUHeader.ENGINE)
-                } catch {
-                    obdProtocol = obdProtocol.nextProtocol()
-                    if obdProtocol == .NONE {
-                        logger.error("No protocol found")
-                        throw SetupError.invalidResponse
-                    }
-                }
-            default:
-                logger.error("Invalid Setup Step")
-            }
+            throw error
         }
     }
-
-    private func connectToAdapter() async throws {
-        bleManager.connectionState = .connecting
-        _ = try await self.bleManager.scanAndConnectAsync(services: [self.elmServiceUUID])
-        bleManager.connectionState = .connectedToAdapter
-    }
-
-    private func resetAdapterAndRetrieveInfo() async throws {
-        // Reset command responds with Device Info
-        _ = try await sendMessageAsync("ATZ")
-    }
-
-    // MARK: - Protocol Testing
-
-    func testProtocol(obdProtocol: PROTOCOL) async throws -> [UInt8: ECU] {
-
-        let response1 = try await sendMessageAsync("0100", withTimeoutSecs: 2)
-
-        guard isHex(response1.joined()) else {
-            logger.error("Invalid response: \(response1)")
-            throw SetupError.invalidResponse
-        }
-        let response = try await sendMessageAsync("0100", withTimeoutSecs: 2)
-
-        let messages = call(response, idBits: obdProtocol.idBits)
-        for message in messages {
-            print(message.frames[0])
-=======
     
     func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {
         guard let lengthHex = UInt8(response[startIndex - 1], radix: 16) else {
