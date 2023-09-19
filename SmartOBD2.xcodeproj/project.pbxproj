@@ -39,6 +39,7 @@
 		38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC410F2AB632A100098A76 /* PROTOCOL.swift */; };
 		38FC41142AB7B13200098A76 /* GaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41132AB7B13100098A76 /* GaugeView.swift */; };
 		38FC41162AB7B19900098A76 /* PIDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41152AB7B19900098A76 /* PIDView.swift */; };
+<<<<<<< HEAD
 =======
 =======
 		38FC41102AB632A300098A76 /* PROTOCOL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC410F2AB632A100098A76 /* PROTOCOL.swift */; };
@@ -47,6 +48,10 @@
 		38FEF1832A8834F700EABC60 /* CustomTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF1822A8834F700EABC60 /* CustomTabView.swift */; };
 		38FEF18B2A8897DE00EABC60 /* NavButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FEF18A2A8897DE00EABC60 /* NavButton.swift */; };
 >>>>>>> main
+=======
+		38FC41212AB8009500098A76 /* SmartOBD2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */; };
+		38FC41282AB801A600098A76 /* ELM327_Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FC41272AB801A500098A76 /* ELM327_Tests.swift */; };
+>>>>>>> parent of c7458c6 (delected test)
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,6 +97,7 @@
 		38FC41132AB7B13100098A76 /* GaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GaugeView.swift; sourceTree = "<group>"; };
 		38FC41152AB7B19900098A76 /* PIDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIDView.swift; sourceTree = "<group>"; };
 		38FC411E2AB8009400098A76 /* SmartOBD2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartOBD2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+<<<<<<< HEAD
 =======
 =======
 		38FC410F2AB632A100098A76 /* PROTOCOL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PROTOCOL.swift; sourceTree = "<group>"; };
@@ -100,6 +106,10 @@
 		38FEF1822A8834F700EABC60 /* CustomTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabView.swift; sourceTree = "<group>"; };
 		38FEF18A2A8897DE00EABC60 /* NavButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavButton.swift; sourceTree = "<group>"; };
 >>>>>>> main
+=======
+		38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartOBD2Tests.swift; sourceTree = "<group>"; };
+		38FC41272AB801A500098A76 /* ELM327_Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327_Tests.swift; sourceTree = "<group>"; };
+>>>>>>> parent of c7458c6 (delected test)
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -195,6 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				38C93E872A7CBE3D0044C7E4 /* SmartOBD2 */,
+				38FC411F2AB8009400098A76 /* SmartOBD2Tests */,
 				38C93E862A7CBE3D0044C7E4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -230,6 +241,15 @@
 				38C93E8F2A7CBE440044C7E4 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		38FC411F2AB8009400098A76 /* SmartOBD2Tests */ = {
+			isa = PBXGroup;
+			children = (
+				38FC41202AB8009500098A76 /* SmartOBD2Tests.swift */,
+				38FC41272AB801A500098A76 /* ELM327_Tests.swift */,
+			);
+			path = SmartOBD2Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -407,6 +427,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38FC41212AB8009500098A76 /* SmartOBD2Tests.swift in Sources */,
+				38FC41282AB801A600098A76 /* ELM327_Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
