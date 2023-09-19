@@ -419,6 +419,7 @@ class ELM327: ObservableObject, ElmManager {
             print(message.frames[0])
 =======
 <<<<<<< HEAD
+<<<<<<< HEAD
     
 
     
@@ -526,6 +527,8 @@ class ELM327: ObservableObject, ElmManager {
     
     
    
+=======
+>>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
 =======
 >>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
     
