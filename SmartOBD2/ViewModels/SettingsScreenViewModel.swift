@@ -41,6 +41,12 @@ struct GarageVehicle: Codable, Identifiable {
     var obdinfo: OBDInfo?
 }
 
+struct PIDData {
+    let pid: OBDCommand
+    var value: Double
+    var unit: String
+}
+
 class SettingsScreenViewModel: ObservableObject {
     @Published var garageVehicles: [GarageVehicle] = []
     @Published var obdInfo = OBDInfo()
@@ -124,25 +130,34 @@ class SettingsScreenViewModel: ObservableObject {
             }
 =======
     
+    @Published var pidData: [OBDCommand: PIDData] = [:]
 
-    func requestPID(pid: OBDCommand) async throws -> String {
-        
+    func requestPID(pid: OBDCommand) async  {
         do {
-            let response = try await elm327.requestPID(pid: pid)
-            if let measurement = response {
-                // Convert the Measurement<Unit> to a string
-                let measurementString = "\(measurement.value) \(measurement.unit.symbol)"
-                return measurementString
-            } else {
-                // Handle the case where response is nil (e.g., no response)
-                // You can assign a default or appropriate value here
-                return "No data"
-                   
+            while true {
+                let response = try await elm327.requestPID(pid: pid)
+                if let measurement = response {
+                    // Convert the Measurement<Unit> to a string
+                    let value = measurement.value
+                    let unitString = measurement.unit.symbol
+
+                    DispatchQueue.main.async {
+                        // Update the UI
+                        self.pidData[pid] = PIDData(pid: pid, value: value, unit: unitString)
+                    }
+                        
+                } else {
+                    // Handle the case where response is nil (e.g., no response)
+                    // You can assign a default or appropriate value here
+                }
             }
         } catch {
             // Handle the error, e.g., log or display an error message
+<<<<<<< HEAD
             return "Error"
 >>>>>>> main
+=======
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
         }
     }
 

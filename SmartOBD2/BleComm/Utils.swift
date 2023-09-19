@@ -122,6 +122,7 @@ enum PROTOCOL: String, Codable {
         }
     }
 
+<<<<<<< HEAD
     func nextProtocol() -> PROTOCOL {
         let protocolMap: [PROTOCOL: PROTOCOL] = [
             .protocolC: .protocolB,
@@ -150,6 +151,9 @@ enum PROTOCOL: String, Codable {
         case .protocol1:
             return "ATSP1"
 =======
+=======
+
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
 }
 >>>>>>> main
 

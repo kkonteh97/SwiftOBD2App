@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreBluetooth
 
+
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
 
@@ -40,6 +41,7 @@ struct RoundedRectangleStyle: ViewModifier {
     }
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 struct DraggableContentView: View {
     @Binding var isExpanded: Bool
@@ -82,6 +84,10 @@ struct DraggableContentView: View {
 
 =======
 >>>>>>> main
+=======
+
+
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -94,6 +100,7 @@ struct SettingsScreen: View {
     @State private var isExpandedOtherCars = false
 
     @State private var isLoading = false
+<<<<<<< HEAD
 <<<<<<< HEAD
     @State private var addVehicle = false
 
@@ -137,6 +144,10 @@ struct SettingsScreen: View {
 // MARK: Bluetooth Section
 
 =======
+=======
+    @State private var selectedPIDValues: [OBDCommand: String] = [:]
+    @State private var selectedPID: OBDCommand? = nil
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
     
     private var pidSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
@@ -150,32 +161,38 @@ struct SettingsScreen: View {
             VStack {
                 if let supportedPIDs = viewModel.obdInfo.supportedPIDs {
                     ForEach(supportedPIDs, id: \.self) { pid in
-                        Text(pid.description + " - " + (selectedPIDValues[pid] ?? ""))
-                            .font(.caption)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(LinearGradient(Color.darkStart,Color.darkEnd))
-                                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
-                            .onTapGesture {
-                                Task {
-                                    
-                                    do {
-                                        let pidValue = try await viewModel.requestPID(pid: pid)
-                                        selectedPIDValues[pid] = pidValue
-                                    } catch {
-                                        print("Error requesting PID: \(error)")
+                        HStack {
+                            
+                            Text(pid.description)
+                                .font(.caption)
+                                .padding()
+                            
+                                .onTapGesture {
+                                    Task {
+                                        await viewModel.requestPID(pid: pid)
+                                    }
                                 }
+                            if let pidData = viewModel.pidData[pid] {
+                                Text("\(pidData.value) \(pidData.unit)")
+                                    .font(.caption)
+                                    .padding()
+                                
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(LinearGradient(Color.darkStart,Color.darkEnd))
+                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                        }
+                       
                     }
                 }
             }
             .frame(minHeight: 200)
-        }
     }
+    
     
     
     // Bluetooth Section
@@ -236,6 +253,7 @@ struct SettingsScreen: View {
 <<<<<<< HEAD
 =======
     
+<<<<<<< HEAD
     @State private var selectedPIDValues: [OBDCommand: String] = [:]
     @State private var selectedPID: OBDCommand? = nil
 >>>>>>> main
@@ -394,6 +412,8 @@ struct SettingsScreen: View {
     }
 
 // MARK: ELM Section
+=======
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
 
     private var elmSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "ELM", labelImage: "info.circle")) {

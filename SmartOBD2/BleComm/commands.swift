@@ -8,6 +8,7 @@
 import Foundation
 
 <<<<<<< HEAD
+<<<<<<< HEAD
  enum ECU: UInt8, Codable {
     case ALL = 0b11111111
     case ALLKNOWN = 0b11111110
@@ -27,7 +28,16 @@ enum ECU {
     static let CHASSIS = "CHASSIS"
     static let INFO = "INFO"
     static let ALL = "11111111"
+=======
+ enum ECU: UInt8, Codable {
+    case ALL = 0b11111111
+    case ALL_KNOWN = 0b11111110
+    case UNKNOWN = 0b00000001
+    case ENGINE = 0b00000010
+    case TRANSMISSION = 0b00000100
+>>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
 }
+
 
 
 extension Unit {
@@ -145,7 +155,7 @@ struct OBDCommand: Codable, Hashable {
     var cmd: String
     var bytes: Int
     var decoder: Decoder
-    var ecu: String
+    var ecu: ECU
     var fast: Bool
 
     init(_ name: String, description: String, cmd: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) {
