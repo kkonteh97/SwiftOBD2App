@@ -7,14 +7,17 @@
 
 import Foundation
 
- enum ECU: UInt8, Codable {
-    case ALL = 0b11111111
-    case ALL_KNOWN = 0b11111110
-    case UNKNOWN = 0b00000001
-    case ENGINE = 0b00000010
-    case TRANSMISSION = 0b00000100
+enum ECU {
+    static let ENGINE = "00000010"
+    static let TRANSMISSION = "00000100"
+    static let ABS = "ABS"
+    static let AIRBAG = "AIRBAG"
+    static let CLIMATE = "CLIMATE"
+    static let BODY = "BODY"
+    static let CHASSIS = "CHASSIS"
+    static let INFO = "INFO"
+    static let ALL = "11111111"
 }
-
 
 
 extension Unit {
@@ -131,7 +134,7 @@ struct OBDCommand: Codable, Hashable {
     var cmd: String
     var bytes: Int
     var decoder: Decoder
-    var ecu: ECU
+    var ecu: String
     var fast: Bool
     
     func hexStringToUInt8(_ hexString: [String]) -> [UInt8]? {
