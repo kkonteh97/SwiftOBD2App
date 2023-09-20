@@ -69,6 +69,43 @@ struct MainView: View {
                 isOpen: self.$bottomSheetShown,
                 maxHeight: geometry.size.height * 0.6
             ) {
+                Button {
+                    let impactLight = UIImpactFeedbackGenerator(style: .medium)
+                    impactLight.impactOccurred()
+                    self.isLoading = true
+                    Task {
+                        do {
+                            try await viewModel.setupAdapter(setupOrder: setupOrder)
+                        } catch {
+                            print(error.localizedDescription)
+                        }
+                    }
+                    // remove when done
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self.isLoading = false
+                    }
+                } label: {
+                    VStack {
+                        if isLoading {
+                            ProgressView()
+                        } else {
+                            Text("Connect")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.accentColor)
+                                .cornerRadius(10)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(LinearGradient(Color.darkStart, Color.darkEnd))
+                            .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                            .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+                }
                 garageSection
             }
         }
@@ -260,7 +297,7 @@ struct MainView: View {
 }
 
 struct VINResults: Codable {
-    let results: [VINInfo]
+    let Results: [VINInfo]
 }
 
 struct VINInfo: Codable, Hashable {
@@ -273,5 +310,66 @@ struct VINInfo: Codable, Hashable {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         MainView(viewModel: SettingsScreenViewModel(elm327: ELM327(bleManager: BLEManager())))
+    }
+}
+
+struct BottomSheetView<Content: View>: View {
+    @Binding var isOpen: Bool
+
+    let maxHeight: CGFloat
+    let minHeight: CGFloat
+    let content: Content
+
+
+    init(isOpen: Binding<Bool>, maxHeight: CGFloat, @ViewBuilder content: () -> Content) {
+        self.minHeight = maxHeight * Constants.minHeightRatio
+        self.maxHeight = maxHeight
+        self.content = content()
+        self._isOpen = isOpen
+    }
+
+    private var offset: CGFloat {
+        isOpen ? 0 : maxHeight - minHeight
+    }
+
+    private var indicator: some View {
+        HStack {
+            RoundedRectangle(cornerRadius: Constants.radius)
+                .fill(Color.secondary)
+                .frame(
+                    width: Constants.indicatorWidth,
+                    height: Constants.indicatorHeight
+                )
+        }
+    }
+
+    @GestureState private var translation: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                self.indicator.padding()
+                Divider().padding(.vertical, 4)
+                self.content
+            }
+            .frame(width: geometry.size.width, height: self.maxHeight, alignment: .top)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(Constants.radius)
+            .frame(height: geometry.size.height, alignment: .bottom)
+            .offset(y: max(self.offset + self.translation, 0))
+            .animation(.interactiveSpring(), value: isOpen)
+            .animation(.interactiveSpring(), value: translation)
+            .gesture(
+                DragGesture().updating(self.$translation) { value, state, _ in
+                    state = value.translation.height
+                }.onEnded { value in
+                    let snapDistance = self.maxHeight * Constants.snapRatio
+                    guard abs(value.translation.height) > snapDistance else {
+                        return
+                    }
+                    self.isOpen = value.translation.height < 0
+                }
+            )
+        }
     }
 }

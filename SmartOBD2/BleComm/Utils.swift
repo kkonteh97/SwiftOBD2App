@@ -135,7 +135,7 @@ enum PROTOCOL: String, Codable {
             .protocol4: .protocol3,
             .protocol3: .protocol2,
             .protocol2: .protocol1,
-            .protocol1: .AUTO
+            .protocol1: .NONE
         ]
 
         return protocolMap[self] ?? .NONE

@@ -160,7 +160,6 @@ class SettingsScreenViewModel: ObservableObject {
             self.obdInfo = obdInfo
             self.selectedProtocol = obdInfo.obdProtocol
         }
-
         if let vin = obdInfo.vin {
             do {
                 if var vehicle =  self.garageVehicles.first(where: { $0.vin == vin }) {
@@ -171,11 +170,9 @@ class SettingsScreenViewModel: ObservableObject {
                 let vinInfo = try await getVINInfo(vin: vin)
                 DispatchQueue.main.async {
                     self.vinInput = vin
-                    guard let vinInfo = vinInfo.results.first else {
-
+                    guard let vinInfo = vinInfo.Results.first else {
                         return
                     }
-
                     self.addVehicle(
                         make: vinInfo.make, model: vinInfo.model, year: vinInfo.modelYear, vin: vin, obdinfo: obdInfo
                     )
@@ -212,6 +209,6 @@ class SettingsScreenViewModel: ObservableObject {
         } catch {
             print(error)
         }
-        return VINResults(results: [])
+        return VINResults(Results: [])
     }
 }

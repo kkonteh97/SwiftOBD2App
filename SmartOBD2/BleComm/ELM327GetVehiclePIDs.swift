@@ -84,7 +84,7 @@ extension ELM327 {
             }
     }
 
-    public func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {
+    func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {
         guard let lengthHex = UInt8(response[startIndex - 1], radix: 16) else {
             return nil
         }
@@ -109,4 +109,25 @@ extension ELM327 {
             return nil
         }
     }
+
+
+    func hexToBinary(_ hexString: String) -> String? {
+        // Create a scanner to parse the hex string
+        let scanner = Scanner(string: hexString)
+
+        // Check if the string starts with "0x" or "0X" and skip it if present
+        scanner.charactersToBeSkipped = CharacterSet(charactersIn: "0x")
+        var intValue: UInt64 = 0
+
+        // Use the scanner to convert the hex string to an integer
+        if scanner.scanHexInt64(&intValue) {
+            // Convert the integer to a binary string with leading zeros
+            let binaryString = String(intValue, radix: 2)
+            let leadingZerosCount = hexString.count * 4 - binaryString.count
+            let leadingZeros = String(repeating: "0", count: leadingZerosCount)
+            return leadingZeros + binaryString
+        }
+        // Return nil if the conversion fails
+        return nil
+        }
 }

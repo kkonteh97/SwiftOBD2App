@@ -171,6 +171,17 @@ extension ELM327 {
             return messages
     }
 
+    func isContiguous(_ indices: [UInt8]) -> Bool {
+        var last = indices[0]
+        for indice in indices {
+            if indice != last + 1 {
+                return false
+            }
+            last = indice
+        }
+        return true
+    }
+
     func isHex(_ str: String) -> Bool {
         let hexChars = CharacterSet(charactersIn: "0123456789ABCDEF")
         return str.uppercased().rangeOfCharacter(from: hexChars.inverted) == nil

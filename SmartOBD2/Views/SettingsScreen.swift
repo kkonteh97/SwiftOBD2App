@@ -47,46 +47,6 @@ struct RoundedRectangleStyle: ViewModifier {
     }
 }
 
-struct DraggableContentView: View {
-    @Binding var isExpanded: Bool
-
-    var body: some View {
-        VStack {
-            // Your content goes here
-            Text("Draggable Content")
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .cornerRadius(20)
-        .padding()
-        .offset(y: isExpanded ? 0 : UIScreen.main.bounds.height)
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    if value.translation.height > 0 {
-                        // Allow dragging only in the upward direction
-                        isExpanded = true
-                    }
-                }
-                .onEnded { value in
-                    let dragThreshold: CGFloat = 100 // Adjust this threshold as needed
-                    if value.translation.height > dragThreshold {
-                        // If dragged beyond the threshold, expand the view
-                        withAnimation {
-                            isExpanded = true
-                        }
-                    } else {
-                        // Otherwise, reset to the initial position
-                        withAnimation {
-                            isExpanded = false
-                        }
-                    }
-                }
-        )
-    }
-}
-
-
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -128,7 +88,7 @@ struct SettingsScreen: View {
         Text("gell")
     }
 
-// MARK: Bluetooth Section
+    // MARK: Bluetooth Section
 
     // Bluetooth Section
 
@@ -151,34 +111,34 @@ struct SettingsScreen: View {
 
     }
 
-// MARK: Garage Section
+    // MARK: Garage Section
 
     private var garageSection: some View {
-            VStack {
-                carDetailsView()
-                if isExpandedCarInfo {
-                    Divider().padding(.vertical, 4)
-                    carInfoExpandedView()
-                }
-                if isExpandedOtherCars {
-                    Divider().padding(.vertical, 4)
-                    otherVehiclesView()
-                }
-                Spacer()
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isExpandedOtherCars.toggle()
-                    }
-                }, label: {
-                    Image(systemName: "chevron.down.circle")
-                        .font(.title)
-                        .rotationEffect(.degrees(isExpandedOtherCars ? 180 : 0))
-                        .foregroundColor(.gray)
-
-                })
-                .padding(.top, 40)
+        VStack {
+            carDetailsView()
+            if isExpandedCarInfo {
+                Divider().padding(.vertical, 4)
+                carInfoExpandedView()
             }
+            if isExpandedOtherCars {
+                Divider().padding(.vertical, 4)
+                otherVehiclesView()
+            }
+            Spacer()
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpandedOtherCars.toggle()
+                }
+            }, label: {
+                Image(systemName: "chevron.down.circle")
+                    .font(.title)
+                    .rotationEffect(.degrees(isExpandedOtherCars ? 180 : 0))
+                    .foregroundColor(.gray)
+
+            })
+            .padding(.top, 40)
         }
+    }
 
     private func carDetailsView() -> some View {
         VStack(spacing: 20) {
@@ -200,10 +160,10 @@ struct SettingsScreen: View {
                                 isExpandedCarInfo.toggle()
                             }
                         }
-                    }
                 }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Divider().padding(.vertical, 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Divider().padding(.vertical, 4)
         }
         .modifier(RoundedRectangleStyle())
     }
@@ -309,117 +269,6 @@ struct SettingsScreen: View {
                     SetupOrderModal(isModalPresented: $isSetupOrderPresented, setupOrder: $setupOrder)
                 }
             }
-        }
-    }
-}
-
-struct ConnectButton<Content: View>: View {
-    @Binding var isLoading: Bool
-    let label: Content
-
-
-    init(isLoading: Binding<Bool>, @ViewBuilder label: () -> Content) {
-        self._isLoading = isLoading
-        self.label = label()
-    }
-
-    var body: some View {
-        Button {
-            let impactLight = UIImpactFeedbackGenerator(style: .medium)
-            impactLight.impactOccurred()
-            self.isLoading = true
-//                    try await viewModel.setupAdapter(setupOrder: setupOrder)
-                    // remove when done
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        self.isLoading = false
-                    }
-
-        } label: {
-            VStack {
-                if isLoading {
-                    ProgressView()
-                } else {
-                    self.label
-
-
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
-                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
-        }
-    }
-}
-struct BottomSheetView<Content: View>: View {
-    @Binding var isOpen: Bool
-    
-    let maxHeight: CGFloat
-    let minHeight: CGFloat
-    let content: Content
-
-    init(isOpen: Binding<Bool>, maxHeight: CGFloat, @ViewBuilder content: () -> Content) {
-        self.minHeight = maxHeight * Constants.minHeightRatio
-        self.maxHeight = maxHeight
-        self.content = content()
-        self._isOpen = isOpen
-    }
-
-    private var offset: CGFloat {
-        isOpen ? 0 : maxHeight - minHeight
-    }
-
-    private var indicator: some View {
-        HStack {
-            Text("Not Connect")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            ConnectButton(isLoading: .constant(false)) {
-                Text("Initialize Vehicle")
-                    .font(.headline)
-            }
-
-        }
-
-
-//        RoundedRectangle(cornerRadius: Constants.radius)
-//            .fill(Color.secondary)
-//            .frame(
-//                width: Constants.indicatorWidth,
-//                height: Constants.indicatorHeight
-//        )
-    }
-
-    @GestureState private var translation: CGFloat = 0
-
-    var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                self.indicator.padding()
-                Divider().padding(.vertical, 4)
-                self.content
-            }
-            .frame(width: geometry.size.width, height: self.maxHeight, alignment: .top)
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(Constants.radius)
-            .frame(height: geometry.size.height, alignment: .bottom)
-            .offset(y: max(self.offset + self.translation, 0))
-            .animation(.interactiveSpring(), value: isOpen)
-            .animation(.interactiveSpring(), value: translation)
-            .gesture(
-                DragGesture().updating(self.$translation) { value, state, _ in
-                    state = value.translation.height
-                }.onEnded { value in
-                    let snapDistance = self.maxHeight * Constants.snapRatio
-                    guard abs(value.translation.height) > snapDistance else {
-                        return
-                    }
-                    self.isOpen = value.translation.height < 0
-                }
-            )
         }
     }
 }
