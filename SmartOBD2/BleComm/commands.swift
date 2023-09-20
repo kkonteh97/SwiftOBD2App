@@ -7,51 +7,12 @@
 
 import Foundation
 
-<<<<<<< HEAD
-<<<<<<< HEAD
- enum ECU: UInt8, Codable {
+enum ECU: UInt8, Codable {
     case ALL = 0b11111111
     case ALLKNOWN = 0b11111110
     case UNKNOWN = 0b00000001
     case ENGINE = 0b00000010
     case TRANSMISSION = 0b00000100
-}
-
-=======
-enum ECU {
-    static let ENGINE = "00000010"
-    static let TRANSMISSION = "00000100"
-    static let ABS = "ABS"
-    static let AIRBAG = "AIRBAG"
-    static let CLIMATE = "CLIMATE"
-    static let BODY = "BODY"
-    static let CHASSIS = "CHASSIS"
-    static let INFO = "INFO"
-    static let ALL = "11111111"
-=======
- enum ECU: UInt8, Codable {
-    case ALL = 0b11111111
-    case ALL_KNOWN = 0b11111110
-    case UNKNOWN = 0b00000001
-    case ENGINE = 0b00000010
-    case TRANSMISSION = 0b00000100
->>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
-}
-
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
-=======
->>>>>>> parent of 7892edd (Merge remote-tracking branch 'refs/remotes/origin/main')
-extension Unit {
-    static let percent = Unit(symbol: "%")
-    static let count = Unit(symbol: "count")
-    static let degreeCelsius = Unit(symbol: "°C")
-    static let kph = Unit(symbol: "kph")
-    static let rpm = Unit(symbol: "rpm")
 }
 
 func bytesToInt(_ byteArray: [UInt8]) -> Int {
@@ -62,7 +23,6 @@ func bytesToInt(_ byteArray: [UInt8]) -> Int {
         value += Int(byte) << power
         power += 8
     }
-
     return value
 }
 
@@ -96,6 +56,7 @@ struct UAS {
             return Measurement(value: scaledValue, unit: unit)
     }
 }
+
 let UAS_IDS: [UInt8: UAS] = [
     // Unsigned
     0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
@@ -111,7 +72,6 @@ let UAS_IDS: [UInt8: UAS] = [
     // Add more entries for other IDs...
 ]
 
->>>>>>> main
 struct OBDCommand: Codable, Hashable {
     enum Decoder: Codable {
         case pid
