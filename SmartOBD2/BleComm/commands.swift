@@ -57,21 +57,6 @@ struct UAS {
     }
 }
 
-let UAS_IDS: [UInt8: UAS] = [
-    // Unsigned
-    0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
-    0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
-    0x09: UAS(signed: false, scale: 1, unit: Unit.kph),
-    0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
-
-    // Add more entries for other IDs...
-
-    // Signed
-    0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
-    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count),
-    // Add more entries for other IDs...
-]
-
 struct OBDCommand: Codable, Hashable {
     enum Decoder: Codable {
         case pid
