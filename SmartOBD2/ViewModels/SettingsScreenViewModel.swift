@@ -89,12 +89,21 @@ class SettingsScreenViewModel: ObservableObject {
         subscribeToElmAdapterChanges()
 
         // Load garageVehicles from UserDefaults
-       if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
-          let decodedVehicles = try? JSONDecoder().decode([GarageVehicle].self, from: data) {
-           self.garageVehicles = decodedVehicles
-       }
+        if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
+           let decodedVehicles = try? JSONDecoder().decode([GarageVehicle].self, from: data) {
+            self.garageVehicles = decodedVehicles
+        }
     }
-<<<<<<< HEAD
+
+    private func subscribeToElmAdapterChanges() {
+        elm327.bleManager.$elmAdapter
+            .sink { [weak self] elmAdapter in
+                self?.elmAdapter = elmAdapter
+            }
+            .store(in: &cancellables)
+    }
+
+
     private func loadGarageVehicles() {
         do {
             let url = Bundle.main.url(forResource: "Cars", withExtension: "json")!
@@ -107,6 +116,7 @@ class SettingsScreenViewModel: ObservableObject {
     }
 
     private var isRequestingPids = false
+
     @Published var pidData: [OBDCommand: PIDData] = [:]
 
     func startRequestingPID(pid: OBDCommand) {
@@ -128,53 +138,16 @@ class SettingsScreenViewModel: ObservableObject {
                     }
                 }
             }
-=======
-    
-    @Published var pidData: [OBDCommand: PIDData] = [:]
-
-    func requestPID(pid: OBDCommand) async  {
-        do {
-            while true {
-                let response = try await elm327.requestPID(pid: pid)
-                if let measurement = response {
-                    // Convert the Measurement<Unit> to a string
-                    let value = measurement.value
-                    let unitString = measurement.unit.symbol
-
-                    DispatchQueue.main.async {
-                        // Update the UI
-                        self.pidData[pid] = PIDData(pid: pid, value: value, unit: unitString)
-                    }
-                        
-                } else {
-                    // Handle the case where response is nil (e.g., no response)
-                    // You can assign a default or appropriate value here
-                }
-            }
-        } catch {
-            // Handle the error, e.g., log or display an error message
-<<<<<<< HEAD
-            return "Error"
->>>>>>> main
-=======
->>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
         }
-    }
-
-    private func subscribeToElmAdapterChanges() {
-        elm327.bleManager.$elmAdapter
-            .sink { [weak self] elmAdapter in
-                self?.elmAdapter = elmAdapter
-            }
-            .store(in: &cancellables)
     }
 
     func addVehicle(make: String, model: String, year: String, vin: String = "", obdinfo: OBDInfo? = nil) {
         let selectedCar = GarageVehicle(id: UUID(), vin: vin, make: make, model: model, year: year, obdinfo: obdinfo)
-            garageVehicles.append(selectedCar)
-            print(garageVehicles)
+        garageVehicles.append(selectedCar)
+        print(garageVehicles)
         saveGarageVehicles()
     }
+
     func saveGarageVehicles() {
         if let encodedData = try? JSONEncoder().encode(garageVehicles) {
             UserDefaults.standard.set(encodedData, forKey: "garageVehicles")
