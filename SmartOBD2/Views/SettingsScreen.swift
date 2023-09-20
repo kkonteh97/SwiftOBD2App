@@ -8,13 +8,11 @@
 import SwiftUI
 import CoreBluetooth
 
-
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
 
     var body: some View {
         HStack {
-
             Text("OBD Protocol: ")
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -26,6 +24,14 @@ struct ProtocolPicker: View {
             }
         }
     }
+}
+
+enum Constants {
+    static let radius: CGFloat = 16
+    static let indicatorWidth: CGFloat = 40
+    static let indicatorHeight: CGFloat = 6
+    static let minHeightRatio: CGFloat = 0.2
+    static let snapRatio: CGFloat = 0.25
 }
 
 struct RoundedRectangleStyle: ViewModifier {
@@ -41,8 +47,6 @@ struct RoundedRectangleStyle: ViewModifier {
     }
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 struct DraggableContentView: View {
     @Binding var isExpanded: Bool
 
@@ -82,12 +86,7 @@ struct DraggableContentView: View {
     }
 }
 
-=======
->>>>>>> main
-=======
 
-
->>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
 struct SettingsScreen: View {
     @ObservedObject var viewModel: SettingsScreenViewModel
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -100,12 +99,10 @@ struct SettingsScreen: View {
     @State private var isExpandedOtherCars = false
 
     @State private var isLoading = false
-<<<<<<< HEAD
-<<<<<<< HEAD
     @State private var addVehicle = false
 
     @AppStorage("selectedCarIndex") var selectedCarIndex = 0
-
+    @State private var bottomSheetShown = false
     @State private var isExpanded = false
 
     // Computed properties
@@ -128,84 +125,38 @@ struct SettingsScreen: View {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 20) {
-                bluetoothSection
+        GeometryReader { geometry in
 
-                garageSection
-                elmSection
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 20) {
+                    bluetoothSection
 
+                    elmSection
+                }
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
+
+            BottomSheetView(
+                isOpen: self.$bottomSheetShown,
+                maxHeight: geometry.size.height * 0.6
+            ) {
+                garageSection
+            }
         }
         .ignoresSafeArea(.all, edges: .bottom)
     }
 
 // MARK: Bluetooth Section
 
-=======
-=======
-    @State private var selectedPIDValues: [OBDCommand: String] = [:]
-    @State private var selectedPID: OBDCommand? = nil
->>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
-    
-    private var pidSection: some View {
-        GroupBox(label: SettingsLabelView(labelText: "pids", labelImage: "wifi.circle")) {
-            Divider().padding(.vertical, 4)
-            // Supported PIDs
-            Text("Supported PIDs")
-                .font(.headline)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            VStack {
-                if let supportedPIDs = viewModel.obdInfo.supportedPIDs {
-                    ForEach(supportedPIDs, id: \.self) { pid in
-                        HStack {
-                            
-                            Text(pid.description)
-                                .font(.caption)
-                                .padding()
-                            
-                                .onTapGesture {
-                                    Task {
-                                        await viewModel.requestPID(pid: pid)
-                                    }
-                                }
-                            if let pidData = viewModel.pidData[pid] {
-                                Text("\(pidData.value) \(pidData.unit)")
-                                    .font(.caption)
-                                    .padding()
-                                
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(LinearGradient(Color.darkStart,Color.darkEnd))
-                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
-                        }
-                       
-                    }
-                }
-            }
-            .frame(minHeight: 200)
-    }
-    
-    
-    
     // Bluetooth Section
->>>>>>> main
+
     private var bluetoothSection: some View {
         VStack {
             GroupBox(label: SettingsLabelView(labelText: "Adapter", labelImage: "wifi.circle")) {
                 Divider().padding(.vertical, 4)
 
                 VStack {
-                    Text("\(isConnected ? "Connected": "Not Connect")")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+
                     Text("Device: \(viewModel.elmAdapter?.name ?? "")")
                         .font(.headline)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -221,9 +172,6 @@ struct SettingsScreen: View {
 // MARK: Garage Section
 
     private var garageSection: some View {
-        GroupBox(label: SettingsLabelView(labelText: "Garage", labelImage: "car.side")) {
-            Divider().padding(.vertical, 4)
-
             VStack {
                 carDetailsView()
                 if isExpandedCarInfo {
@@ -249,14 +197,6 @@ struct SettingsScreen: View {
                 .padding(.top, 40)
             }
         }
-    }
-<<<<<<< HEAD
-=======
-    
-<<<<<<< HEAD
-    @State private var selectedPIDValues: [OBDCommand: String] = [:]
-    @State private var selectedPID: OBDCommand? = nil
->>>>>>> main
 
     private func carDetailsView() -> some View {
         VStack(spacing: 20) {
@@ -282,12 +222,8 @@ struct SettingsScreen: View {
                 }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Divider().padding(.vertical, 4)
-
-                connectButton()
-
         }
         .modifier(RoundedRectangleStyle())
-
     }
 
     private func carInfoExpandedView() -> some View {
@@ -374,46 +310,7 @@ struct SettingsScreen: View {
         .opacity(isExpandedOtherCars ? 1 : 0) // Fade in the content
     }
 
-    private func connectButton() -> some View {
-        Button {
-            let impactLight = UIImpactFeedbackGenerator(style: .medium)
-            impactLight.impactOccurred()
-            self.isLoading = true
-            Task {
-                do {
-                    try await viewModel.setupAdapter(setupOrder: setupOrder)
-                    // remove when done
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        self.isLoading = false
-                    }
-                } catch {
-                    print("Error setting up adapter: \(error.localizedDescription)")
-                }
-            }
-        } label: {
-            VStack {
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Text(viewModel.elm327.bleManager.connectionState == .connectedToVehicle ?
-                         "Connected To Vehicle" : "Initialize Vehicle")
-                        .font(.headline)
-
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
-                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
-        }
-    }
-
-// MARK: ELM Section
-=======
->>>>>>> parent of 576eaca (Revert "dropped version down to ios 15")
+    // MARK: ELM Section
 
     private var elmSection: some View {
         GroupBox(label: SettingsLabelView(labelText: "ELM", labelImage: "info.circle")) {
@@ -430,6 +327,117 @@ struct SettingsScreen: View {
                     SetupOrderModal(isModalPresented: $isSetupOrderPresented, setupOrder: $setupOrder)
                 }
             }
+        }
+    }
+}
+
+struct ConnectButton<Content: View>: View {
+    @Binding var isLoading: Bool
+    let label: Content
+
+
+    init(isLoading: Binding<Bool>, @ViewBuilder label: () -> Content) {
+        self._isLoading = isLoading
+        self.label = label()
+    }
+
+    var body: some View {
+        Button {
+            let impactLight = UIImpactFeedbackGenerator(style: .medium)
+            impactLight.impactOccurred()
+            self.isLoading = true
+//                    try await viewModel.setupAdapter(setupOrder: setupOrder)
+                    // remove when done
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        self.isLoading = false
+                    }
+
+        } label: {
+            VStack {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    self.label
+
+
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
+                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
+                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3))
+        }
+    }
+}
+struct BottomSheetView<Content: View>: View {
+    @Binding var isOpen: Bool
+    
+    let maxHeight: CGFloat
+    let minHeight: CGFloat
+    let content: Content
+
+    init(isOpen: Binding<Bool>, maxHeight: CGFloat, @ViewBuilder content: () -> Content) {
+        self.minHeight = maxHeight * Constants.minHeightRatio
+        self.maxHeight = maxHeight
+        self.content = content()
+        self._isOpen = isOpen
+    }
+
+    private var offset: CGFloat {
+        isOpen ? 0 : maxHeight - minHeight
+    }
+
+    private var indicator: some View {
+        HStack {
+            Text("Not Connect")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            ConnectButton(isLoading: .constant(false)) {
+                Text("Initialize Vehicle")
+                    .font(.headline)
+            }
+
+        }
+
+
+//        RoundedRectangle(cornerRadius: Constants.radius)
+//            .fill(Color.secondary)
+//            .frame(
+//                width: Constants.indicatorWidth,
+//                height: Constants.indicatorHeight
+//        )
+    }
+
+    @GestureState private var translation: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                self.indicator.padding()
+                Divider().padding(.vertical, 4)
+                self.content
+            }
+            .frame(width: geometry.size.width, height: self.maxHeight, alignment: .top)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(Constants.radius)
+            .frame(height: geometry.size.height, alignment: .bottom)
+            .offset(y: max(self.offset + self.translation, 0))
+            .animation(.interactiveSpring(), value: isOpen)
+            .animation(.interactiveSpring(), value: translation)
+            .gesture(
+                DragGesture().updating(self.$translation) { value, state, _ in
+                    state = value.translation.height
+                }.onEnded { value in
+                    let snapDistance = self.maxHeight * Constants.snapRatio
+                    guard abs(value.translation.height) > snapDistance else {
+                        return
+                    }
+                    self.isOpen = value.translation.height < 0
+                }
+            )
         }
     }
 }
