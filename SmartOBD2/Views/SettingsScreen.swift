@@ -125,25 +125,7 @@ struct SettingsScreen: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    bluetoothSection
-
-                    elmSection
-                }
-                .padding(.horizontal, 20)
-            }
-
-            BottomSheetView(
-                isOpen: self.$bottomSheetShown,
-                maxHeight: geometry.size.height * 0.6
-            ) {
-                garageSection
-            }
-        }
-        .ignoresSafeArea(.all, edges: .bottom)
+        Text("gell")
     }
 
 // MARK: Bluetooth Section

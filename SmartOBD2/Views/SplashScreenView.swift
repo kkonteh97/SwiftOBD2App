@@ -36,8 +36,6 @@ struct SplashScreenView: View {
 
     var body: some View {
         if isActive {
-            MainView()
-
         } else {
             VStack {
                 VStack {

@@ -3,9 +3,9 @@ options:
   bundleIdPrefix: com.myapp
 
 targets:
-  SMARTOBD2:
-    type: application
-    platform: iOS
-    deploymentTarget: "15.0"
-    sources: [SMARTOBD2]
+    SMARTOBD2:
+        type: application
+        platform: iOS
+        deploymentTarget: "15.0"
+        sources: [SMARTOBD2]
 

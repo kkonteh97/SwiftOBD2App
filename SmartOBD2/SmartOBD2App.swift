@@ -21,12 +21,16 @@ extension Logger {
 
 @main
 struct SmartOBD2App: App {
-    @StateObject private var elm327 = ELM327(bleManager: BLEManager.shared)
+    let sharedBLEManager = BLEManager.shared
+    @ObservedObject private var elm327: ELM327
 
+    init() {
+            // Create an instance of ELM327 using the shared BLEManager
+            self.elm327 = ELM327(bleManager: sharedBLEManager)
+    }
     var body: some Scene {
         WindowGroup {
-            MainView()
-                .environmentObject(elm327)
+            MainView(viewModel: SettingsScreenViewModel(elm327: elm327))
         }
     }
 }
