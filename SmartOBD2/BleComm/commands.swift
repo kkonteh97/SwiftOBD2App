@@ -7,6 +7,64 @@
 
 import Foundation
 
+struct Status {
+    var MIL: Bool = false
+    var DTC_count: UInt8 = 0
+    var ignition_type: String = ""
+
+    var MISFIRE_MONITORING: StatusTest
+    var FUEL_SYSTEM_MONITORING: StatusTest
+    var COMPONENT_MONITORING: StatusTest
+
+    // Add other properties for SPARK_TESTS and COMPRESSION_TESTS here
+    init() {
+        MISFIRE_MONITORING = StatusTest()
+        FUEL_SYSTEM_MONITORING = StatusTest()
+        COMPONENT_MONITORING = StatusTest()
+    }
+}
+
+struct StatusTest {
+    var name: String = ""
+    var supported: Bool = false
+    var ready: Bool = false
+
+    init(_ name: String = "", _ supported: Bool = false, _ ready: Bool = false) {
+        self.name = name
+        self.supported = supported
+        self.ready = ready
+    }
+}
+
+let BASE_TESTS = [
+    "MISFIRE_MONITORING",
+    "FUEL_SYSTEM_MONITORING",
+    "COMPONENT_MONITORING",
+]
+
+let SPARK_TESTS = [
+    "CATALYST_MONITORING",
+    "HEATED_CATALYST_MONITORING",
+    "EVAPORATIVE_SYSTEM_MONITORING",
+    "SECONDARY_AIR_SYSTEM_MONITORING",
+    nil,
+    "OXYGEN_SENSOR_MONITORING",
+    "OXYGEN_SENSOR_HEATER_MONITORING",
+    "EGR_VVT_SYSTEM_MONITORING"
+]
+
+let COMPRESSION_TESTS = [
+    "NMHC_CATALYST_MONITORING",
+    "NOX_SCR_AFTERTREATMENT_MONITORING",
+    nil,
+    "BOOST_PRESSURE_MONITORING",
+    nil,
+    "EXHAUST_GAS_SENSOR_MONITORING",
+    "PM_FILTER_MONITORING",
+    "EGR_VVT_SYSTEM_MONITORING",
+]
+
+
 enum ECU: UInt8, Codable {
     case ALL = 0b11111111
     case ALLKNOWN = 0b11111110
@@ -15,7 +73,7 @@ enum ECU: UInt8, Codable {
     case TRANSMISSION = 0b00000100
 }
 
-func bytesToInt(_ byteArray: [UInt8]) -> Int {
+func bytesToInt(_ byteArray: Data) -> Int {
     var value = 0
     var power = 0
 
@@ -25,6 +83,38 @@ func bytesToInt(_ byteArray: [UInt8]) -> Int {
     }
     return value
 }
+
+
+struct BitArray {
+    private var data: Data
+    var binaryArray: [Int] = []
+
+    init(data: Data) {
+        self.data = data
+        for byte in data {
+            for i in 0..<8 {
+                binaryArray.append(Int((byte >> UInt8(7 - i)) & 1))
+            }
+        }
+        print(binaryArray)
+    }
+
+    subscript(index: Int) -> Bool {
+        let byteIndex = index / 8
+        let bitIndex = index % 8
+        return (data[byteIndex] & UInt8(1 << bitIndex)) != 0
+    }
+
+    func value(at range: Range<Int>) -> UInt8 {
+        var value: UInt8 = 0
+        for i in range {
+            value = value << 1
+            value = value | UInt8(binaryArray[i])
+        }
+        return value
+    }
+}
+
 
 struct UAS {
     let signed: Bool
@@ -45,7 +135,7 @@ struct UAS {
     }
 
 
-    func decode(bytes: [UInt8]) -> Measurement<Unit>? {
+    func decode(bytes: Data) -> Measurement<Unit>? {
             var value = bytesToInt(bytes)
 
             if signed {
@@ -56,6 +146,28 @@ struct UAS {
             return Measurement(value: scaledValue, unit: unit)
     }
 }
+
+extension Unit {
+    static let percent = Unit(symbol: "%")
+    static let count = Unit(symbol: "count")
+    static let degreeCelsius = Unit(symbol: "°C")
+    static let kph = Unit(symbol: "kph")
+    static let rpm = Unit(symbol: "rpm")
+}
+
+let uasIDS: [UInt8: UAS] = [
+    // Unsigned
+    0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
+    0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
+    0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
+    0x09: UAS(signed: false, scale: 1, unit: Unit.kph),
+    0x12: UAS(signed: false, scale: 1, unit: UnitDuration.seconds),
+
+    // Signed
+    0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
+    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count)
+]
+
 
 struct OBDCommand: Codable, Hashable {
     enum Decoder: Codable {
@@ -125,56 +237,60 @@ struct OBDCommand: Codable, Hashable {
         return hex.isEmpty ? nil : hex
     }
 
-    func decode(data: [String]) -> Measurement<Unit>? {
+    func decode(data: [Message]) -> Any? {
             switch decoder {
             case .percent:
-                return percent(data: data)
+                return percent(data)
             case .percentCentered:
-                return percentCentered(data: data)
+                return percentCentered(data)
             case .currentCentered:
-                return currentCentered(data: data)
+                return currentCentered(data)
             case .airStatus:
-                return airStatus(data: data)
+                return airStatus(data)
             case .uas0x09:
-                return decodeUAS(data: data, id: 0x09)
+                return decodeUAS(data, id: 0x09)
             case .uas0x07:
-                return decodeUAS(data: data, id: 0x07)
+                return decodeUAS(data, id: 0x07)
             case .uas0x12:
-                return decodeUAS(data: data, id: 0x12)
-
+                return decodeUAS(data, id: 0x12)
             case .timingAdvance:
-                return timingAdvance(data: data)
+                return timingAdvance(data)
+            case .status:
+                return status(data)
             default:
                 return nil
             }
     }
-    func decodeUAS(data: [String], id: UInt8) -> Measurement<Unit>? {
-            let bytes = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+
+    func decodeUAS(_ messages: [Message], id: UInt8) -> Measurement<Unit>? {
+        print(messages[0].data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
+            let bytes = messages[0].data[2...]
             return uasIDS[id]?.decode(bytes: bytes)
     }
-    func percent(data: [String]) -> Measurement<Unit>? {
-        let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+
+    func percent(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
         var value = Double(data[0])
         value = value * 100.0 / 255.0
         return Measurement(value: value, unit: .percent)
     }
 
     // -100 to 100 %
-    func percentCentered(data: [String]) -> Measurement<Unit>? {
-        let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+    func percentCentered(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
         var value = Double(data[0])
         value = (value - 128) * 100.0 / 128.0
         return Measurement(value: value, unit: .percent)
     }
 
-    func currentCentered(data: [String]) -> Measurement<Unit>? {
-            let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
-           let value = (Double(bytesToInt(Array(data[2..<4]))) / 256.0) - 128.0
+    func currentCentered(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
+           let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
         return Measurement(value: value, unit: UnitElectricCurrent.milliamperes)
     }
 
-    func airStatus(data: [String]) -> Measurement<Unit>? {
-        let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+    func airStatus(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
         let bits = byteArray(data)
 
         let numSet = bits.filter { $0 == true }.count
@@ -186,19 +302,19 @@ struct OBDCommand: Codable, Hashable {
     }
 
     //     -64 to 63.5 degrees
-    func timingAdvance(data: [String]) -> Measurement<Unit>? {
-        let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+    func timingAdvance(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
         let value = (Double(data[0]) - 128) / 2.0
         return Measurement(value: value, unit: UnitAngle.degrees)
     }
 
-    func temp(data: [String]) -> Measurement<Unit>? {
-        let data = data[3...].filter { $0 != "00" }.compactMap { UInt8($0, radix: 16) }
+    func temp(_ messages: [Message]) -> Measurement<Unit>? {
+        let data = messages[0].data[2...]
         let value = Double(bytesToInt(data)) - 40.0
         return Measurement(value: value, unit: UnitTemperature.celsius)
     }
 
-    func byteArray(_ bytes: [UInt8]) -> [Bool] {
+    func byteArray(_ bytes: Data) -> [Bool] {
         var bits = [Bool]()
         for byte in bytes {
             for bit in 0..<8 {
@@ -206,6 +322,106 @@ struct OBDCommand: Codable, Hashable {
             }
         }
         return bits
+    }
+
+    func status(_ messages: [Message]) -> Status {
+        let d = messages[1].data[2...]
+        print(d.compactMap({ String(format: "%02X", $0) }).joined(separator: " "))
+
+        let IGNITION_TYPE = ["Spark", "Compression"]
+
+        //            ┌Components not ready
+        //            |┌Fuel not ready
+        //            ||┌Misfire not ready
+        //            |||┌Spark vs. Compression
+        //            ||||┌Components supported
+        //            |||||┌Fuel supported
+        //  ┌MIL      ||||||┌Misfire supported
+        //  |         |||||||
+        //  10000011 00000111 11111111 00000000
+        //  00000000 00000111 11100101 00000000
+        //  10111110 00011111 10101000 00010011
+        //   [# DTC] X        [supprt] [~ready]
+
+        // convert to binaryarray
+        let bits = BitArray(data: d)
+        print(bits.binaryArray.map { ($0 != 0) ? "1" : "0" }.joined(separator: ""))
+
+        var output = Status()
+        output.MIL = bits.binaryArray[0] == 1
+        output.DTC_count = bits.value(at: 1..<8)
+        output.ignition_type = IGNITION_TYPE[bits.binaryArray[12]]
+
+        // load the 3 base tests that are always present
+
+        for (i, name) in BASE_TESTS.reversed().enumerated() {
+            let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
+            switch name {
+            case "MISFIRE_MONITORING":
+                output.MISFIRE_MONITORING = t
+            case "FUEL_SYSTEM_MONITORING":
+                output.FUEL_SYSTEM_MONITORING = t
+            case "COMPONENT_MONITORING":
+                output.COMPONENT_MONITORING = t
+            default:
+                break
+            }
+        }
+
+        // Different tests for different ignition types
+
+        if bits.binaryArray[12] == 0 {
+            // Spark
+            for (i, name) in SPARK_TESTS.reversed().enumerated() {
+                if let name = name {
+                    let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
+                    print(t)
+                    switch name {
+                    case "CATALYST_MONITORING":
+                        output.MISFIRE_MONITORING = t
+                    case "HEATED_CATALYST_MONITORING":
+                        output.FUEL_SYSTEM_MONITORING = t
+                    case "EVAPORATIVE_SYSTEM_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "SECONDARY_AIR_SYSTEM_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "OXYGEN_SENSOR_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "OXYGEN_SENSOR_HEATER_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "EGR_VVT_SYSTEM_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    default:
+                        break
+                    }
+                }
+            }
+        } else {
+            // Compression
+            for (i, name) in COMPRESSION_TESTS.reversed().enumerated() {
+                if let name = name {
+                    let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
+                    switch name {
+                    case "NMHC_CATALYST_MONITORING":
+                        output.MISFIRE_MONITORING = t
+                    case "NOX_SCR_AFTERTREATMENT_MONITORING":
+                        output.FUEL_SYSTEM_MONITORING = t
+                    case "BOOST_PRESSURE_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "EXHAUST_GAS_SENSOR_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "PM_FILTER_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    case "EGR_VVT_SYSTEM_MONITORING":
+                        output.COMPONENT_MONITORING = t
+                    default:
+                        break
+                    }
+                }
+            }
+        }
+
+        return output
     }
 }
 

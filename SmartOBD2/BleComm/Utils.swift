@@ -72,6 +72,7 @@ enum SetupStep: String, CaseIterable, Identifiable {
     case ATL0
     case ATE0
     case ATH1
+    case ATH0
     case ATAT1
     case ATSTFF
     case ATDPN

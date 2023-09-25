@@ -47,8 +47,19 @@ struct PIDData {
     var unit: String
 }
 
-class SettingsScreenViewModel: ObservableObject {
-    @Published var garageVehicles: [GarageVehicle] = []
+struct VINResults: Codable {
+    let Results: [VINInfo]
+}
+
+struct VINInfo: Codable, Hashable {
+    let Make: String
+    let Model: String
+    let ModelYear: String
+    let EngineCylinders: String
+}
+
+class HomeViewModel: ObservableObject {
+    @Published var garageVehicles: [GarageVehicle] = [GarageVehicle(id: UUID(), make: "Nissan", model: "Altima", year: "2016")]
     @Published var obdInfo = OBDInfo()
     @Published var elmAdapter: CBPeripheral?
     @Published var vinInput = ""
@@ -103,13 +114,11 @@ class SettingsScreenViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-
     private func loadGarageVehicles() {
         do {
             let url = Bundle.main.url(forResource: "Cars", withExtension: "json")!
             let data = try Data(contentsOf: url)
             self.carData = try JSONDecoder().decode([Manufacturer].self, from: data)
-
         } catch {
 
         }
@@ -141,7 +150,8 @@ class SettingsScreenViewModel: ObservableObject {
         }
     }
 
-    func addVehicle(make: String, model: String, year: String, vin: String = "", obdinfo: OBDInfo? = nil) {
+    func addVehicle(make: String, model: String, year: String,
+                    vin: String = "", obdinfo: OBDInfo? = nil) {
         let selectedCar = GarageVehicle(id: UUID(), vin: vin, make: make, model: model, year: year, obdinfo: obdinfo)
         garageVehicles.append(selectedCar)
         print(garageVehicles)
@@ -166,15 +176,15 @@ class SettingsScreenViewModel: ObservableObject {
                     vehicle.obdinfo = obdInfo
                     return
                 }
-
                 let vinInfo = try await getVINInfo(vin: vin)
+
                 DispatchQueue.main.async {
                     self.vinInput = vin
                     guard let vinInfo = vinInfo.Results.first else {
                         return
                     }
                     self.addVehicle(
-                        make: vinInfo.make, model: vinInfo.model, year: vinInfo.modelYear, vin: vin, obdinfo: obdInfo
+                        make: vinInfo.Make, model: vinInfo.Model, year: vinInfo.ModelYear, vin: vin, obdinfo: obdInfo
                     )
                 }
                 print(vinInfo)

@@ -8,9 +8,10 @@
 import Foundation
 
 class CarScreenViewModel: ObservableObject {
-    @Published var command: String = ""
 
     let elm327: ELM327
+
+    @Published var command: String = ""
 
     init(elm327: ELM327) {
         self.elm327 = elm327

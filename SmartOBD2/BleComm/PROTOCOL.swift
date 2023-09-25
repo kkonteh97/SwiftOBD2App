@@ -31,28 +31,6 @@ class Message {
     }
 }
 
-class Frame {
-    var raw: String
-    var data = Data()
-    var priority: UInt8?
-    var addrMode: UInt8?
-    var rxID: UInt8?
-    var txID: ECUID?
-    var type: FrameType?
-    var seqIndex: UInt8 = 0 // Only used when type = CF
-    var dataLen: UInt8?
-
-    init(raw: String) {
-        self.raw = raw
-    }
-}
-
-enum FrameType: UInt8, Codable {
-    case singleFrame = 0x00
-    case firstFrame = 0x10
-    case consecutiveFrame = 0x20
-}
-
 enum ECUID: UInt8, Codable {
     case engine = 0x00
     case transmission = 0x01

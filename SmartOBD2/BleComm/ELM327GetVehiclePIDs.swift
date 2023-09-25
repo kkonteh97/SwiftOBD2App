@@ -14,55 +14,25 @@ extension ELM327 {
 
         for pid in pidGetters {
             do {
-                let response = try await sendMessageAsync(pid.cmd)[0].components(separatedBy: " ")
+                let response = try await sendMessageAsync(pid.cmd)
                 // find first instance of 41 plus command sent, from there we determine the position of everything else
                 // Ex.
                 //        || ||
                 // 7E8 06 41 00 BE 7F B8 13
+                let messages = call(response, idBits: obdProtocol.idBits)
 
-                guard let startIndex = response.firstIndex(of: "41"),
-                        startIndex + 1 < response.count && response[startIndex + 1] == pid.cmd.dropFirst(2) else {
-                    return []
-                }
 
-                do {
-                    guard let dataLen = try extractDataLength(startIndex, response),
-                          let endIndex = response.index(
-                            startIndex, offsetBy: dataLen, limitedBy: response.endIndex
-                          ) else {
-                        // Invalid data length or out-of-bounds, skip this iteration
-                        continue
-                    }
-                    //
-                    //             PCI
-                    // [  header ] ||       [   data  ]
-                    // 00 00 07 E8 06 41 00 BE 7F B8 13 00
-                    //                ||                ||
-                    //            startIndex        endIndex
+                // Convert ecuData to binary and extract supported PIDs
+                let binaryData = BitArray(data: messages[0].data)
 
-                    var data = Array(response[...endIndex]).joined()
-                    let ecuData = Array(response[(startIndex + 2)...(endIndex - 1)])
-
-                    if obdProtocol.idBits == 11 {
-                        data = "00000" + data
-                    }
-                    // Convert ecuData to binary and extract supported PIDs
-                    guard let binaryData = hexToBinary(ecuData.joined()) else {
-                           continue
-                    }
-
-                    let supportedPIDsByECU = extractSupportedPIDs(binaryData)
-                    print("pid", supportedPIDsByECU)
-                    // Check if the supported PIDs are present in the predefined OBD commands
-                    let modeCommands = Modes.mode1
-                    // map supportedPIDsByECU to the modeCommands
-                    for modeCommand in modeCommands
-                    where supportedPIDsByECU.contains(String(modeCommand.cmd.dropFirst(2))) {
-                               supportedPIDsSet.insert(modeCommand) // Add to supported PIDs set
-                       }
-                } catch {
-                    logger.error("\(error.localizedDescription)")
-                }
+                let supportedPIDsByECU = extractSupportedPIDs(binaryData.binaryArray)
+                // Check if the supported PIDs are present in the predefined OBD commands
+                let modeCommands = Modes.mode1
+                // map supportedPIDsByECU to the modeCommands
+                for modeCommand in modeCommands
+                                where supportedPIDsByECU.contains(String(modeCommand.cmd.dropFirst(2))) {
+                           supportedPIDsSet.insert(modeCommand) // Add to supported PIDs set
+                   }
             } catch {
                 logger.error("\(error.localizedDescription)")
             }
@@ -73,10 +43,10 @@ extension ELM327 {
         return supportedPIDsArray
     }
 
-    func extractSupportedPIDs(_ binaryData: String) -> [String] {
+    func extractSupportedPIDs(_ binaryData: [Int]) -> [String] {
         return binaryData.enumerated()
             .compactMap { index, bit -> String? in
-                if bit == "1" {
+                if bit == 1 {
                     let pidNumber = String(format: "%02X", index + 1)
                     return pidNumber
                 }
@@ -129,5 +99,5 @@ extension ELM327 {
         }
         // Return nil if the conversion fails
         return nil
-        }
+    }
 }

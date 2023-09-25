@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct VehiclePickerView: View {
-    @ObservedObject var viewModel: SettingsScreenViewModel
+    @ObservedObject var viewModel: HomeViewModel
 
     var body: some View {
         HStack {
@@ -69,5 +69,5 @@ struct VehiclePickerView: View {
 }
 
 #Preview {
-    VehiclePickerView(viewModel: SettingsScreenViewModel(elm327: ELM327(bleManager: BLEManager())))
+    VehiclePickerView(viewModel: HomeViewModel(elm327: ELM327(bleManager: BLEManager())))
 }

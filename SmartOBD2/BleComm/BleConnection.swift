@@ -49,6 +49,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     static let shared = BLEManager()
     var linesToParse = [String]()
     var adapterReady = false
+    var debug = true
 
     var sendMessageCompletion: (([String]?, Error?) -> Void)?
 
@@ -137,7 +138,9 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     func sendMessageAsync(_ message: String) async throws -> [String] {
         // ... (sending message logic)
         let message = "\(message)\r"
-        logger.info("Sending: \(message)")
+        if debug {
+            logger.info("Sending: \(message)")
+        }
 
         guard let connectedPeripheral = self.elmAdapter,
               let ecuCharacteristic = self.ecuCharacteristic,
@@ -258,11 +261,11 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
 
             // remove the last line
             lines.removeLast()
+            if debug {
+                logger.info("Response: \(lines)")
+            }
             completion?(lines, nil)
-
-            print("Response: \(lines)")
             buffer.removeAll()
-
         }
 
 //        guard let responseString = String(data: data, encoding: .ascii) else {

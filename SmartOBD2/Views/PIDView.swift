@@ -42,6 +42,7 @@ class PIDViewModel: ObservableObject {
                                 if pid == rpmPid {
                                     self.rpm = pidData.value / 1000
                                 } else if pid == speedPid {
+                                    print(pidData.value)
                                     self.speed = Double(pidData.value)
                                 }
 

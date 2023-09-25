@@ -9,11 +9,6 @@ import Foundation
 import CoreBluetooth
 import OSLog
 
-protocol ElmManager {
-    func sendMessageAsync(_ message: String,  withTimeoutSecs: TimeInterval) async throws -> [String]
-    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo
-}
-
 struct ECUHeader {
     static let ENGINE = "7E0"
 }
@@ -54,6 +49,8 @@ class ELM327: ObservableObject {
         self.bleManager = bleManager
     }
 
+    var obdProtocol: PROTOCOL = .NONE
+
     // MARK: - Message Sending
 
     func sendMessageAsync(_ message: String, withTimeoutSecs: TimeInterval = 2) async throws -> [String] {
@@ -90,7 +87,7 @@ class ELM327: ObservableObject {
 
         try await adapterInitialization(setupOrder: setupOrder)
 
-        let obdProtocol = try await connectToVehicle(autoProtocol: autoProtocol)
+        obdProtocol = try await connectToVehicle(autoProtocol: autoProtocol)
         bleManager.connectionState = .connectedToVehicle
 
         obdInfo.obdProtocol = obdProtocol
@@ -121,7 +118,7 @@ class ELM327: ObservableObject {
         do {
             for step in setupOrder {
                 switch step {
-                case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF:
+                case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF, .ATH0:
                     _ = try await okResponse(message: step.rawValue)
                 case .ATZ:
                     _ = try await sendMessageAsync("ATZ")
@@ -131,7 +128,8 @@ class ELM327: ObservableObject {
                     logger.info("Voltage: \(voltage)")
                 case .ATDPN:
                     // Describe current protocol number
-                    _ = try await sendMessageAsync("ATDPN")
+                    let protocolNumber = try await sendMessageAsync("ATDPN")
+                    obdProtocol = PROTOCOL(rawValue: protocolNumber[0]) ?? .protocol9
                 default:
                     logger.error("Invalid Setup Step")
                 }
@@ -185,7 +183,6 @@ class ELM327: ObservableObject {
     }
 
     func manualProtocolDetection() async throws -> PROTOCOL? {
-        var obdProtocol: PROTOCOL = .protocol9
         while obdProtocol != .NONE {
             switch obdProtocol {
             case .protocol1, .protocol2, .protocol3, .protocol4, .protocol5, .protocol6,
@@ -223,6 +220,15 @@ class ELM327: ObservableObject {
                 logger.error("Invalid response to 0100")
                 throw SetupError.invalidResponse
             }
+            // searching...
+            logger.info("Protocol \(obdProtocol.rawValue) found")
+
+            let response = try await sendMessageAsync("0100", withTimeoutSecs: 10)
+            let messages = call(response, idBits: obdProtocol.idBits)
+
+            let ecuMaps = populateECUMap(messages)
+            print(ecuMaps)
+
         } catch {
             logger.error("\(error.localizedDescription)")
             throw error
@@ -235,6 +241,58 @@ class ELM327: ObservableObject {
         _ = try await self.bleManager.scanAndConnectAsync(services: [self.elmServiceUUID])
         bleManager.connectionState = .connectedToAdapter
     }
+
+
+    func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID] {
+        let engineTXID = 0
+        let transmissionTXID = 1
+        var ecuMap: [UInt8: ECUID] = [:]
+
+        if messages.isEmpty {
+            return [:]
+        } else if messages.count == 1 {
+            ecuMap[messages[0].txID ?? 0] = .engine
+        } else {
+            var foundEngine = false
+
+            for message in messages {
+                guard let txID = message.txID else {
+                    print("parse_frame failed to extract TX_ID")
+                    continue
+                }
+
+                if txID == engineTXID {
+                    ecuMap[txID] = .engine
+                    foundEngine = true
+                } else if txID == transmissionTXID {
+                    ecuMap[txID] = .transmission
+                }
+            }
+
+            if !foundEngine {
+                var bestBits = 0
+                var bestTXID: UInt8?
+
+                for message in messages {
+                    let bits = message.data.bitCount()
+                    if bits > bestBits {
+                        bestBits = bits
+                        bestTXID = message.txID
+                    }
+                }
+
+                if let bestTXID = bestTXID {
+                    ecuMap[bestTXID] = .engine
+                }
+            }
+
+            for message in messages where ecuMap[message.txID ?? 0] == nil {
+                ecuMap[message.txID ?? 0] = .transmission
+            }
+        }
+        return ecuMap
+    }
+
 
     func decodeVIN(response: String) async -> String {
         // Find the index of the occurrence of "49 02"
@@ -273,18 +331,17 @@ class ELM327: ObservableObject {
     }
 }
 
-// MARK: - Extension for Additional Functions
-
 extension ELM327 {
     func requestPIDs(_ pid: OBDCommand, completion: @escaping (PIDData?) -> Void) async {
         // Ensure you're not already requesting
         do {
             let response = try await sendMessageAsync(pid.cmd)
-            let decodedValue = await decodePIDs(response: response[0].components(separatedBy: " "), pid: pid)
+            let decodedValue = await decodePIDs(response: response, pid: pid)
 
             if let measurement = decodedValue {
                 // Convert the Measurement<Unit> to a string
                 let value = measurement.value
+                print("\(value) \(pid.name)")
                 let unitString = measurement.unit.symbol
                 let pidData = PIDData(pid: pid, value: value, unit: unitString)
                 completion(pidData) // Pass the result to the completion handler
@@ -299,8 +356,9 @@ extension ELM327 {
     }
 
     func decodePIDs(response: [String], pid: OBDCommand) async -> Measurement<Unit>? {
-        if let decodedValue = pid.decode(data: response) {
-            return decodedValue
+        let messages = call(response, idBits: obdProtocol.idBits)
+        if let decodedValue = pid.decode(data: messages) {
+            return decodedValue as? Measurement<Unit>
         } else {
             return nil
         }
