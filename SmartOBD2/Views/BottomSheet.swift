@@ -33,23 +33,22 @@ struct BottomSheet: View {
 
     private var offset: CGFloat {
         switch displayType {
-        case .fullScreen :
+        case .fullScreen:
             return maxHeight * 0.10
-        case .halfScreen :
+        case .halfScreen:
             return maxHeight * 0.60
-        case .none :
+        case .none:
             return maxHeight * 0.90
         }
     }
 
-    init(viewModel: HomeViewModel,displayType: Binding<BottomSheetType>, maxHeight: CGFloat) {
+    init(viewModel: HomeViewModel, displayType: Binding<BottomSheetType>, maxHeight: CGFloat) {
         self.viewModel = viewModel
         self.maxHeight = maxHeight
         self._displayType = displayType
     }
 
     var body: some View {
-        GeometryReader { geometry in
             ZStack {
                 VStack {
                     BottomSheetContent(displayType: $displayType, viewModel: viewModel, maxHeight: maxHeight)
@@ -58,7 +57,7 @@ struct BottomSheet: View {
                 .cornerRadius(20)
                 .offset(y: max(self.offset + self.gestureOffset, 0))
                 .background(.clear)
-                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, 
+                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
                                               blendDuration: 0), value: gestureOffset)
                 .gesture(DragGesture().updating($gestureOffset, body: { value, out, _ in
                     out = value.translation.height
@@ -68,21 +67,21 @@ struct BottomSheet: View {
                     let snapDistanceHalfScreen =  self.maxHeight * 0.85
                     if value.location.y <= snapDistanceFullScreen {
                         self.displayType = .fullScreen
-                    } else if value.location.y > snapDistanceFullScreen  &&  value.location.y <= snapDistanceHalfScreen {
+                    } else if value.location.y > snapDistanceFullScreen  &&
+                                value.location.y <= snapDistanceHalfScreen {
                         self.displayType = .halfScreen
                     } else {
                         self.displayType = .none
                     }
                 }))
-                
                 if viewModel.elm327.bleManager.connectionState != .connectedToVehicle {
                     self.connectButton
                         .offset(y: self.offset + self.gestureOffset - maxHeight * 0.6)
-                        .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8, blendDuration: 0), value: gestureOffset)
+                        .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
+                                                      blendDuration: 0), value: gestureOffset)
                         .opacity(displayType == .fullScreen ? 0 : 1)
                 }
             }
-        }
     }
 
     private var connectButton: some View {
@@ -99,7 +98,7 @@ struct BottomSheet: View {
                 }
             }
             .padding(35)
-            .background(Color(red:39/255, green:110/255, blue:241/255))
+            .background(Color(red: 39/255, green: 110/255, blue: 241/255))
             .mask(
                 Circle()
                     .frame(width: 80, height: 80)
@@ -109,7 +108,6 @@ struct BottomSheet: View {
             GoButtonAnimation(isLoading: $isLoading)
         }
     }
-
 
     private func handleConnectButtonTapped() {
         self.isLoading = true
@@ -124,16 +122,12 @@ struct BottomSheet: View {
             }
         }
     }
-
-
     // Blur Radius for BG...
     func getBlurRadius() -> CGFloat {
         let progress = -offset / (UIScreen.main.bounds.height - 100)
         return progress * 30
     }
 }
-
-
 
 struct BlurView: UIViewRepresentable {
     var style: UIBlurEffect.Style
@@ -153,7 +147,8 @@ struct CustomCorner: Shape {
     var radius: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners,
+                                cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
     }
 }
@@ -162,12 +157,12 @@ struct CustomCorner: Shape {
     ZStack {
         GeometryReader { proxy in
             Color.blue
-            BottomSheet(viewModel: HomeViewModel(elm327: ELM327(bleManager: BLEManager())),displayType: .constant(.none), maxHeight: proxy.size.height)
+            BottomSheet(viewModel: HomeViewModel(elm327: ELM327(bleManager: BLEManager())),
+                        displayType: .constant(.none), maxHeight: proxy.size.height)
         }
         //            .blur(radius: getBlurRadius())
     }
 }
-
 //    private var elmSection: some View {
 //        GroupBox(label: SettingsLabelView(labelText: "ELM", labelImage: "info.circle")) {
 //            Divider().padding(.vertical, 4)

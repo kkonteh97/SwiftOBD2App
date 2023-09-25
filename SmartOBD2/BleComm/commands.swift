@@ -9,18 +9,18 @@ import Foundation
 
 struct Status {
     var MIL: Bool = false
-    var DTC_count: UInt8 = 0
-    var ignition_type: String = ""
+    var dtcCount: UInt8 = 0
+    var ignitionType: String = ""
 
-    var MISFIRE_MONITORING: StatusTest
-    var FUEL_SYSTEM_MONITORING: StatusTest
-    var COMPONENT_MONITORING: StatusTest
+    var misfireMonitoring: StatusTest
+    var fuelSystemMonitoring: StatusTest
+    var componentMonitoring: StatusTest
 
     // Add other properties for SPARK_TESTS and COMPRESSION_TESTS here
     init() {
-        MISFIRE_MONITORING = StatusTest()
-        FUEL_SYSTEM_MONITORING = StatusTest()
-        COMPONENT_MONITORING = StatusTest()
+        misfireMonitoring = StatusTest()
+        fuelSystemMonitoring = StatusTest()
+        componentMonitoring = StatusTest()
     }
 }
 
@@ -36,13 +36,13 @@ struct StatusTest {
     }
 }
 
-let BASE_TESTS = [
+let baseTests = [
     "MISFIRE_MONITORING",
     "FUEL_SYSTEM_MONITORING",
-    "COMPONENT_MONITORING",
+    "COMPONENT_MONITORING"
 ]
 
-let SPARK_TESTS = [
+let sparkTests = [
     "CATALYST_MONITORING",
     "HEATED_CATALYST_MONITORING",
     "EVAPORATIVE_SYSTEM_MONITORING",
@@ -53,7 +53,7 @@ let SPARK_TESTS = [
     "EGR_VVT_SYSTEM_MONITORING"
 ]
 
-let COMPRESSION_TESTS = [
+let compressionTests = [
     "NMHC_CATALYST_MONITORING",
     "NOX_SCR_AFTERTREATMENT_MONITORING",
     nil,
@@ -61,9 +61,8 @@ let COMPRESSION_TESTS = [
     nil,
     "EXHAUST_GAS_SENSOR_MONITORING",
     "PM_FILTER_MONITORING",
-    "EGR_VVT_SYSTEM_MONITORING",
+    "EGR_VVT_SYSTEM_MONITORING"
 ]
-
 
 enum ECU: UInt8, Codable {
     case ALL = 0b11111111
@@ -84,7 +83,6 @@ func bytesToInt(_ byteArray: Data) -> Int {
     return value
 }
 
-
 struct BitArray {
     private var data: Data
     var binaryArray: [Int] = []
@@ -92,8 +90,8 @@ struct BitArray {
     init(data: Data) {
         self.data = data
         for byte in data {
-            for i in 0..<8 {
-                binaryArray.append(Int((byte >> UInt8(7 - i)) & 1))
+            for bit in 0..<8 {
+                binaryArray.append(Int((byte >> UInt8(7 - bit)) & 1))
             }
         }
         print(binaryArray)
@@ -107,14 +105,13 @@ struct BitArray {
 
     func value(at range: Range<Int>) -> UInt8 {
         var value: UInt8 = 0
-        for i in range {
+        for bit in range {
             value = value << 1
-            value = value | UInt8(binaryArray[i])
+            value = value | UInt8(binaryArray[bit])
         }
         return value
     }
 }
-
 
 struct UAS {
     let signed: Bool
@@ -128,12 +125,11 @@ struct UAS {
         self.unit = unit
         self.offset = offset
     }
-    
+
     func twosComp(_ value: Int, length: Int) -> Int {
         let mask = (1 << length) - 1
         return value & mask
     }
-
 
     func decode(bytes: Data) -> Measurement<Unit>? {
             var value = bytesToInt(bytes)
@@ -167,7 +163,6 @@ let uasIDS: [UInt8: UAS] = [
     0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
     0x82: UAS(signed: true, scale: 0.1, unit: Unit.count)
 ]
-
 
 struct OBDCommand: Codable, Hashable {
     enum Decoder: Codable {
@@ -325,10 +320,8 @@ struct OBDCommand: Codable, Hashable {
     }
 
     func status(_ messages: [Message]) -> Status {
-        let d = messages[1].data[2...]
-        print(d.compactMap({ String(format: "%02X", $0) }).joined(separator: " "))
-
-        let IGNITION_TYPE = ["Spark", "Compression"]
+        let data = messages[1].data[2...]
+        let IGNITIONTYPE = ["Spark", "Compression"]
 
         //            ┌Components not ready
         //            |┌Fuel not ready
@@ -344,25 +337,25 @@ struct OBDCommand: Codable, Hashable {
         //   [# DTC] X        [supprt] [~ready]
 
         // convert to binaryarray
-        let bits = BitArray(data: d)
+        let bits = BitArray(data: data)
         print(bits.binaryArray.map { ($0 != 0) ? "1" : "0" }.joined(separator: ""))
 
         var output = Status()
         output.MIL = bits.binaryArray[0] == 1
-        output.DTC_count = bits.value(at: 1..<8)
-        output.ignition_type = IGNITION_TYPE[bits.binaryArray[12]]
+        output.dtcCount = bits.value(at: 1..<8)
+        output.ignitionType = IGNITIONTYPE[bits.binaryArray[12]]
 
         // load the 3 base tests that are always present
 
-        for (i, name) in BASE_TESTS.reversed().enumerated() {
-            let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
+        for (index, name) in baseTests.reversed().enumerated() {
+            let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
             switch name {
             case "MISFIRE_MONITORING":
-                output.MISFIRE_MONITORING = t
+                output.misfireMonitoring = test
             case "FUEL_SYSTEM_MONITORING":
-                output.FUEL_SYSTEM_MONITORING = t
+                output.fuelSystemMonitoring = test
             case "COMPONENT_MONITORING":
-                output.COMPONENT_MONITORING = t
+                output.componentMonitoring = test
             default:
                 break
             }
@@ -372,25 +365,24 @@ struct OBDCommand: Codable, Hashable {
 
         if bits.binaryArray[12] == 0 {
             // Spark
-            for (i, name) in SPARK_TESTS.reversed().enumerated() {
+            for (index, name) in sparkTests.reversed().enumerated() {
                 if let name = name {
-                    let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
-                    print(t)
+                    let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
                     switch name {
                     case "CATALYST_MONITORING":
-                        output.MISFIRE_MONITORING = t
+                        output.misfireMonitoring = test
                     case "HEATED_CATALYST_MONITORING":
-                        output.FUEL_SYSTEM_MONITORING = t
+                        output.fuelSystemMonitoring = test
                     case "EVAPORATIVE_SYSTEM_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "SECONDARY_AIR_SYSTEM_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "OXYGEN_SENSOR_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "OXYGEN_SENSOR_HEATER_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "EGR_VVT_SYSTEM_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     default:
                         break
                     }
@@ -398,22 +390,22 @@ struct OBDCommand: Codable, Hashable {
             }
         } else {
             // Compression
-            for (i, name) in COMPRESSION_TESTS.reversed().enumerated() {
+            for (index, name) in compressionTests.reversed().enumerated() {
                 if let name = name {
-                    let t = StatusTest(name, (bits.binaryArray[13 + i] != 0), (bits.binaryArray[9 + i] == 0))
+                    let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
                     switch name {
                     case "NMHC_CATALYST_MONITORING":
-                        output.MISFIRE_MONITORING = t
+                        output.misfireMonitoring = test
                     case "NOX_SCR_AFTERTREATMENT_MONITORING":
-                        output.FUEL_SYSTEM_MONITORING = t
+                        output.fuelSystemMonitoring = test
                     case "BOOST_PRESSURE_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "EXHAUST_GAS_SENSOR_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "PM_FILTER_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     case "EGR_VVT_SYSTEM_MONITORING":
-                        output.COMPONENT_MONITORING = t
+                        output.componentMonitoring = test
                     default:
                         break
                     }
