@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-
-
 struct BottomSheetContent: View {
     @Binding var displayType: BottomSheetType
     @ObservedObject var viewModel: HomeViewModel
@@ -61,7 +59,6 @@ struct BottomSheetContent: View {
             }
         }
 
-
     var body: some View {
         VStack(spacing: 0) {
             VStack {
@@ -71,12 +68,12 @@ struct BottomSheetContent: View {
                 carDetailsView()
                     .padding(.bottom)
                     .scaleEffect(displayType == .none ? 0.90 : 1)
-                    }
-                    .frame(maxWidth: .infinity,maxHeight: (maxHeight * 0.1))
-                    .padding()
+                }
+                .frame(maxWidth: .infinity, maxHeight: (maxHeight * 0.1))
+                .padding()
 
             carInfoView
-                .frame(maxHeight:  maxHeight * 0.4 - maxHeight * 0.1)
+                .frame(maxHeight: maxHeight * 0.4 - maxHeight * 0.1)
 //                .border(Color.red)
 
             garageSection
@@ -205,7 +202,10 @@ struct ShadowButtonStyle: ButtonStyle {
 #Preview {
     ZStack {
         GeometryReader { proxy in
-            BottomSheetContent(displayType: .constant(.none), viewModel: HomeViewModel(elm327: ELM327(bleManager: BLEManager())), maxHeight: proxy.size.height)
+            BottomSheetContent(displayType: .constant(.none),
+                               viewModel: HomeViewModel(elm327: ELM327(bleManager: BLEManager())),
+                               maxHeight: proxy.size.height
+            )
         }
     }
 }

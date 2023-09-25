@@ -242,22 +242,23 @@ class ELM327: ObservableObject {
         bleManager.connectionState = .connectedToAdapter
     }
 
-
     func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID] {
         let engineTXID = 0
         let transmissionTXID = 1
         var ecuMap: [UInt8: ECUID] = [:]
 
-        if messages.isEmpty {
+        guard messages.isEmpty else {
             return [:]
-        } else if messages.count == 1 {
+        }
+    
+        if messages.count == 1 {
             ecuMap[messages[0].txID ?? 0] = .engine
         } else {
             var foundEngine = false
 
             for message in messages {
                 guard let txID = message.txID else {
-                    print("parse_frame failed to extract TX_ID")
+                    logger.error("parse_frame failed to extract TX_ID")
                     continue
                 }
 
@@ -292,7 +293,6 @@ class ELM327: ObservableObject {
         }
         return ecuMap
     }
-
 
     func decodeVIN(response: String) async -> String {
         // Find the index of the occurrence of "49 02"
@@ -364,4 +364,3 @@ extension ELM327 {
         }
     }
 }
-

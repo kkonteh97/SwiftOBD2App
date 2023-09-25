@@ -59,7 +59,9 @@ struct VINInfo: Codable, Hashable {
 }
 
 class HomeViewModel: ObservableObject {
-    @Published var garageVehicles: [GarageVehicle] = [GarageVehicle(id: UUID(), make: "Nissan", model: "Altima", year: "2016")]
+    @Published var garageVehicles: [GarageVehicle] = [
+        GarageVehicle(id: UUID(), make: "Nissan", model: "Altima", year: "2016")
+    ]
     @Published var obdInfo = OBDInfo()
     @Published var elmAdapter: CBPeripheral?
     @Published var vinInput = ""

@@ -243,7 +243,6 @@ extension ELM327 {
         return frame.data[startIndex..<endIndex]
     }
 
-
     func isContiguous(_ indices: [UInt8]) -> Bool {
         var last = indices[0]
         for indice in indices {

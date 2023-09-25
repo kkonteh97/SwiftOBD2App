@@ -21,7 +21,6 @@ extension ELM327 {
                 // 7E8 06 41 00 BE 7F B8 13
                 let messages = call(response, idBits: obdProtocol.idBits)
 
-
                 // Convert ecuData to binary and extract supported PIDs
                 let binaryData = BitArray(data: messages[0].data)
 
@@ -79,7 +78,6 @@ extension ELM327 {
             return nil
         }
     }
-
 
     func hexToBinary(_ hexString: String) -> String? {
         // Create a scanner to parse the hex string

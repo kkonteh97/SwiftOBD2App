@@ -14,6 +14,12 @@ struct CarlyObd {
 }
 
 struct MainView: View {
+    @State private var selectedPIDValues: [OBDCommand: String] = [:]
+    @State private var selectedPID: OBDCommand?
+    @State var displayType: BottomSheetType = .none
+
+    @Environment(\.colorScheme) var colorScheme
+    
     let elm327: ELM327
     let homeViewModel: HomeViewModel
     let carScreenViewModel: CarScreenViewModel
@@ -24,14 +30,11 @@ struct MainView: View {
         self.homeViewModel = HomeViewModel(elm327: elm327)
     }
 
-    @State private var selectedPIDValues: [OBDCommand: String] = [:]
-    @State private var selectedPID: OBDCommand?
-
-    @Environment(\.colorScheme) var colorScheme
-    @State var displayType: BottomSheetType = .none
-
     var body: some View {
         ZStack {
+            LinearGradient(Color.darkStart, Color.darkEnd)
+                .edgesIgnoringSafeArea(.all)
+
             GeometryReader { proxy in
                 let frame = proxy.frame(in: .global)
                 TabView {
@@ -50,7 +53,7 @@ struct MainView: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-                .frame(width: frame.width, height:frame.height)
+                .frame(width: frame.width, height: frame.height)
 
                 BottomSheet(viewModel: homeViewModel, displayType: $displayType, maxHeight: proxy.size.height)
             }
@@ -64,10 +67,67 @@ struct HomeView: View {
 
     var body: some View {
         VStack {
-            bluetoothSection
-            testsSection
-            diagnosticsSection
-            Spacer()
+            HStack {
+                Image(systemName: "car.fill")
+                    .resizable()
+                    .frame(width: 50, height: 50)
+                    .foregroundColor(.white)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Vehicle Information")
+                    Text("Read Data From your Vehicle")
+                }
+            }
+            
+            Divider().padding(.vertical, 8)
+
+            HStack {
+                Image(systemName: "wrench.and.screwdriver")
+                    .resizable()
+                    .frame(width: 25, height: 25)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("Diagnostics")
+                    .foregroundColor(.white)
+            }   
+            
+            HStack {
+                Image(systemName: "wrench.and.screwdriver")
+                    .resizable()
+                    .frame(width: 25, height: 25)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("Live Data")
+                    .foregroundColor(.white)
+                
+            }   
+            
+            HStack {
+                Image(systemName: "wrench.and.screwdriver")
+                    .resizable()
+                    .frame(width: 25, height: 25)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("Digital Garage")
+                    .foregroundColor(.white)
+                
+            }   
+//            bluetoothSection
+//            testsSection
+//            diagnosticsSection
+
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background { 
+            RoundedRectangle(cornerRadius: 10)
+                .fill(LinearGradient(Color.darkStart, Color.darkEnd))
         }
     }
 
@@ -107,7 +167,6 @@ struct HomeView: View {
         }
     }
 }
-
 
 #Preview {
     MainView()

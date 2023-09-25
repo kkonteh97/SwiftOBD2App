@@ -14,8 +14,8 @@
             filePath = "SMARTOBD2/ViewModels/SettingsScreenViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "178"
-            endingLineNumber = "178"
+            startingLineNumber = "180"
+            endingLineNumber = "180"
             landmarkName = "setupAdapter(setupOrder:)"
             landmarkType = "7">
             <Locations>
@@ -122,8 +122,8 @@
             filePath = "SMARTOBD2/ViewModels/SettingsScreenViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "179"
-            endingLineNumber = "179"
+            startingLineNumber = "181"
+            endingLineNumber = "181"
             landmarkName = "setupAdapter(setupOrder:)"
             landmarkType = "7">
             <Locations>
@@ -230,8 +230,8 @@
             filePath = "SMARTOBD2/ViewModels/SettingsScreenViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "182"
-            endingLineNumber = "182"
+            startingLineNumber = "184"
+            endingLineNumber = "184"
             landmarkName = "setupAdapter(setupOrder:)"
             landmarkType = "7">
          </BreakpointContent>

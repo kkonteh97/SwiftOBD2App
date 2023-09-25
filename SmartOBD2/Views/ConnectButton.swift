@@ -29,7 +29,7 @@ struct GoButtonAnimation: View {
                             .scaleEffect(shouldGrow ? 1.5 : 1.0)
                             .opacity(shouldGrow ? 0.0 : 1.0)
                     )
-                    .onAppear() {
+                    .onAppear {
                         withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                             self.shouldGrow = true
                         }
@@ -37,4 +37,3 @@ struct GoButtonAnimation: View {
             }
     }
 }
-

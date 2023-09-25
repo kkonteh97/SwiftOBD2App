@@ -338,8 +338,7 @@ struct OBDCommand: Codable, Hashable {
 
         // convert to binaryarray
         let bits = BitArray(data: data)
-        print(bits.binaryArray.map { ($0 != 0) ? "1" : "0" }.joined(separator: ""))
-
+        
         var output = Status()
         output.MIL = bits.binaryArray[0] == 1
         output.dtcCount = bits.value(at: 1..<8)
@@ -348,72 +347,83 @@ struct OBDCommand: Codable, Hashable {
         // load the 3 base tests that are always present
 
         for (index, name) in baseTests.reversed().enumerated() {
-            let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-            switch name {
-            case "MISFIRE_MONITORING":
-                output.misfireMonitoring = test
-            case "FUEL_SYSTEM_MONITORING":
-                output.fuelSystemMonitoring = test
-            case "COMPONENT_MONITORING":
-                output.componentMonitoring = test
-            default:
-                break
-            }
+                processBaseTest(name, index, bits, &output)
         }
-
-        // Different tests for different ignition types
-
+        return output
+    }
+    
+    func processTest(bits: BitArray, _ output: inout Status) {
         if bits.binaryArray[12] == 0 {
             // Spark
             for (index, name) in sparkTests.reversed().enumerated() {
                 if let name = name {
-                    let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-                    switch name {
-                    case "CATALYST_MONITORING":
-                        output.misfireMonitoring = test
-                    case "HEATED_CATALYST_MONITORING":
-                        output.fuelSystemMonitoring = test
-                    case "EVAPORATIVE_SYSTEM_MONITORING":
-                        output.componentMonitoring = test
-                    case "SECONDARY_AIR_SYSTEM_MONITORING":
-                        output.componentMonitoring = test
-                    case "OXYGEN_SENSOR_MONITORING":
-                        output.componentMonitoring = test
-                    case "OXYGEN_SENSOR_HEATER_MONITORING":
-                        output.componentMonitoring = test
-                    case "EGR_VVT_SYSTEM_MONITORING":
-                        output.componentMonitoring = test
-                    default:
-                        break
-                    }
+                    processBaseTest(name, index, bits, &output)
                 }
             }
         } else {
             // Compression
             for (index, name) in compressionTests.reversed().enumerated() {
                 if let name = name {
-                    let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-                    switch name {
-                    case "NMHC_CATALYST_MONITORING":
-                        output.misfireMonitoring = test
-                    case "NOX_SCR_AFTERTREATMENT_MONITORING":
-                        output.fuelSystemMonitoring = test
-                    case "BOOST_PRESSURE_MONITORING":
-                        output.componentMonitoring = test
-                    case "EXHAUST_GAS_SENSOR_MONITORING":
-                        output.componentMonitoring = test
-                    case "PM_FILTER_MONITORING":
-                        output.componentMonitoring = test
-                    case "EGR_VVT_SYSTEM_MONITORING":
-                        output.componentMonitoring = test
-                    default:
-                        break
-                    }
+                    processCompressionTest(name, index, bits, &output)
                 }
             }
         }
-
-        return output
+    }
+    
+    func processCompressionTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
+        let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
+        switch name {
+        case "NMHC_CATALYST_MONITORING":
+            output.misfireMonitoring = test
+        case "NOX_SCR_AFTERTREATMENT_MONITORING":
+            output.fuelSystemMonitoring = test
+        case "BOOST_PRESSURE_MONITORING":
+            output.componentMonitoring = test
+        case "EXHAUST_GAS_SENSOR_MONITORING":
+            output.componentMonitoring = test
+        case "PM_FILTER_MONITORING":
+            output.componentMonitoring = test
+        case "EGR_VVT_SYSTEM_MONITORING":
+            output.componentMonitoring = test
+        default:
+            break
+        }
+    }
+    
+    func processSparkTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
+        let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
+        switch name {
+        case "CATALYST_MONITORING":
+            output.misfireMonitoring = test
+        case "HEATED_CATALYST_MONITORING":
+            output.fuelSystemMonitoring = test
+        case "EVAPORATIVE_SYSTEM_MONITORING":
+            output.componentMonitoring = test
+        case "SECONDARY_AIR_SYSTEM_MONITORING":
+            output.componentMonitoring = test
+        case "OXYGEN_SENSOR_MONITORING":
+            output.componentMonitoring = test
+        case "OXYGEN_SENSOR_HEATER_MONITORING":
+            output.componentMonitoring = test
+        case "EGR_VVT_SYSTEM_MONITORING":
+            output.componentMonitoring = test
+        default:
+            break
+        }
+    }
+    
+    func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
+        let test = StatusTest(testName, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
+        switch testName {
+        case "MISFIRE_MONITORING":
+            output.misfireMonitoring = test
+        case "FUEL_SYSTEM_MONITORING":
+            output.fuelSystemMonitoring = test
+        case "COMPONENT_MONITORING":
+            output.componentMonitoring = test
+        default:
+            break
+        }
     }
 }
 
