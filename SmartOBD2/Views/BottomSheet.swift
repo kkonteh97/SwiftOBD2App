@@ -49,19 +49,19 @@ struct BottomSheet: View {
     }
 
     var body: some View {
-            ZStack {
-                VStack {
-                    BottomSheetContent(displayType: $displayType, viewModel: viewModel, maxHeight: maxHeight)
-                }
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(20)
-                .offset(y: max(self.offset + self.gestureOffset, 0))
-                .background(.clear)
-                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
-                                              blendDuration: 0), value: gestureOffset)
-                .gesture(DragGesture().updating($gestureOffset, body: { value, out, _ in
-                    out = value.translation.height
-                })
+        ZStack {
+            VStack {
+                BottomSheetContent(displayType: $displayType, viewModel: viewModel, maxHeight: maxHeight)
+            }
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(20)
+            .offset(y: max(self.offset + self.gestureOffset, 0))
+            .background(.clear)
+            .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
+                                          blendDuration: 0), value: gestureOffset)
+            .gesture(DragGesture().updating($gestureOffset, body: { value, out, _ in
+                out = value.translation.height
+            })
                 .onEnded({ value in
                     let snapDistanceFullScreen = self.maxHeight * 0.60
                     let snapDistanceHalfScreen =  self.maxHeight * 0.85
@@ -74,14 +74,14 @@ struct BottomSheet: View {
                         self.displayType = .none
                     }
                 }))
-                if viewModel.elm327.bleManager.connectionState != .connectedToVehicle {
-                    self.connectButton
-                        .offset(y: self.offset + self.gestureOffset - maxHeight * 0.6)
-                        .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
-                                                      blendDuration: 0), value: gestureOffset)
-                        .opacity(displayType == .fullScreen ? 0 : 1)
-                }
+            if viewModel.elm327.bleManager.connectionState != .connectedToVehicle {
+                self.connectButton
+                    .offset(y: self.offset + self.gestureOffset - maxHeight * 0.6)
+                    .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
+                                                  blendDuration: 0), value: gestureOffset)
+                    .opacity(displayType == .fullScreen ? 0 : 1)
             }
+        }
     }
 
     private var connectButton: some View {
@@ -115,7 +115,10 @@ struct BottomSheet: View {
             do {
                 try await viewModel.setupAdapter(setupOrder: setupOrder)
                 DispatchQueue.main.async {
-                    self.isLoading = false
+                    withAnimation {
+                        self.isLoading = false
+                        self.displayType = .halfScreen
+                    }
                 }
             } catch {
                 print(error.localizedDescription)

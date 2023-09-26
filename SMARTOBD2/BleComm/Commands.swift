@@ -258,7 +258,6 @@ struct OBDCommand: Codable, Hashable {
     }
 
     func decodeUAS(_ messages: [Message], id: UInt8) -> Measurement<Unit>? {
-        print(messages[0].data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
             let bytes = messages[0].data[2...]
             return uasIDS[id]?.decode(bytes: bytes)
     }
@@ -338,7 +337,7 @@ struct OBDCommand: Codable, Hashable {
 
         // convert to binaryarray
         let bits = BitArray(data: data)
-        
+
         var output = Status()
         output.MIL = bits.binaryArray[0] == 1
         output.dtcCount = bits.value(at: 1..<8)
@@ -351,7 +350,7 @@ struct OBDCommand: Codable, Hashable {
         }
         return output
     }
-    
+
     func processTest(bits: BitArray, _ output: inout Status) {
         if bits.binaryArray[12] == 0 {
             // Spark
@@ -369,7 +368,7 @@ struct OBDCommand: Codable, Hashable {
             }
         }
     }
-    
+
     func processCompressionTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
         let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
         switch name {
@@ -389,7 +388,7 @@ struct OBDCommand: Codable, Hashable {
             break
         }
     }
-    
+
     func processSparkTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
         let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
         switch name {
@@ -411,7 +410,7 @@ struct OBDCommand: Codable, Hashable {
             break
         }
     }
-    
+
     func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
         let test = StatusTest(testName, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
         switch testName {

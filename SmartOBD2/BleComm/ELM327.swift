@@ -92,11 +92,12 @@ class ELM327: ObservableObject {
 
         obdInfo.obdProtocol = obdProtocol
         obdInfo.supportedPIDs = await getSupportedPIDs(obdProtocol)
-
+        try await _ = okResponse(message: "ATH0")
         // Setup Complete will attempt to get the VIN Number
         if let vin = await requestVin() {
             obdInfo.vin = vin
         }
+        try await _ = okResponse(message: "ATH1")
 
         await setHeader(header: ECUHeader.ENGINE)
 
@@ -220,7 +221,6 @@ class ELM327: ObservableObject {
                 logger.error("Invalid response to 0100")
                 throw SetupError.invalidResponse
             }
-            // searching...
             logger.info("Protocol \(obdProtocol.rawValue) found")
 
             let response = try await sendMessageAsync("0100", withTimeoutSecs: 10)
@@ -228,7 +228,6 @@ class ELM327: ObservableObject {
 
             let ecuMaps = populateECUMap(messages)
             print(ecuMaps)
-
         } catch {
             logger.error("\(error.localizedDescription)")
             throw error
@@ -250,7 +249,7 @@ class ELM327: ObservableObject {
         guard messages.isEmpty else {
             return [:]
         }
-    
+
         if messages.count == 1 {
             ecuMap[messages[0].txID ?? 0] = .engine
         } else {

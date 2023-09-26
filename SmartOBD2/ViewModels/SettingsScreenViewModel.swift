@@ -20,6 +20,7 @@ struct OBDInfo: Codable {
     var vin: String?
     var supportedPIDs: [OBDCommand]?
     var obdProtocol: PROTOCOL = .NONE
+    var ecuMap: [UInt8: ECUID]?
 }
 
 struct Manufacturer: Codable {
@@ -75,6 +76,7 @@ class HomeViewModel: ObservableObject {
     }
 
     @Published var selectedCar: GarageVehicle?
+
     @Published var selectedManufacturer = -1 {
         didSet {
             selectedModel = -1
@@ -168,16 +170,21 @@ class HomeViewModel: ObservableObject {
 
     func setupAdapter(setupOrder: [SetupStep]) async throws {
         let obdInfo = try await elm327.setupAdapter(setupOrder: setupOrder)
+
         DispatchQueue.main.async {
             self.obdInfo = obdInfo
-            self.selectedProtocol = obdInfo.obdProtocol
         }
+
         if let vin = obdInfo.vin {
-            do {
-                if var vehicle =  self.garageVehicles.first(where: { $0.vin == vin }) {
-                    vehicle.obdinfo = obdInfo
+                print(vin)
+                if let vehicle =  self.garageVehicles.first(where: { $0.vin == vin }) {
+                    // set selected car
+                    DispatchQueue.main.async {
+                        self.selectedCar = vehicle
+                    }
                     return
                 }
+
                 let vinInfo = try await getVINInfo(vin: vin)
 
                 DispatchQueue.main.async {
@@ -189,10 +196,6 @@ class HomeViewModel: ObservableObject {
                         make: vinInfo.Make, model: vinInfo.Model, year: vinInfo.ModelYear, vin: vin, obdinfo: obdInfo
                     )
                 }
-                print(vinInfo)
-            } catch {
-                print(error.localizedDescription)
-            }
         }
     }
 

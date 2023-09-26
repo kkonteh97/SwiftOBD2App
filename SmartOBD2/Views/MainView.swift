@@ -19,7 +19,7 @@ struct MainView: View {
     @State var displayType: BottomSheetType = .none
 
     @Environment(\.colorScheme) var colorScheme
-    
+
     let elm327: ELM327
     let homeViewModel: HomeViewModel
     let carScreenViewModel: CarScreenViewModel
@@ -34,12 +34,10 @@ struct MainView: View {
         ZStack {
             LinearGradient(Color.darkStart, Color.darkEnd)
                 .edgesIgnoringSafeArea(.all)
-
             GeometryReader { proxy in
                 let frame = proxy.frame(in: .global)
                 TabView {
                     HomeView(viewModel: homeViewModel)
-                        .padding()
                         .tabItem {
                             Image(systemName: "car.fill")
                             Text("Dashboard")
@@ -67,68 +65,50 @@ struct HomeView: View {
 
     var body: some View {
         VStack {
-            HStack {
-                Image(systemName: "car.fill")
-                    .resizable()
-                    .frame(width: 50, height: 50)
-                    .foregroundColor(.white)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Vehicle Information")
-                    Text("Read Data From your Vehicle")
+            VStack {
+                HStack {
+                    Image(systemName: "car.fill")
+                        .resizable()
+                        .frame(width: 50, height: 50)
+                        .foregroundColor(.white)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Vehicle Information")
+                        Text("Read Data From your Vehicle")
+                    }
                 }
+
+                Divider().padding(.vertical, 8)
+
+                HStack {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .resizable()
+                        .frame(width: 25, height: 25)
+                        .foregroundColor(.white)
+
+                    Text("Diagnostics")
+                        .foregroundColor(.white)
+                }
+
+                Button(action: {}, label: {
+                    Text("Scan For codes")
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.red)
+                        .cornerRadius(10)
+                })
+
             }
-            
-            Divider().padding(.vertical, 8)
-
-            HStack {
-                Image(systemName: "wrench.and.screwdriver")
-                    .resizable()
-                    .frame(width: 25, height: 25)
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Text("Diagnostics")
-                    .foregroundColor(.white)
-            }   
-            
-            HStack {
-                Image(systemName: "wrench.and.screwdriver")
-                    .resizable()
-                    .frame(width: 25, height: 25)
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Text("Live Data")
-                    .foregroundColor(.white)
-                
-            }   
-            
-            HStack {
-                Image(systemName: "wrench.and.screwdriver")
-                    .resizable()
-                    .frame(width: 25, height: 25)
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Text("Digital Garage")
-                    .foregroundColor(.white)
-                
-            }   
-//            bluetoothSection
-//            testsSection
-//            diagnosticsSection
-
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
+            }
+            Spacer()
         }
         .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background { 
-            RoundedRectangle(cornerRadius: 10)
-                .fill(LinearGradient(Color.darkStart, Color.darkEnd))
-        }
     }
 
     private var bluetoothSection: some View {

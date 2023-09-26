@@ -21,12 +21,7 @@ struct BottomSheetContent: View {
     @AppStorage("selectedCarIndex") var selectedCarIndex = 0
 
     var selectedCar: GarageVehicle? {
-        guard selectedCarIndex < viewModel.garageVehicles.count,
-                !viewModel.garageVehicles.isEmpty else {
-            selectedCarIndex = 0
-            return nil
-        }
-        return viewModel.garageVehicles[selectedCarIndex]
+        return viewModel.selectedCar
     }
 
     var garageVehicles: [GarageVehicle] {
