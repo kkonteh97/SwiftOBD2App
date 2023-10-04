@@ -23,6 +23,12 @@ class Frame {
     }
 }
 
+enum FrameType: UInt8, Codable {
+    case singleFrame = 0x00
+    case firstFrame = 0x10
+    case consecutiveFrame = 0x20
+}
+
 enum FrameError: Error {
     case oddFrame
     case invalidSize
@@ -31,15 +37,9 @@ enum FrameError: Error {
     case nonContiguousFrame
 }
 
-enum FrameType: UInt8, Codable {
-    case singleFrame = 0x00
-    case firstFrame = 0x10
-    case consecutiveFrame = 0x20
-}
-
 extension ELM327 {
 
-    func call(_ lines: [String], idBits: Int) -> [Message] {
+    func call(_ lines: [String], idBits: Int) -> [Message]? {
 
         let (obdLines, nonOBDLines) = lines.reduce(into: ([String](), [String]())) { result, line in
             let lineNoSpaces = line.replacingOccurrences(of: " ", with: "")
@@ -82,28 +82,26 @@ extension ELM327 {
 
         messages.append(contentsOf: nonOBDMessages)
 
-        return messages
+        return messages.isEmpty ? nil : messages
     }
 
     func parseFrame(_ frame: Frame, idBits: Int) -> Bool {
-        do {
-            var raw = frame.raw
+        var raw = frame.raw
+        if idBits == 11 {
+            raw = "00000" + raw
+        }
 
-            if idBits == 11 {
-                raw = "00000" + raw
-            }
-            try validateFrame(raw: raw, idBits: idBits, frame: frame) // Throws if invalid
-
-            if idBits == 11 {
-                parse11BitFrame(raw: raw, frame: frame)
-            } else {
-                parse29BitFrame(raw: raw, frame: frame)
-            }
-            return true
-        } catch {
-            print("Error parsing frame: \(error)")
+        guard validateFrame(raw: raw, idBits: idBits, frame: frame) else {
             return false
         }
+
+        if idBits == 11 {
+            parse11BitFrame(raw: raw, frame: frame)
+        } else {
+            parse29BitFrame(raw: raw, frame: frame)
+        }
+
+        return true
     }
 
     private func parse11BitFrame(raw: String, frame: Frame) {
@@ -273,17 +271,19 @@ extension ELM327 {
         return str.uppercased().rangeOfCharacter(from: hexChars.inverted) == nil
     }
 
-    private func validateFrame(raw: String, idBits: Int, frame: Frame) throws {
+    func validateFrame(raw: String, idBits: Int, frame: Frame) -> Bool {
         if raw.count % 2 != 0 {
-            logger.error("Dropping frame for being odd")
-            throw FrameError.oddFrame
+            print("Dropping frame for being odd")
+            return false
         }
 
         let rawBytes = raw.hexBytes
 
         if rawBytes.count < 6 || rawBytes.count > 12 {
-            logger.error("Dropped frame for invalid size")
-            throw FrameError.invalidSize
+            print("Dropped frame for invalid size")
+            return false
         }
+
+        return true
     }
 }

@@ -17,7 +17,7 @@ struct CarScreen: View {
     @ObservedObject var viewModel: CarScreenViewModel
     @State private var history: [History] = []
     @Environment(\.colorScheme) var colorScheme
-    var shadowColor: Color { colorScheme == .dark ? .darkStart : .lightStart }
+
     var body: some View {
         ZStack {
             ScrollView(.vertical, showsIndicators: false) {
@@ -43,9 +43,6 @@ struct CarScreen: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 25)
-                                .fill(LinearGradient(Color.startColor(for: colorScheme)))
-                                .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                                .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
                         )
                         .padding(.horizontal, 10)
                         .frame(height: 40)
@@ -70,13 +67,7 @@ struct CarScreen: View {
                             .frame(width: 29, height: 30)
                             .foregroundColor(.blue)
                             .padding(10)
-                            .background(
-                                Circle()
-                                    .fill(LinearGradient(Color.startColor(for: colorScheme),
-                                                         Color.endColor(for: colorScheme)))
-                                    .shadow(color: shadowColor, radius: 5, x: 3, y: 3)
-                                    .shadow(color: shadowColor, radius: 5, x: -3, y: -3)
-                            )
+
                     }
                     .padding(.trailing)
                 }

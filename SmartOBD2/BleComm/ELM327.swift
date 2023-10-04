@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreBluetooth
+import Combine
 import OSLog
 
 struct ECUHeader {
@@ -20,6 +21,8 @@ enum SetupError: Error {
     case adapterInitFailed
     case timeout
     case peripheralNotFound
+    case ignitionOff
+    case invalidProtocol
 }
 
 enum DataValidationError: Error {
@@ -33,13 +36,13 @@ enum DataValidationError: Error {
 class ELM327: ObservableObject {
 
     // MARK: - Properties
+    @Published var statusMessage: String = ""
 
     let logger = Logger.elmCom
 
     // Bluetooth UUIDs
     var elmServiceUUID = CBUUID(string: CarlyObd.elmServiceUUID)
     var elmCharactericUUID = CBUUID(string: CarlyObd.elmCharactericUUID)
-
     // Bluetooth manager
     var bleManager: BLEManager
 
@@ -78,17 +81,48 @@ class ELM327: ObservableObject {
         }
     }
 
+    func requestDTC() async throws {
+        do {
+            let response = try await sendMessageAsync("0101")
+
+            await decodeDTC(response: response)
+        } catch {
+            logger.error("\(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    func decodeDTC(response: [String]) async {
+        guard let messages = call(response, idBits: obdProtocol.idBits) else {
+            logger.error("could not parse")
+            // maybe header is off 
+            return
+        }
+
+        let command = OBDCommand.status
+        guard let status = command.decoder.decode(data: messages) as? Status else {
+            return
+        }
+        if status.MIL {
+            logger.info("\(status.dtcCount)")
+            // get dtc's 
+        } else {
+            logger.info("no dtc found")
+        }
+    }
+
     func setupAdapter(setupOrder: [SetupStep], autoProtocol: Bool = false) async throws -> OBDInfo {
         var obdInfo = OBDInfo()
 
-        if bleManager.connectionState != .connectedToAdapter {
+        if connectionState != .connectedToAdapter {
             try await connectToAdapter()
         }
 
         try await adapterInitialization(setupOrder: setupOrder)
 
-        obdProtocol = try await connectToVehicle(autoProtocol: autoProtocol)
-        bleManager.connectionState = .connectedToVehicle
+        try await connectToVehicle(autoProtocol: autoProtocol)
+
+        connectionState = .connectedToVehicle
 
         obdInfo.obdProtocol = obdProtocol
         obdInfo.supportedPIDs = await getSupportedPIDs(obdProtocol)
@@ -130,9 +164,9 @@ class ELM327: ObservableObject {
                 case .ATDPN:
                     // Describe current protocol number
                     let protocolNumber = try await sendMessageAsync("ATDPN")
-                    obdProtocol = PROTOCOL(rawValue: protocolNumber[0]) ?? .protocol9
+                    self.obdProtocol = PROTOCOL(rawValue: protocolNumber[0]) ?? .protocol9
                 default:
-                    logger.error("Invalid Setup Step")
+                    logger.error("Invalid Setup Step here: \(step.rawValue)")
                 }
             }
         } catch {
@@ -141,19 +175,15 @@ class ELM327: ObservableObject {
         }
     }
 
-    func connectToVehicle(autoProtocol: Bool) async throws -> PROTOCOL {
+    func connectToVehicle(autoProtocol: Bool) async throws {
         if autoProtocol {
-            guard let obdProtocol = try await autoProtocolDetection() else {
+            guard let _obdProtocol = try await autoProtocolDetection() else {
                 logger.error("No protocol found")
                 throw SetupError.noProtocolFound
             }
-            return obdProtocol
+            obdProtocol = _obdProtocol
         } else {
-            guard let obdProtocol = try await manualProtocolDetection() else {
-                logger.error("No protocol found")
-                throw SetupError.noProtocolFound
-            }
-            return obdProtocol
+            try await manualProtocolDetection()
         }
     }
 
@@ -171,11 +201,13 @@ class ELM327: ObservableObject {
         do {
             _ = try await okResponse(message: "ATSP0")
 
+            try await testProtocol(obdProtocol: obdProtocol)
+
             let obdProtocolNumber = try await sendMessageAsync("ATDPN")
             guard let obdProtocol = PROTOCOL(rawValue: obdProtocolNumber[0]) else {
                 throw SetupError.invalidResponse
             }
-            try await testProtocol(obdProtocol: obdProtocol)
+
             return obdProtocol
         } catch {
             logger.error("\(error.localizedDescription)")
@@ -183,29 +215,29 @@ class ELM327: ObservableObject {
         }
     }
 
-    func manualProtocolDetection() async throws -> PROTOCOL? {
-        while obdProtocol != .NONE {
-            switch obdProtocol {
-            case .protocol1, .protocol2, .protocol3, .protocol4, .protocol5, .protocol6,
-                 .protocol7, .protocol8, .protocol9, .protocolA, .protocolB, .protocolC:
+    func manualProtocolDetection() async throws {
+        do {
+            while obdProtocol != .NONE {
                 do {
-                    _ = try await okResponse(message: obdProtocol.cmd)
-                    // test the protocol
-                    _ = try await testProtocol(obdProtocol: obdProtocol)
-                    return obdProtocol
-                } catch {
+                    try await testProtocol(obdProtocol: obdProtocol)
+                    logger.info("Protocol: \(self.obdProtocol.description)")
+                    return // Exit the loop if the protocol is found successfully
+                } catch SetupError.invalidProtocol {
+                    // Invalid response for the current protocol, try the next one
                     obdProtocol = obdProtocol.nextProtocol()
-                    if obdProtocol == .NONE {
-                        logger.error("No protocol found")
-                        throw SetupError.noProtocolFound
-                    }
+                } catch {
+                    // Other errors are propagated
+                    throw error
                 }
-            default:
-                logger.error("Invalid Setup Step")
-                throw SetupError.invalidResponse
             }
+
+            // If we reach this point, no protocol was found
+            logger.error("No protocol found")
+            throw SetupError.noProtocolFound
+        } catch {
+            logger.error("\(error.localizedDescription)")
+            throw error
         }
-        return nil
     }
 
     // MARK: - Protocol Testing
@@ -216,18 +248,26 @@ class ELM327: ObservableObject {
             _ = try await okResponse(message: obdProtocol.cmd)
 
             let r100 = try await sendMessageAsync("0100", withTimeoutSecs: 10)
-            print(r100.joined())
+
+            if r100.joined().contains("NO DATA") {
+                logger.info("car is off")
+                throw SetupError.ignitionOff
+            }
+
             guard r100.joined().contains("41 00") else {
                 logger.error("Invalid response to 0100")
-                throw SetupError.invalidResponse
+                throw SetupError.invalidProtocol
             }
+
             logger.info("Protocol \(obdProtocol.rawValue) found")
 
             let response = try await sendMessageAsync("0100", withTimeoutSecs: 10)
-            let messages = call(response, idBits: obdProtocol.idBits)
+            guard let messages = call(response, idBits: obdProtocol.idBits) else {
+                logger.error("Invalid response to 0100")
+                throw SetupError.invalidProtocol
+            }
 
-            let ecuMaps = populateECUMap(messages)
-            print(ecuMaps)
+            _ = populateECUMap(messages)
         } catch {
             logger.error("\(error.localizedDescription)")
             throw error
@@ -236,67 +276,74 @@ class ELM327: ObservableObject {
 
     // connect to the adapter
     func connectToAdapter() async throws {
-        bleManager.connectionState = .connecting
+        connectionState = .connecting
         _ = try await self.bleManager.scanAndConnectAsync(services: [self.elmServiceUUID])
-        bleManager.connectionState = .connectedToAdapter
+        connectionState = .connectedToAdapter
     }
 
-    func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID] {
+    func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID]? {
         let engineTXID = 0
         let transmissionTXID = 1
         var ecuMap: [UInt8: ECUID] = [:]
 
-        guard messages.isEmpty else {
-            return [:]
+        // If there are no messages, return an empty map
+        guard !messages.isEmpty else {
+            return nil
         }
 
+        // If there is only one message, assume it's from the engine
         if messages.count == 1 {
             ecuMap[messages[0].txID ?? 0] = .engine
-        } else {
-            var foundEngine = false
+            return ecuMap
+        }
 
-            for message in messages {
-                guard let txID = message.txID else {
-                    logger.error("parse_frame failed to extract TX_ID")
-                    continue
-                }
+        // Find the engine and transmission ECU based on TXID
+        var foundEngine = false
 
-                if txID == engineTXID {
-                    ecuMap[txID] = .engine
-                    foundEngine = true
-                } else if txID == transmissionTXID {
-                    ecuMap[txID] = .transmission
-                }
+        for message in messages {
+            guard let txID = message.txID else {
+                logger.error("parse_frame failed to extract TX_ID")
+                continue
             }
 
-            if !foundEngine {
-                var bestBits = 0
-                var bestTXID: UInt8?
-
-                for message in messages {
-                    let bits = message.data.bitCount()
-                    if bits > bestBits {
-                        bestBits = bits
-                        bestTXID = message.txID
-                    }
-                }
-
-                if let bestTXID = bestTXID {
-                    ecuMap[bestTXID] = .engine
-                }
-            }
-
-            for message in messages where ecuMap[message.txID ?? 0] == nil {
-                ecuMap[message.txID ?? 0] = .transmission
+            if txID == engineTXID {
+                ecuMap[txID] = .engine
+                foundEngine = true
+            } else if txID == transmissionTXID {
+                ecuMap[txID] = .transmission
             }
         }
+
+        // If engine ECU is not found, choose the one with the most bits
+        if !foundEngine {
+            var bestBits = 0
+            var bestTXID: UInt8?
+
+            for message in messages {
+                let bits = message.data.bitCount()
+                if bits > bestBits {
+                    bestBits = bits
+                    bestTXID = message.txID
+                }
+            }
+
+            if let bestTXID = bestTXID {
+                ecuMap[bestTXID] = .engine
+            }
+        }
+
+        // Assign transmission ECU to messages without an ECU assignment
+        for message in messages where ecuMap[message.txID ?? 0] == nil {
+            ecuMap[message.txID ?? 0] = .transmission
+        }
+
         return ecuMap
     }
 
     func decodeVIN(response: String) async -> String {
         // Find the index of the occurrence of "49 02"
         guard let prefixIndex = response.range(of: "49 02")?.upperBound else {
-            print("Prefix not found in the response")
+            logger.error("Prefix not found in the response")
             return ""
         }
         // Extract the VIN hex string after "49 02"
@@ -334,13 +381,13 @@ extension ELM327 {
     func requestPIDs(_ pid: OBDCommand, completion: @escaping (PIDData?) -> Void) async {
         // Ensure you're not already requesting
         do {
-            let response = try await sendMessageAsync(pid.cmd)
+            let response = try await sendMessageAsync(pid.command(mode: "01"))
             let decodedValue = await decodePIDs(response: response, pid: pid)
 
             if let measurement = decodedValue {
                 // Convert the Measurement<Unit> to a string
                 let value = measurement.value
-                print("\(value) \(pid.name)")
+                print(pid.description + " " + String(value))
                 let unitString = measurement.unit.symbol
                 let pidData = PIDData(pid: pid, value: value, unit: unitString)
                 completion(pidData) // Pass the result to the completion handler
@@ -354,9 +401,36 @@ extension ELM327 {
         }
     }
 
+    func requestPIDsPublisher(_ pid: OBDCommand) -> AnyPublisher<PIDData?, Error> {
+           return Future<PIDData?, Error> { promise in
+               Task {
+                   do {
+                       let response = try await self.sendMessageAsync(pid.command(mode: "01"))
+                       let decodedValue = await self.decodePIDs(response: response, pid: pid)
+
+                       if let measurement = decodedValue {
+                           let value = measurement.value
+                           let unitString = measurement.unit.symbol
+                           let pidData = PIDData(pid: pid, value: value, unit: unitString)
+                           promise(.success(pidData))
+                       } else {
+                           promise(.success(nil))
+                       }
+                   } catch {
+                       promise(.failure(error))
+                   }
+               }
+           }
+           .eraseToAnyPublisher()
+       }
+
     func decodePIDs(response: [String], pid: OBDCommand) async -> Measurement<Unit>? {
-        let messages = call(response, idBits: obdProtocol.idBits)
-        if let decodedValue = pid.decode(data: messages) {
+        guard let messages = call(response, idBits: obdProtocol.idBits) else {
+            logger.error("could not parse")
+            // maybe header is off 
+            return nil
+        }
+        if let decodedValue = pid.decoder.decode(data: messages) {
             return decodedValue as? Measurement<Unit>
         } else {
             return nil

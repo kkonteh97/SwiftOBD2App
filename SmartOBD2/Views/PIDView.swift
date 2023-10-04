@@ -19,15 +19,18 @@ class PIDViewModel: ObservableObject {
     @Published var speed: Double = 0.0
 
     func startRequestingPID() {
-        guard elm327.bleManager.connectionState == .connectedToVehicle else {
+        guard connectionState == .connectedToVehicle else {
             return
         }
 
         guard !isRequesting else {
             return
         }
-        guard let rpmPid = Modes.getCommand(cmd: "010C") else { return }
-        guard let speedPid = Modes.getCommand(cmd: "010D") else { return }
+
+        let rpmPid = OBDCommand.rpm
+
+        let speedPid = OBDCommand.speed
+
         let pids = [rpmPid, speedPid]
 
         isRequesting = true

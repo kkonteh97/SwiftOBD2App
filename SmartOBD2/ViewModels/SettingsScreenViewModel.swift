@@ -33,15 +33,6 @@ struct Model: Codable {
     let years: [Int]
 }
 
-struct GarageVehicle: Codable, Identifiable {
-    let id: UUID
-    var vin: String = ""
-    let make: String
-    let model: String
-    let year: String
-    var obdinfo: OBDInfo?
-}
-
 struct PIDData {
     let pid: OBDCommand
     var value: Double
@@ -59,55 +50,15 @@ struct VINInfo: Codable, Hashable {
     let EngineCylinders: String
 }
 
-class HomeViewModel: ObservableObject {
-    @Published var garageVehicles: [GarageVehicle] = [
-        GarageVehicle(id: UUID(), make: "Nissan", model: "Altima", year: "2016")
-    ]
-    @Published var obdInfo = OBDInfo()
-    @Published var elmAdapter: CBPeripheral?
-    @Published var vinInput = ""
-    @Published var vinInfo: VINInfo?
-    @Published var selectedProtocol: PROTOCOL = .AUTO
-    @Published var selectedYear = -1
-    @Published var selectedModel = -1 {
-        didSet {
-            selectedYear = -1
-        }
-    }
-
-    @Published var selectedCar: GarageVehicle?
-
-    @Published var selectedManufacturer = -1 {
-        didSet {
-            selectedModel = -1
-            selectedYear = -1
-            selectedCar = nil
-        }
-    }
-
+class OBDService {
     let elm327: ELM327
-    var carData: [Manufacturer] = []
-
+    @Published var elmAdapter: CBPeripheral?
     private var cancellables = Set<AnyCancellable>()
+    @Published var statusMessage: String?
 
-    var models: [Model] {
-        return (0 ..< carData.count).contains(selectedManufacturer) ? carData[selectedManufacturer].models : []
-    }
-
-    var years: [Int] {
-        return (0 ..< models.count).contains(selectedModel) ? models[selectedModel].years : []
-    }
-
-    init(elm327: ELM327) {
-        self.elm327 = elm327
-        loadGarageVehicles()
+    init(bleManager: BLEManager) {
+        self.elm327 = ELM327(bleManager: bleManager)
         subscribeToElmAdapterChanges()
-
-        // Load garageVehicles from UserDefaults
-        if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
-           let decodedVehicles = try? JSONDecoder().decode([GarageVehicle].self, from: data) {
-            self.garageVehicles = decodedVehicles
-        }
     }
 
     private func subscribeToElmAdapterChanges() {
@@ -116,114 +67,24 @@ class HomeViewModel: ObservableObject {
                 self?.elmAdapter = elmAdapter
             }
             .store(in: &cancellables)
-    }
 
-    private func loadGarageVehicles() {
-        do {
-            let url = Bundle.main.url(forResource: "Cars", withExtension: "json")!
-            let data = try Data(contentsOf: url)
-            self.carData = try JSONDecoder().decode([Manufacturer].self, from: data)
-        } catch {
-
-        }
-    }
-
-    private var isRequestingPids = false
-
-    @Published var pidData: [OBDCommand: PIDData] = [:]
-
-    func startRequestingPID(pid: OBDCommand) {
-        guard !isRequestingPids else {
-            return
-        }
-        isRequestingPids = true
-        Task {
-            while isRequestingPids {
-                await self.elm327.requestPIDs(pid) { pidData in
-                    if let pidData = pidData {
-                        // Handle the valid PID data here
-                        DispatchQueue.main.async { // Ensure UI updates on the main thread
-                            self.pidData[pid] = pidData
-                        }
-                    } else {
-                        // Handle the case where the request failed or returned nil data
-                        print("Request failed or returned nil data")
-                    }
-                }
+        elm327.$statusMessage
+            .sink { [weak self] message in
+                self?.statusMessage = message
             }
-        }
+            .store(in: &cancellables)
     }
 
-    func addVehicle(make: String, model: String, year: String,
-                    vin: String = "", obdinfo: OBDInfo? = nil) {
-        let selectedCar = GarageVehicle(id: UUID(), vin: vin, make: make, model: model, year: year, obdinfo: obdinfo)
-        garageVehicles.append(selectedCar)
-        print(garageVehicles)
-        saveGarageVehicles()
+    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
+        return try await elm327.setupAdapter(setupOrder: setupOrder)
     }
 
-    func saveGarageVehicles() {
-        if let encodedData = try? JSONEncoder().encode(garageVehicles) {
-            UserDefaults.standard.set(encodedData, forKey: "garageVehicles")
-        }
-    }
-
-    func setupAdapter(setupOrder: [SetupStep]) async throws {
-        let obdInfo = try await elm327.setupAdapter(setupOrder: setupOrder)
-
-        DispatchQueue.main.async {
-            self.obdInfo = obdInfo
-        }
-
-        if let vin = obdInfo.vin {
-                print(vin)
-                if let vehicle =  self.garageVehicles.first(where: { $0.vin == vin }) {
-                    // set selected car
-                    DispatchQueue.main.async {
-                        self.selectedCar = vehicle
-                    }
-                    return
-                }
-
-                let vinInfo = try await getVINInfo(vin: vin)
-
-                DispatchQueue.main.async {
-                    self.vinInput = vin
-                    guard let vinInfo = vinInfo.Results.first else {
-                        return
-                    }
-                    self.addVehicle(
-                        make: vinInfo.Make, model: vinInfo.Model, year: vinInfo.ModelYear, vin: vin, obdinfo: obdInfo
-                    )
-                }
-        }
-    }
-
-    func deleteVehicle(_ car: GarageVehicle) {
-        garageVehicles.removeAll(where: { $0.id == car.id })
-        saveGarageVehicles()
-    }
-
-    func getVINInfo(vin: String) async throws -> VINResults {
-        let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
-
-        guard let url = URL(string: endpoint) else {
-            throw URLError(.badURL)
-        }
-
-        let (data, response) = try await URLSession.shared.data(from: url)
-
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            throw URLError(.badServerResponse)
-        }
-
+    func requestDTC() async {
         do {
-            let decoder = JSONDecoder()
-            let decoded = try decoder.decode(VINResults.self, from: data)
-            return decoded
+            try await elm327.requestDTC()
+
         } catch {
-            print(error)
+            print(error.localizedDescription)
         }
-        return VINResults(Results: [])
     }
 }

@@ -82,7 +82,6 @@ enum SetupStep: String, CaseIterable, Identifiable {
 
 enum PROTOCOL: String, Codable {
     case
-    AUTO = "0",
     protocol1 = "1",
     protocol2 = "2",
     protocol3 = "3",
@@ -99,7 +98,6 @@ enum PROTOCOL: String, Codable {
 
     var description: String {
         switch self {
-        case .AUTO: return "0: Automatic"
         case .protocol1: return "1: SAE J1850 PWM (41.6 kbaud)"
         case .protocol2: return "2: SAE J1850 VPW (10.4 kbaud)"
         case .protocol3: return "3: ISO 9141-2 (5 baud init, 10.4 kbaud)"
@@ -144,9 +142,6 @@ enum PROTOCOL: String, Codable {
 
     var cmd: String {
         switch self {
-
-        case .AUTO:
-            return "ATSP0"
         case .protocol1:
             return "ATSP1"
 
@@ -189,7 +184,7 @@ enum PROTOCOL: String, Codable {
         }
     }
 
-    static let asArray: [PROTOCOL] = [AUTO,
+    static let asArray: [PROTOCOL] = [
                                       protocol1,
                                       protocol2,
                                       protocol3,

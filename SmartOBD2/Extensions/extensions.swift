@@ -14,23 +14,50 @@ extension LinearGradient {
 }
 
 extension Color {
+    enum ColorScheme {
+        case light
+        case dark
+    }
+
+    static func currentColorScheme() -> ColorScheme {
+        return UITraitCollection.current.userInterfaceStyle == .dark ? .dark : .light
+    }
+
+//    static func startColor(for colorScheme: ColorScheme = currentColorScheme()) -> Color {
+//        switch colorScheme {
+//            case .dark: return Color(red: 238 / 255, green: 244 / 255, blue: 237 / 255)
+//            case .light: return Color(red: 241 / 255, green: 242 / 255, blue: 246 / 255)
+//        }
+//    }
+//
+    static func endColor(for colorScheme: ColorScheme = currentColorScheme()) -> Color {
+        switch colorScheme {
+            case .dark: return Color(red: 37 / 255, green: 38 / 255, blue: 31 / 255)
+            case .light: return Color(red: 220 / 255, green: 221 / 235, blue: 226 / 255)
+        }
+    }
+
+    static func automotivePrimaryColor() -> Color {
+        return Color(red: 141 / 255, green: 169 / 255, blue: 196 / 255)
+    }
+
+    static func automotiveSecondaryColor() -> Color {
+        return Color(red: 231 / 255, green: 76 / 255, blue: 60 / 255)
+    }
+
+    static func automotiveAccentColor() -> Color {
+        return Color(red: 46 / 255, green: 204 / 255, blue: 113 / 255)
+    }
+
+    static func automotiveBackgroundColor() -> Color {
+        return Color(red: 158 / 255, green: 144 / 255, blue: 127 / 255)
+    }
+    static let lightGray = Color(red: 13 / 255, green: 27 / 255, blue: 42 / 255)
+    static let cyclamen = Color(red: 46 / 255, green: 64 / 255, blue: 89 / 255)
+    static let pinknew = Color(red: 119 / 255, green: 141 / 255, blue: 169 / 255)
+
     static let darkStart = Color(red: 50 / 255, green: 60 / 255, blue: 65 / 255)
     static let darkEnd = Color(red: 25 / 255, green: 25 / 255, blue: 30 / 255)
-    static let lightStart = Color(red: 240 / 255, green: 240 / 255, blue: 246 / 255)
-    static let lightEnd = Color(red: 120 / 255, green: 120 / 255, blue: 123 / 255)
-
-    static let automotivePrimary = Color(red: 27 / 255, green: 109 / 255, blue: 207 / 255)
-    static let automotiveSecondary = Color(red: 241 / 255, green: 143 / 255, blue: 1 / 255)
-    static let automotiveAccent = Color(red: 228 / 255, green: 57 / 255, blue: 60 / 255)
-    static let automotiveBackground = Color(red: 245 / 255, green: 245 / 255, blue: 245 / 255)
-
-    static func startColor(for colorScheme: ColorScheme) -> Color {
-        return colorScheme == .dark ? .darkStart : .lightStart
-    }
-
-    static func endColor(for colorScheme: ColorScheme) -> Color {
-        return colorScheme == .dark ? .darkEnd : .lightEnd
-    }
 }
 
 extension String {

@@ -36,34 +36,6 @@ struct StatusTest {
     }
 }
 
-let baseTests = [
-    "MISFIRE_MONITORING",
-    "FUEL_SYSTEM_MONITORING",
-    "COMPONENT_MONITORING"
-]
-
-let sparkTests = [
-    "CATALYST_MONITORING",
-    "HEATED_CATALYST_MONITORING",
-    "EVAPORATIVE_SYSTEM_MONITORING",
-    "SECONDARY_AIR_SYSTEM_MONITORING",
-    nil,
-    "OXYGEN_SENSOR_MONITORING",
-    "OXYGEN_SENSOR_HEATER_MONITORING",
-    "EGR_VVT_SYSTEM_MONITORING"
-]
-
-let compressionTests = [
-    "NMHC_CATALYST_MONITORING",
-    "NOX_SCR_AFTERTREATMENT_MONITORING",
-    nil,
-    "BOOST_PRESSURE_MONITORING",
-    nil,
-    "EXHAUST_GAS_SENSOR_MONITORING",
-    "PM_FILTER_MONITORING",
-    "EGR_VVT_SYSTEM_MONITORING"
-]
-
 enum ECU: UInt8, Codable {
     case ALL = 0b11111111
     case ALLKNOWN = 0b11111110
@@ -72,584 +44,303 @@ enum ECU: UInt8, Codable {
     case TRANSMISSION = 0b00000100
 }
 
-func bytesToInt(_ byteArray: Data) -> Int {
-    var value = 0
-    var power = 0
-
-    for byte in byteArray.reversed() {
-        value += Int(byte) << power
-        power += 8
-    }
-    return value
+struct OBDCommandConfiguration {
+    let name: String
+    let description: String
+    let cmd: String
+    let bytes: Int
+    let decoder: Decoder
+    let ecu: ECU
+    let fast: Bool
 }
 
-struct BitArray {
-    private var data: Data
-    var binaryArray: [Int] = []
+enum OBDCommand: CaseIterable, Codable {
+    case pidsA
+    case status
+    case freezeDTC
+    case fuelStatus
+    case engineLoad
+    case coolantTemp
+    case shortFuelTrim1
+    case longFuelTrim1
+    case shortFuelTrim2
+    case longFuelTrim2
+    case fuelPressure
+    case intakePressure
+    case rpm
+    case speed
+    case timingAdvance
+    case intakeTemp
+    case maf
+    case throttlePos
+    case pidsB
 
-    init(data: Data) {
-        self.data = data
-        for byte in data {
-            for bit in 0..<8 {
-                binaryArray.append(Int((byte >> UInt8(7 - bit)) & 1))
-            }
-        }
-        print(binaryArray)
-    }
-
-    subscript(index: Int) -> Bool {
-        let byteIndex = index / 8
-        let bitIndex = index % 8
-        return (data[byteIndex] & UInt8(1 << bitIndex)) != 0
-    }
-
-    func value(at range: Range<Int>) -> UInt8 {
-        var value: UInt8 = 0
-        for bit in range {
-            value = value << 1
-            value = value | UInt8(binaryArray[bit])
-        }
-        return value
-    }
-}
-
-struct UAS {
-    let signed: Bool
-    let scale: Double
-    let unit: Unit
-    let offset: Double
-
-    init(signed: Bool, scale: Double, unit: Unit, offset: Double = 0.0) {
-        self.signed = signed
-        self.scale = scale
-        self.unit = unit
-        self.offset = offset
-    }
-
-    func twosComp(_ value: Int, length: Int) -> Int {
-        let mask = (1 << length) - 1
-        return value & mask
-    }
-
-    func decode(bytes: Data) -> Measurement<Unit>? {
-            var value = bytesToInt(bytes)
-
-            if signed {
-                value = twosComp(value, length: bytes.count * 8)
-            }
-
-            let scaledValue = Double(value) * scale + offset
-            return Measurement(value: scaledValue, unit: unit)
-    }
-}
-
-extension Unit {
-    static let percent = Unit(symbol: "%")
-    static let count = Unit(symbol: "count")
-    static let degreeCelsius = Unit(symbol: "°C")
-    static let kph = Unit(symbol: "kph")
-    static let rpm = Unit(symbol: "rpm")
-}
-
-let uasIDS: [UInt8: UAS] = [
-    // Unsigned
-    0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
-    0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
-    0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
-    0x09: UAS(signed: false, scale: 1, unit: Unit.kph),
-    0x12: UAS(signed: false, scale: 1, unit: UnitDuration.seconds),
-
-    // Signed
-    0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
-    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count)
-]
-
-struct OBDCommand: Codable, Hashable {
-    enum Decoder: Codable {
-        case pid
-        case status
-        case singleDTC
-        case fuelStatus
-        case percent
-        case temp
-        case percentCentered
-        case fuelPressure
-        case pressure
-        case uas0x07
-        case uas0x09
-        case timingAdvance
-        case uas0x27
-        case airStatus
-        case o2Sensors
-        case sensorVoltage
-        case obdCompliance
-        case o2SensorsAlt
-        case auxInputStatus
-        case uas0x12
-        case uas0x25
-        case uas0x19
-        case uas0x1B
-        case uas0x01
-        case uas0x16
-        case uas0x0B
-        case uas0x1E
-        case evapPressure
-        case sensorVoltageBig
-        case currentCentered
-        case absoluteLoad
-        case drop
-        case uas0x34
-        case maxMaf
-        case fuelType
-        case absEvapPressure
-        case evapPressureAlt
-        case injectTiming
-        case dtc
-        case fuelRate
-    }
-
-    var name: String
-    var description: String
-    var cmd: String
-    var bytes: Int
-    var decoder: Decoder
-    var ecu: ECU
-    var fast: Bool
-
-    init(_ name: String, description: String, cmd: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) {
-        self.name = name
-        self.description = description
-        self.cmd = cmd
-        self.bytes = bytes
-        self.decoder = decoder
-        self.ecu = ecu
-        self.fast = fast
-    }
-
-    func hexStringToUInt8(_ hexString: [String]) -> [UInt8]? {
-        // Converts each list value to a UInt8
-        let hex = hexString.compactMap { UInt8($0, radix: 16) }
-        return hex.isEmpty ? nil : hex
-    }
-
-    func decode(data: [Message]) -> Any? {
-            switch decoder {
-            case .percent:
-                return percent(data)
-            case .percentCentered:
-                return percentCentered(data)
-            case .currentCentered:
-                return currentCentered(data)
-            case .airStatus:
-                return airStatus(data)
-            case .uas0x09:
-                return decodeUAS(data, id: 0x09)
-            case .uas0x07:
-                return decodeUAS(data, id: 0x07)
-            case .uas0x12:
-                return decodeUAS(data, id: 0x12)
-            case .timingAdvance:
-                return timingAdvance(data)
-            case .status:
-                return status(data)
-            default:
-                return nil
-            }
-    }
-
-    func decodeUAS(_ messages: [Message], id: UInt8) -> Measurement<Unit>? {
-            let bytes = messages[0].data[2...]
-            return uasIDS[id]?.decode(bytes: bytes)
-    }
-
-    func percent(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        var value = Double(data[0])
-        value = value * 100.0 / 255.0
-        return Measurement(value: value, unit: .percent)
-    }
-
-    // -100 to 100 %
-    func percentCentered(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        var value = Double(data[0])
-        value = (value - 128) * 100.0 / 128.0
-        return Measurement(value: value, unit: .percent)
-    }
-
-    func currentCentered(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-           let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
-        return Measurement(value: value, unit: UnitElectricCurrent.milliamperes)
-    }
-
-    func airStatus(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        let bits = byteArray(data)
-
-        let numSet = bits.filter { $0 == true }.count
-        if numSet == 1 {
-            let index = 7 - bits.firstIndex(of: true)!
-            return Measurement(value: Double(index), unit: Unit.count)
-        }
-        return nil
-    }
-
-    //     -64 to 63.5 degrees
-    func timingAdvance(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        let value = (Double(data[0]) - 128) / 2.0
-        return Measurement(value: value, unit: UnitAngle.degrees)
-    }
-
-    func temp(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        let value = Double(bytesToInt(data)) - 40.0
-        return Measurement(value: value, unit: UnitTemperature.celsius)
-    }
-
-    func byteArray(_ bytes: Data) -> [Bool] {
-        var bits = [Bool]()
-        for byte in bytes {
-            for bit in 0..<8 {
-                bits.append((byte & (1 << bit)) != 0)
-            }
-        }
-        return bits
-    }
-
-    func status(_ messages: [Message]) -> Status {
-        let data = messages[1].data[2...]
-        let IGNITIONTYPE = ["Spark", "Compression"]
-
-        //            ┌Components not ready
-        //            |┌Fuel not ready
-        //            ||┌Misfire not ready
-        //            |||┌Spark vs. Compression
-        //            ||||┌Components supported
-        //            |||||┌Fuel supported
-        //  ┌MIL      ||||||┌Misfire supported
-        //  |         |||||||
-        //  10000011 00000111 11111111 00000000
-        //  00000000 00000111 11100101 00000000
-        //  10111110 00011111 10101000 00010011
-        //   [# DTC] X        [supprt] [~ready]
-
-        // convert to binaryarray
-        let bits = BitArray(data: data)
-
-        var output = Status()
-        output.MIL = bits.binaryArray[0] == 1
-        output.dtcCount = bits.value(at: 1..<8)
-        output.ignitionType = IGNITIONTYPE[bits.binaryArray[12]]
-
-        // load the 3 base tests that are always present
-
-        for (index, name) in baseTests.reversed().enumerated() {
-                processBaseTest(name, index, bits, &output)
-        }
-        return output
-    }
-
-    func processTest(bits: BitArray, _ output: inout Status) {
-        if bits.binaryArray[12] == 0 {
-            // Spark
-            for (index, name) in sparkTests.reversed().enumerated() {
-                if let name = name {
-                    processBaseTest(name, index, bits, &output)
-                }
-            }
-        } else {
-            // Compression
-            for (index, name) in compressionTests.reversed().enumerated() {
-                if let name = name {
-                    processCompressionTest(name, index, bits, &output)
-                }
-            }
+    func command(mode: String) -> String {
+        switch self {
+        case .pidsA:              return mode + "00"
+        case .status:             return mode + "01"
+        case .freezeDTC:          return mode + "02"
+        case .fuelStatus:         return mode + "03"
+        case .engineLoad:         return mode + "04"
+        case .coolantTemp:        return mode + "05"
+        case .shortFuelTrim1:     return mode + "06"
+        case .longFuelTrim1:      return mode + "07"
+        case .shortFuelTrim2:     return mode + "08"
+        case .longFuelTrim2:      return mode + "09"
+        case .fuelPressure:       return mode + "0A"
+        case .intakePressure:     return mode + "0B"
+        case .rpm:                return mode + "0C"
+        case .speed:              return mode + "0D"
+        case .timingAdvance:      return mode + "0E"
+        case .intakeTemp:         return mode + "0F"
+        case .maf:                return mode + "10"
+        case .throttlePos:        return mode + "11"
+        case .pidsB:              return mode + "20"
         }
     }
 
-    func processCompressionTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
-        let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-        switch name {
-        case "NMHC_CATALYST_MONITORING":
-            output.misfireMonitoring = test
-        case "NOX_SCR_AFTERTREATMENT_MONITORING":
-            output.fuelSystemMonitoring = test
-        case "BOOST_PRESSURE_MONITORING":
-            output.componentMonitoring = test
-        case "EXHAUST_GAS_SENSOR_MONITORING":
-            output.componentMonitoring = test
-        case "PM_FILTER_MONITORING":
-            output.componentMonitoring = test
-        case "EGR_VVT_SYSTEM_MONITORING":
-            output.componentMonitoring = test
-        default:
-            break
+    var description: String {
+        switch self {
+        case .pidsA:                return "Supported PIDs [01-20]"
+        case .status:               return "Status since DTCs cleared"
+        case .freezeDTC:            return "DTC that triggered the freeze frame"
+        case .fuelStatus:           return "Fuel System Status"
+        case .engineLoad:           return "Calculated Engine Load"
+        case .coolantTemp:          return "Coolant temperature"
+        case .shortFuelTrim1:       return "Short Term Fuel Trim - Bank 1"
+        case .longFuelTrim1:        return "Long Term Fuel Trim - Bank 1"
+        case .shortFuelTrim2:       return "Short Term Fuel Trim - Bank 2"
+        case .longFuelTrim2:        return "Long Term Fuel Trim - Bank 2"
+        case .fuelPressure:         return "Fuel Pressure"
+        case .intakePressure:       return "Intake Manifold Pressure"
+        case .speed:                return "Vehicle Speed"
+        case .rpm:                  return "RPM"
+        case .timingAdvance:        return "Timing Advance"
+        case .intakeTemp:           return "Intake Air Temp"
+        case .maf:                  return "Air Flow Rate (MAF)"
+        case .throttlePos:          return "Throttle Position"
+        case .pidsB:                return "Supported PIDs [21-40]"
         }
     }
 
-    func processSparkTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
-        let test = StatusTest(name, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-        switch name {
-        case "CATALYST_MONITORING":
-            output.misfireMonitoring = test
-        case "HEATED_CATALYST_MONITORING":
-            output.fuelSystemMonitoring = test
-        case "EVAPORATIVE_SYSTEM_MONITORING":
-            output.componentMonitoring = test
-        case "SECONDARY_AIR_SYSTEM_MONITORING":
-            output.componentMonitoring = test
-        case "OXYGEN_SENSOR_MONITORING":
-            output.componentMonitoring = test
-        case "OXYGEN_SENSOR_HEATER_MONITORING":
-            output.componentMonitoring = test
-        case "EGR_VVT_SYSTEM_MONITORING":
-            output.componentMonitoring = test
-        default:
-            break
+    var bytes: Int {
+        switch self {
+        case .pidsA:                return 4
+        case .status:               return 4
+        case .freezeDTC:            return 4
+        case .fuelStatus:           return 4
+        case .engineLoad:           return 1
+        case .coolantTemp:          return 1
+        case .shortFuelTrim1:       return 2
+        case .longFuelTrim1:        return 2
+        case .shortFuelTrim2:       return 2
+        case .longFuelTrim2:        return 2
+        case .fuelPressure:         return 1
+        case .intakePressure:       return 2
+        case .rpm:                  return 2
+        case .speed:                return 1
+        case .timingAdvance:        return 2
+        case .intakeTemp:           return 1
+        case .maf:                  return 2
+        case .throttlePos:          return 1
+        case .pidsB:                return 4
         }
     }
 
-    func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
-        let test = StatusTest(testName, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-        switch testName {
-        case "MISFIRE_MONITORING":
-            output.misfireMonitoring = test
-        case "FUEL_SYSTEM_MONITORING":
-            output.fuelSystemMonitoring = test
-        case "COMPONENT_MONITORING":
-            output.componentMonitoring = test
-        default:
-            break
+    var decoder: Decoder {
+        switch self {
+        case .pidsA:                return .pid
+        case .status:               return .status
+        case .freezeDTC:            return .singleDTC
+        case .fuelStatus:           return .fuelStatus
+        case .engineLoad:           return .percent
+        case .coolantTemp:          return .temp
+        case .shortFuelTrim1:       return .percentCentered
+        case .longFuelTrim1:        return .percentCentered
+        case .shortFuelTrim2:       return .percentCentered
+        case .longFuelTrim2:        return .percentCentered
+        case .fuelPressure:         return .fuelPressure
+        case .intakePressure:       return .pressure
+        case .rpm:                  return .uas0x07
+        case .speed:                return .uas0x09
+        case .timingAdvance:        return .timingAdvance
+        case .intakeTemp:           return .temp
+        case .maf:                  return .uas0x27
+        case .throttlePos:          return .percent
+        case .pidsB:                return .pid
         }
-    }
-}
-
-struct Modes {
-    static func generateCommands(modeIdentifier: String) -> [OBDCommand] {
-        let mode = modeIdentifier
-        return [
-        OBDCommand("PIDS_A", description: "Supported PIDs [01-20]",
-                   cmd: mode + "00", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("STATUS", description: "Status since DTCs cleared",
-                   cmd: mode + "01", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FREEZE_DTC", description: "DTC that triggered the freeze frame",
-                   cmd: mode + "02", bytes: 4, decoder: .singleDTC, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_STATUS", description: "Fuel System Status",
-                   cmd: mode + "03", bytes: 4, decoder: .fuelStatus, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ENGINE_LOAD", description: "Calculated Engine Load",
-                   cmd: mode + "04", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("COOLANT_TEMP", description: "Engine Coolant Temperature",
-                   cmd: mode + "05", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("SHORT_FUEL_TRIM_1", description: "Short Term Fuel Trim - Bank 1",
-                   cmd: mode + "06", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("LONG_FUEL_TRIM_1", description: "Long Term Fuel Trim - Bank 1",
-                   cmd: mode + "07", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("SHORT_FUEL_TRIM_2", description: "Short Term Fuel Trim - Bank 2",
-                   cmd: mode + "08", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("LONG_FUEL_TRIM_2", description: "Long Term Fuel Trim - Bank 2",
-                   cmd: mode + "09", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_PRESSURE", description: "Fuel Pressure",
-                   cmd: mode + "0A", bytes: 3, decoder: .fuelPressure, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("INTAKE_PRESSURE", description: "Intake Manifold Pressure",
-                   cmd: mode + "0B", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("RPM", description: "Engine RPM",
-                   cmd: mode + "0C", bytes: 4, decoder: .uas0x07, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("SPEED", description: "Vehicle Speed",
-                   cmd: mode + "0D", bytes: 3, decoder: .uas0x09, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("TIMING_ADVANCE", description: "Timing Advance",
-                   cmd: mode + "0E", bytes: 3, decoder: .timingAdvance, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("INTAKE_TEMP", description: "Intake Air Temp",
-                   cmd: mode + "0F", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("MAF", description: "Air Flow Rate (MAF)",
-                   cmd: mode + "10", bytes: 4, decoder: .uas0x27, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("THROTTLE_POS", description: "Throttle Position",
-                   cmd: mode + "11", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("AIR_STATUS", description: "Secondary Air Status",
-                   cmd: mode + "12", bytes: 3, decoder: .airStatus, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_SENSORS", description: "O2 Sensors Present",
-                   cmd: mode + "13", bytes: 3, decoder: .o2Sensors, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B1S1", description: "O2: Bank 1 - Sensor 1 Voltage",
-                   cmd: mode + "14", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B1S2", description: "O2: Bank 1 - Sensor 2 Voltage",
-                   cmd: mode + "15", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B1S3", description: "O2: Bank 1 - Sensor 3 Voltage",
-                   cmd: mode + "16", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B1S4", description: "O2: Bank 1 - Sensor 4 Voltage",
-                   cmd: mode + "17", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B2S1", description: "O2: Bank 2 - Sensor 1 Voltage",
-                   cmd: mode + "18", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B2S2", description: "O2: Bank 2 - Sensor 2 Voltage",
-                   cmd: mode + "19", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B2S3", description: "O2: Bank 2 - Sensor 3 Voltage",
-                   cmd: mode + "1A", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_B2S4", description: "O2: Bank 2 - Sensor 4 Voltage",
-                   cmd: mode + "1B", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("OBD_COMPLIANCE", description: "OBD Standards Compliance",
-                   cmd: mode + "1C", bytes: 3, decoder: .obdCompliance, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_SENSORS_ALT", description: "O2 Sensors Present (alternate)",
-                   cmd: mode + "1D", bytes: 3, decoder: .o2SensorsAlt, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("AUX_INPUT_STATUS", description: "Auxiliary input status (power take off)",
-                   cmd: mode + "1E", bytes: 3, decoder: .auxInputStatus, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("RUN_TIME", description: "Engine Run Time",
-                   cmd: mode + "1F", bytes: 4, decoder: .uas0x12, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("PIDS_B", description: "Supported PIDs [21-40]",
-                   cmd: mode + "20", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("DISTANCE_W_MIL", description: "Distance Traveled with MIL on",
-                   cmd: mode + "21", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_RAIL_PRESSURE_VAC", description: "Fuel Rail Pressure (relative to vacuum)",
-                   cmd: mode + "22", bytes: 4, decoder: .uas0x19, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_RAIL_PRESSURE_DIRECT", description: "Fuel Rail Pressure (direct inject)",
-                   cmd: mode + "23", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S1_WR_VOLTAGE", description: "02 Sensor 1 WR Lambda Voltage",
-                   cmd: mode + "24", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S2_WR_VOLTAGE", description: "02 Sensor 2 WR Lambda Voltage",
-                   cmd: mode + "25", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S3_WR_VOLTAGE", description: "02 Sensor 3 WR Lambda Voltage",
-                   cmd: mode + "26", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S4_WR_VOLTAGE", description: "02 Sensor 4 WR Lambda Voltage",
-                   cmd: mode + "27", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S5_WR_VOLTAGE", description: "02 Sensor 5 WR Lambda Voltage",
-                   cmd: mode + "28", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S6_WR_VOLTAGE", description: "02 Sensor 6 WR Lambda Voltage",
-                   cmd: mode + "29", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S7_WR_VOLTAGE", description: "02 Sensor 7 WR Lambda Voltage",
-                   cmd: mode + "2A", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S8_WR_VOLTAGE", description: "02 Sensor 8 WR Lambda Voltage",
-                   cmd: mode + "2B", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("COMMANDED_EGR", description: "Commanded EGR",
-                   cmd: mode + "2C", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EGR_ERROR", description: "EGR Error",
-                   cmd: mode + "2D", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EVAPORATIVE_PURGE", description: "Commanded Evaporative Purge",
-                   cmd: mode + "2E", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_LEVEL", description: "Fuel Level Input",
-                   cmd: mode + "2F", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("WARMUPS_SINCE_DTC_CLEAR", description: "Number of warm-ups since codes cleared",
-                   cmd: mode + "30", bytes: 3, decoder: .uas0x01, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("DISTANCE_SINCE_DTC_CLEAR", description: "Distance traveled since codes cleared",
-                   cmd: mode + "31", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EVAP_VAPOR_PRESSURE", description: "Evaporative system vapor pressure",
-                   cmd: mode + "32", bytes: 4, decoder: .evapPressure, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("BAROMETRIC_PRESSURE", description: "Barometric Pressure",
-                   cmd: mode + "33", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S1_WR_CURRENT", description: "02 Sensor 1 WR Lambda Current",
-                   cmd: mode + "34", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S2_WR_CURRENT", description: "02 Sensor 2 WR Lambda Current",
-                   cmd: mode + "35", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S3_WR_CURRENT", description: "02 Sensor 3 WR Lambda Current",
-                   cmd: mode + "36", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S4_WR_CURRENT", description: "02 Sensor 4 WR Lambda Current",
-                   cmd: mode + "37", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S5_WR_CURRENT", description: "02 Sensor 5 WR Lambda Current",
-                   cmd: mode + "38", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S6_WR_CURRENT", description: "02 Sensor 6 WR Lambda Current",
-                   cmd: mode + "39", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S7_WR_CURRENT", description: "02 Sensor 7 WR Lambda Current",
-                   cmd: mode + "3A", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("O2_S8_WR_CURRENT", description: "02 Sensor 8 WR Lambda Current",
-                   cmd: mode + "3B", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("CATALYST_TEMP_B1S1", description: "Catalyst Temperature: Bank 1 - Sensor 1",
-                   cmd: mode + "3C", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("CATALYST_TEMP_B2S1", description: "Catalyst Temperature: Bank 2 - Sensor 1",
-                   cmd: mode + "3D", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("CATALYST_TEMP_B1S2", description: "Catalyst Temperature: Bank 1 - Sensor 2",
-                   cmd: mode + "3E", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("CATALYST_TEMP_B2S2", description: "Catalyst Temperature: Bank 2 - Sensor 2",
-                   cmd: mode + "3F", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("PIDS_C", description: "Supported PIDs [41-60]",
-                   cmd: mode + "40", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("STATUS_DRIVE_CYCLE", description: "Monitor status this drive cycle",
-                   cmd: mode + "41", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("CONTROL_MODULE_VOLTAGE", description: "Control module voltage",
-                   cmd: mode + "42", bytes: 4, decoder: .uas0x0B, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ABSOLUTE_LOAD", description: "Absolute load value",
-                   cmd: mode + "43", bytes: 4, decoder: .absoluteLoad, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("COMMANDED_EQUIV_RATIO", description: "Commanded equivalence ratio",
-                   cmd: mode + "44", bytes: 4, decoder: .uas0x1E, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("RELATIVE_THROTTLE_POS", description: "Relative throttle position",
-                   cmd: mode + "45", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("AMBIANT_AIR_TEMP", description: "Ambient air temperature",
-                   cmd: mode + "46", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("THROTTLE_POS_B", description: "Absolute throttle position B",
-                   cmd: mode + "47", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("THROTTLE_POS_C", description: "Absolute throttle position C",
-                   cmd: mode + "48", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ACCELERATOR_POS_D", description: "Accelerator pedal position D",
-                   cmd: mode + "49", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ACCELERATOR_POS_E", description: "Accelerator pedal position E",
-                   cmd: mode + "4A", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ACCELERATOR_POS_F", description: "Accelerator pedal position F",
-                   cmd: mode + "4B", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("THROTTLE_ACTUATOR", description: "Commanded throttle actuator",
-                   cmd: mode + "4C", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("RUN_TIME_MIL", description: "Time run with MIL on",
-                   cmd: mode + "4D", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("TIME_SINCE_DTC_CLEARED", description: "Time since trouble codes cleared",
-                   cmd: mode + "4E", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("MAX_VALUES", description: "Various Max values",
-                   cmd: mode + "4F", bytes: 6, decoder: .drop, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("MAX_MAF", description: "Maximum value for mass air flow sensor",
-                   cmd: mode + "50", bytes: 6, decoder: .maxMaf, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_TYPE", description: "Fuel Type",
-                   cmd: mode + "51", bytes: 3, decoder: .fuelType, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("ETHANOL_PERCENT", description: "Ethanol Fuel Percent",
-                   cmd: mode + "52", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EVAP_VAPOR_PRESSURE_ABS", description: "Absolute Evap system Vapor Pressure",
-                   cmd: mode + "53", bytes: 4, decoder: .absEvapPressure, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EVAP_VAPOR_PRESSURE_ALT", description: "Evap system vapor pressure",
-                   cmd: mode + "54", bytes: 4, decoder: .evapPressureAlt, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("SHORT_O2_TRIM_B1", description: "Short term secondary O2 trim - Bank 1",
-                   cmd: mode + "55", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("LONG_O2_TRIM_B1", description: "Long term secondary O2 trim - Bank 1",
-                   cmd: mode + "56", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("SHORT_O2_TRIM_B2", description: "Short term secondary O2 trim - Bank 2",
-                   cmd: mode + "57", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("LONG_O2_TRIM_B2", description: "Long term secondary O2 trim - Bank 2",
-                   cmd: mode + "58", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_RAIL_PRESSURE_ABS", description: "Fuel rail pressure (absolute)",
-                   cmd: mode + "59", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("RELATIVE_ACCEL_POS", description: "Relative accelerator pedal position",
-                   cmd: mode + "5A", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("HYBRID_BATTERY_REMAINING", description: "Hybrid battery pack remaining life",
-                   cmd: mode + "5B", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("OIL_TEMP", description: "Engine oil temperature",
-                   cmd: mode + "5C", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_INJECT_TIMING", description: "Fuel injection timing",
-                   cmd: mode + "5D", bytes: 4, decoder: .injectTiming, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("FUEL_RATE", description: "Engine fuel rate",
-                   cmd: mode + "5E", bytes: 4, decoder: .fuelRate, ecu: ECU.ENGINE, fast: true),
-        OBDCommand("EMISSION_REQ", description: "Designed emission requirements",
-                   cmd: mode + "5F", bytes: 3, decoder: .drop, ecu: ECU.ENGINE, fast: true)
-        ]
-    }
-    // Define Mode 1 commands using the common function
-    static var mode1: [OBDCommand] {
-        return generateCommands(modeIdentifier: "01")
-    }
-    // modes
-    static var modes: [[OBDCommand]] {
-        return [mode1]
-    }
-
-    static func getCommand(cmd: String) -> OBDCommand? {
-        for mode in Modes.modes {
-            for command in mode where command.cmd == cmd {
-                    return command
-            }
-        }
-        return nil
     }
 
     static var pidGetters: [OBDCommand] = {
-        // returns a list of PID GET commands
         var getters: [OBDCommand] = []
-        for mode in Modes.modes {
-            for cmd in mode where cmd .decoder == .pid {
-                    getters.append(cmd)
+        for command in OBDCommand.allCases {
+            if command.decoder == .pid {
+                getters.append(command)
             }
         }
         return getters
     }()
 }
+//
+// struct OBDCommand: Codable, Hashable {
+//    var name: String
+//    var description: String
+//    var cmd: String
+//    var bytes: Int
+//    var decoder: Decoder
+//    var ecu: ECU
+//    var fast: Bool
+//
+//    init(_ name: String, description: String, cmd: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) {
+//         self.name = name
+//         self.description = description
+//         self.cmd = cmd
+//         self.bytes = bytes
+//         self.decoder = decoder
+//         self.ecu = ecu
+//         self.fast = fast
+//     }
+//
+//    static func generateCommand(_ name: String, mode: String, cmd: String, description: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) -> OBDCommand {
+//        return OBDCommand(name, description: description, cmd: "\(mode)\(cmd)", bytes: bytes, decoder: decoder, ecu: ecu, fast: fast)
+//    }
+//    
+//    static var commands: [String: OBDCommand] {
+//            var commandDictionary = [String: OBDCommand]()
+//
+//            // Populate the dictionary with your commands
+//            for command in Self.mode1 {
+//                commandDictionary[command.name] = command
+//            }
+//
+//            return commandDictionary
+//    }
+// }
+//
+// extension OBDCommand {
+//    static var mode1: [OBDCommand] {
+//        return [
+//            generateCommand("PIDS_A", mode: "01", cmd: "00", description: "Supported PIDs [01-20]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE),
+//            generateCommand("status", mode: "01", cmd: "01", description: "Status since DTCs cleared", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("freezeDTC", mode: "01", cmd: "02", description: "DTC that triggered the freeze frame", bytes: 4, decoder: .singleDTC, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_STATUS", mode: "01", cmd: "03", description: "Fuel System Status", bytes: 4, decoder: .fuelStatus, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ENGINE_LOAD", mode: "01", cmd: "04", description: "Calculated Engine Load", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("COOLANT_TEMP", mode: "01", cmd: "05", description: "Engine Coolant Temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("SHORT_FUEL_TRIM_1", mode: "01", cmd: "06", description: "Short Term Fuel Trim - Bank 1", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("LONG_FUEL_TRIM_1", mode: "01", cmd: "07", description: "Long Term Fuel Trim - Bank 1", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("SHORT_FUEL_TRIM_2", mode: "01", cmd: "08", description: "Short Term Fuel Trim - Bank 2", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("LONG_FUEL_TRIM_2", mode: "01", cmd: "09", description: "Long Term Fuel Trim - Bank 2", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_PRESSURE", mode: "01", cmd: "0A", description: "Fuel Pressure", bytes: 3, decoder: .fuelPressure, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("INTAKE_PRESSURE", mode: "01", cmd: "0B", description: "Intake Manifold Pressure", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("rpm", mode: "01", cmd: "0C", description: "Engine RPM", bytes: 4, decoder: .uas0x07, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("speed", mode: "01", cmd: "0D", description: "Vehicle Speed", bytes: 3, decoder: .uas0x09, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("TIMING_ADVANCE", mode: "01", cmd: "0E", description: "Timing Advance", bytes: 3, decoder: .timingAdvance, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("INTAKE_TEMP", mode: "01", cmd: "0F", description: "Intake Air Temp", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("MAF", mode: "01", cmd: "10", description: "Air Flow Rate (MAF)", bytes: 4, decoder: .uas0x27, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("THROTTLE_POS", mode: "01", cmd: "11", description: "Throttle Position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("AIR_STATUS", mode: "01", cmd: "12", description: "Secondary Air Status", bytes: 3, decoder: .airStatus, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_SENSORS", mode: "01", cmd: "13", description: "O2 Sensors Present", bytes: 3, decoder: .o2Sensors, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B1S1", mode: "01", cmd: "14", description: "O2: Bank 1 - Sensor 1 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B1S2", mode: "01", cmd: "15", description: "O2: Bank 1 - Sensor 2 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B1S3", mode: "01", cmd: "16", description: "O2: Bank 1 - Sensor 3 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B1S4", mode: "01", cmd: "17", description: "O2: Bank 1 - Sensor 4 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B2S1", mode: "01", cmd: "18", description: "O2: Bank 2 - Sensor 1 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B2S2", mode: "01", cmd: "19", description: "O2: Bank 2 - Sensor 2 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B2S3", mode: "01", cmd: "1A", description: "O2: Bank 2 - Sensor 3 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_B2S4", mode: "01", cmd: "1B", description: "O2: Bank 2 - Sensor 4 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("OBD_COMPLIANCE", mode: "01", cmd: "1C", description: "OBD Standards Compliance", bytes: 3, decoder: .obdCompliance, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_SENSORS_ALT", mode: "01", cmd: "1D", description: "O2 Sensors Present (alternate)", bytes: 3, decoder: .o2SensorsAlt, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("AUX_INPUT_STATUS", mode: "01", cmd: "1E", description: "Auxiliary input status (power take off)", bytes: 3, decoder: .auxInputStatus, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("RUN_TIME", mode: "01", cmd: "1F", description: "Engine Run Time", bytes: 4, decoder: .uas0x12, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("PIDS_B", mode: "01", cmd: "20", description: "Supported PIDs [21-40]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("DISTANCE_W_MIL", mode: "01", cmd: "21", description: "Distance Traveled with MIL on", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_RAIL_PRESSURE_VAC", mode: "01", cmd: "22", description: "Fuel Rail Pressure (relative to vacuum)", bytes: 4, decoder: .uas0x19, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_RAIL_PRESSURE_DIRECT", mode: "01", cmd: "23", description: "Fuel Rail Pressure (direct inject)", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S1_WR_VOLTAGE", mode: "01", cmd: "24", description: "02 Sensor 1 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S2_WR_VOLTAGE", mode: "01", cmd: "25", description: "02 Sensor 2 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S3_WR_VOLTAGE", mode: "01", cmd: "26", description: "02 Sensor 3 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S4_WR_VOLTAGE", mode: "01", cmd: "27", description: "02 Sensor 4 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S5_WR_VOLTAGE", mode: "01", cmd: "28", description: "02 Sensor 5 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S6_WR_VOLTAGE", mode: "01", cmd: "29", description: "02 Sensor 6 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S7_WR_VOLTAGE", mode: "01", cmd: "2A", description: "02 Sensor 7 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S8_WR_VOLTAGE", mode: "01", cmd: "2B", description: "02 Sensor 8 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("COMMANDED_EGR", mode: "01", cmd: "2C", description: "Commanded EGR", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EGR_ERROR", mode: "01", cmd: "2D", description: "EGR Error", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EVAPORATIVE_PURGE", mode: "01", cmd: "2E", description: "Commanded Evaporative Purge", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_LEVEL", mode: "01", cmd: "2F", description: "Fuel Level Input", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("WARMUPS_SINCE_DTC_CLEAR", mode: "01", cmd: "30", description: "Number of warm-ups since codes cleared", bytes: 3, decoder: .uas0x01, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("DISTANCE_SINCE_DTC_CLEAR", mode: "01", cmd: "31", description: "Distance traveled since codes cleared", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EVAP_VAPOR_PRESSURE", mode: "01", cmd: "32", description: "Evaporative system vapor pressure", bytes: 4, decoder: .evapPressure, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("BAROMETRIC_PRESSURE", mode: "01", cmd: "33", description: "Barometric Pressure", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S1_WR_CURRENT", mode: "01", cmd: "34", description: "02 Sensor 1 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S2_WR_CURRENT", mode: "01", cmd: "35", description: "02 Sensor 2 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S3_WR_CURRENT", mode: "01", cmd: "36", description: "02 Sensor 3 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S4_WR_CURRENT", mode: "01", cmd: "37", description: "02 Sensor 4 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S5_WR_CURRENT", mode: "01", cmd: "38", description: "02 Sensor 5 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S6_WR_CURRENT", mode: "01", cmd: "39", description: "02 Sensor 6 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S7_WR_CURRENT", mode: "01", cmd: "3A", description: "02 Sensor 7 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("O2_S8_WR_CURRENT", mode: "01", cmd: "3B", description: "02 Sensor 8 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("CATALYST_TEMP_B1S1", mode: "01", cmd: "3C", description: "Catalyst Temperature: Bank 1 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("CATALYST_TEMP_B2S1", mode: "01", cmd: "3D", description: "Catalyst Temperature: Bank 2 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("CATALYST_TEMP_B1S2", mode: "01", cmd: "3E", description: "Catalyst Temperature: Bank 1 - Sensor 2", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("CATALYST_TEMP_B2S2", mode: "01", cmd: "3F", description: "Catalyst Temperature: Bank 2 - Sensor 2", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("PIDS_C", mode: "01", cmd: "40", description: "Supported PIDs [41-60]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("STATUS_DRIVE_CYCLE", mode: "01", cmd: "41", description: "Monitor status this drive cycle", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("CONTROL_MODULE_VOLTAGE", mode: "01", cmd: "42", description: "Control module voltage", bytes: 4, decoder: .uas0x0B, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ABSOLUTE_LOAD", mode: "01", cmd: "43", description: "Absolute load value", bytes: 4, decoder: .absoluteLoad, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("COMMANDED_EQUIV_RATIO", mode: "01", cmd: "44", description: "Commanded equivalence ratio", bytes: 4, decoder: .uas0x1E, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("RELATIVE_THROTTLE_POS", mode: "01", cmd: "45", description: "Relative throttle position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("AMBIANT_AIR_TEMP", mode: "01", cmd: "46", description: "Ambient air temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("THROTTLE_POS_B", mode: "01", cmd: "47", description: "Absolute throttle position B", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("THROTTLE_POS_C", mode: "01", cmd: "48", description: "Absolute throttle position C", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ACCELERATOR_POS_D", mode: "01", cmd: "49", description: "Accelerator pedal position D", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ACCELERATOR_POS_E", mode: "01", cmd: "4A", description: "Accelerator pedal position E", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ACCELERATOR_POS_F", mode: "01", cmd: "4B", description: "Accelerator pedal position F", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("THROTTLE_ACTUATOR", mode: "01", cmd: "4C", description: "Commanded throttle actuator", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("RUN_TIME_MIL", mode: "01", cmd: "4D", description: "Time run with MIL on", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("TIME_SINCE_DTC_CLEARED", mode: "01", cmd: "4E", description: "Time since trouble codes cleared", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("MAX_VALUES", mode: "01", cmd: "4F", description: "Various Max values", bytes: 6, decoder: .drop, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("MAX_MAF", mode: "01", cmd: "50", description: "Maximum value for mass air flow sensor", bytes: 6, decoder: .maxMaf, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_TYPE", mode: "01", cmd: "51", description: "Fuel Type", bytes: 3, decoder: .fuelType, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("ETHANOL_PERCENT", mode: "01", cmd: "52", description: "Ethanol Fuel Percent", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EVAP_VAPOR_PRESSURE_ABS", mode: "01", cmd: "53", description: "Absolute Evap system Vapor Pressure", bytes: 4, decoder: .absEvapPressure, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EVAP_VAPOR_PRESSURE_ALT", mode: "01", cmd: "54", description: "Evap system vapor pressure", bytes: 4, decoder: .evapPressureAlt, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("SHORT_O2_TRIM_B1", mode: "01", cmd: "55", description: "Short term secondary O2 trim - Bank 1", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("LONG_O2_TRIM_B1", mode: "01", cmd: "56", description: "Long term secondary O2 trim - Bank 1", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("SHORT_O2_TRIM_B2", mode: "01", cmd: "57", description: "Short term secondary O2 trim - Bank 2", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("LONG_O2_TRIM_B2", mode: "01", cmd: "58", description: "Long term secondary O2 trim - Bank 2", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_RAIL_PRESSURE_ABS", mode: "01", cmd: "59", description: "Fuel rail pressure (absolute)", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("RELATIVE_ACCEL_POS", mode: "01", cmd: "5A", description: "Relative accelerator pedal position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("HYBRID_BATTERY_REMAINING", mode: "01", cmd: "5B", description: "Hybrid battery pack remaining life", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("OIL_TEMP", mode: "01", cmd: "5C", description: "Engine oil temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_INJECT_TIMING", mode: "01", cmd: "5D", description: "Fuel injection timing", bytes: 4, decoder: .injectTiming, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("FUEL_RATE", mode: "01", cmd: "5E", description: "Engine fuel rate", bytes: 4, decoder: .fuelRate, ecu: ECU.ENGINE, fast: true),
+//            generateCommand("EMISSION_REQ", mode: "01", cmd: "5F", description: "Designed emission requirements", bytes: 3, decoder: .drop, ecu: ECU.ENGINE, fast: true)
+//        ]
+//    }
+//
+//    static var modes: [[OBDCommand]] {
+//            return [mode1]
+//    }
+//
+//    static var pidGetters: [OBDCommand] = {
+//        var getters: [OBDCommand] = []
+//        for mode in modes {
+//                for cmd in mode where cmd .decoder == .pid {
+//                        getters.append(cmd)
+//            }
+//        }
+//        return getters
+//    }()
+//
+//    // getCommand by name
+//
+//    static func getCommand(_ name: String) -> OBDCommand? {
+//        for mode in modes {
+//            for cmd in mode where cmd.name == name {
+//                return cmd
+//            }
+//        }
+//        return nil
+//    }
+// }

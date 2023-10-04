@@ -34,8 +34,13 @@ struct SplashScreenView: View {
     let size1: CGFloat = 250
     var offset: CGFloat = 200
 
+    let obdService = OBDService(bleManager: BLEManager())
+    let garage = Garage()
+
     var body: some View {
         if isActive {
+            MainView(garage: Garage())
+                .transition(.opacity)
         } else {
             VStack {
                 VStack {
@@ -62,14 +67,11 @@ struct SplashScreenView: View {
                                 .resizable()
                                 .renderingMode(.template)
                                 .frame(width: 100, height: 100)
-                                // forefround color gradient
                                 .foregroundStyle(
                                     LinearGradient(Color.red, Color.blue)
                                 )
                                 .position(x: carX + center.x, y: center.y + 10)
-
                         }
-
                         .onAppear {
                             withAnimation(.spring(duration: 1.4, bounce: 0.4, blendDuration: 2)) {
                                 self.rotation = 1
@@ -77,11 +79,8 @@ struct SplashScreenView: View {
                                 self.size = 1.2
                                 self.opacity = 0.9
                             }
-
+                        }
                     }
-
-                }
-
                 }
             }
             .onAppear {
@@ -92,9 +91,9 @@ struct SplashScreenView: View {
                 }
             }
             .preferredColorScheme(.dark)
-
+//            .background(LinearGradient(.darkStart, .darkEnd))
         }
-        }
+    }
 }
 
 #Preview {

@@ -27,14 +27,14 @@ struct ProtocolPicker: View {
 }
 
 struct RoundedRectangleStyle: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+
     func body(content: Content) -> some View {
         content
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
-                    .shadow(color: Color.darkEnd, radius: 5, x: -3, y: -3)
-                    .shadow(color: Color.darkStart, radius: 5, x: 3, y: 3)
+                    .fill(Color.endColor())
             )
     }
 }

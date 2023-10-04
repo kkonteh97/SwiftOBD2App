@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct GaugeConstants {
-    static let gaugeSize: CGSize = CGSize(width: 150, height: 150) // Adjust the size of the gauge view
+    static let gaugeSize: CGSize = CGSize(width: 200, height: 200) // Adjust the size of the gauge view
     static let needleSize: CGSize = CGSize(width: 70, height: 3.5) // Adjust the size of the needle
     static let tickWidthSmall: CGFloat = 1.5 // Adjust the width of the small tick
     static let tickWidthBig: CGFloat = 2.5 // Adjust the width of the big tick
@@ -21,8 +21,8 @@ struct Needle: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         path.move(to: CGPoint(x: 0, y: rect.height/2))
-        path.addLine(to: CGPoint(x: rect.width, y: 0))
-        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
+        path.addLine(to: CGPoint(x: rect.width / 2, y: 0))
+        path.addLine(to: CGPoint(x: rect.width / 2, y: rect.height))
         return path
     }
 }
@@ -38,13 +38,10 @@ struct GaugeView: View {
         return maxValue/steperSplit
     }
 
+    // colormix white to red
     func colorMix(percent: Int) -> Color {
-        let percent = Double(percent)
-        let tempG = (100.0-percent)/100
-        let green: Double = tempG < 0 ? 0 : tempG
-        let tempR = 1+(percent-100.0)/100.0
-        let red: Double = tempR < 0 ? 0 : tempR
-        return Color.init(red: red, green: green, blue: 0)
+        let red = Double(percent) / 100
+        return Color(red: red, green: 1 - red, blue: 0)
     }
 
     func tickText(at tick: Int, text: String) -> some View {
@@ -53,9 +50,10 @@ struct GaugeView: View {
         let stepper = coveredRadius/Double(tickCount)
         let rotation = startAngle + stepper * Double(tick)
         return Text(text)
+            .font(.system(size: 16, design: .rounded))
                 .foregroundColor(colorMix(percent: percent))
                 .rotationEffect(.init(degrees: -1 * rotation), anchor: .center)
-                .offset(x: -45, y: 0).rotationEffect(Angle.degrees(rotation))
+                .offset(x: -80, y: 0).rotationEffect(Angle.degrees(rotation))
     }
 
     func tick(at tick: Int, totalTicks: Int) -> some View {
@@ -67,29 +65,41 @@ struct GaugeView: View {
             Rectangle()
                 .fill(colorMix(percent: percent))
                 .frame(width: tick % 2 == 0 ? 5 : 3,
-                       height: tick % 2 == 0 ? 20 : 10) // alternet small big dash
+                       height: tick % 2 == 0 ? 10 : 5) // alternet small big dash
             Spacer()
         }.rotationEffect(rotation)
     }
 
     var body: some View {
         ZStack {
+            Circle()
+                .strokeBorder(.gray, lineWidth: 2)
+
+            Circle()
+                .fill(Color.gray)
+                .frame(width: 125)
+                .shadow(color: Color.gray, radius: 10)
+                .shadow(color: Color.darkStart, radius: 10)
+                .blur(radius: 1.0)
+
+            Text("\(Int($value.wrappedValue))")
+                .font(.system(size: 40, design: .rounded))
+                .foregroundColor(.white)
+
             ForEach(0..<tickCount*2 + 1, id: \.self) { tick in
-                self.tick(at: tick,
-                          totalTicks: self.tickCount*2)
+                self.tick(at: tick, totalTicks: self.tickCount*2)
             }
-            ForEach(0..<tickCount+1, id: \.self) { tick in
+
+            ForEach(0..<tickCount + 1, id: \.self) { tick in
                 self.tickText(at: tick, text: "\(self.steperSplit*tick)")
             }
+
             Needle()
                 .fill(Color.red)
                 .frame(width: GaugeConstants.needleSize.width, height: GaugeConstants.needleSize.height)
-                .offset(x: -GaugeConstants.needleSize.width / 2, y: 0)
+                .offset(x: -GaugeConstants.needleSize.width / 2 - 25, y: 0)
                 .rotationEffect(.init(degrees: getAngle(value: Double(value))))
 
-            Circle()
-                    .frame(width: GaugeConstants.circleSize.width, height: GaugeConstants.circleSize.height)
-                    .foregroundColor(.red)
         }.frame(width: GaugeConstants.gaugeSize.width, height: GaugeConstants.gaugeSize.height, alignment: .center)
     }
 
@@ -97,7 +107,6 @@ struct GaugeView: View {
         return (value/Double(maxValue))*coveredRadius - coveredRadius/2 + 90
     }
 }
-
 struct GuageView_Previews: PreviewProvider {
     static var previews: some View {
         GaugeView(coveredRadius: 250, maxValue: 80, steperSplit: 10, value: .constant(20))

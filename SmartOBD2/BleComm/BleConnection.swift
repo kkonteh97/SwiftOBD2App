@@ -10,7 +10,7 @@ import CoreBluetooth
 import OSLog
 
 enum ConnectionState {
-    case disconnected
+    case notInitialized
     case connecting
     case connectedToAdapter
     case connectedToVehicle
@@ -18,8 +18,8 @@ enum ConnectionState {
 
     var description: String {
         switch self {
-        case .disconnected:
-            return "Disconnected"
+        case .notInitialized:
+            return "Not Initialized"
         case .connecting:
             return "Connecting"
         case .connectedToAdapter:
@@ -32,6 +32,8 @@ enum ConnectionState {
     }
 }
 
+var connectionState: ConnectionState = .notInitialized
+
 class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralManagerDelegate {
 
     // MARK: Properties
@@ -43,13 +45,12 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     @Published var elmAdapter: CBPeripheral?
     private var centralManager: CBCentralManager?
     @Published var discoveredServicesAndCharacteristics: [(CBService, [CBCharacteristic])] = []
-    @Published var connectionState: ConnectionState = .disconnected
 
     @Published var connected: Bool = false
-    static let shared = BLEManager()
     var linesToParse = [String]()
     var adapterReady = false
-    var debug = true
+    var debug = false
+    var buffer = Data()
 
     var sendMessageCompletion: (([String]?, Error?) -> Void)?
 
@@ -67,13 +68,13 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-            self.centralManager?
-                .scanForPeripherals(withServices: [CBUUID(string: CarlyObd.elmServiceUUID)], options: nil)
+//            self.centralManager?
+//                .scanForPeripherals(withServices: [CBUUID(string: CarlyObd.elmServiceUUID)], options: nil)
             connectionState = .connecting
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
             self.connected = false
-            connectionState = .disconnected
+            connectionState = .notInitialized
 
         case .resetting:
             logger.warning("Bluetooth is resetting.")
@@ -238,8 +239,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     func handleResponse(completion: ((String?, Error?) -> Void)?) {
 
     }
-
-    var buffer = Data()
 
     func processReceivedData(_ data: Data, completion: (([String]?, Error?) -> Void)?) {
 

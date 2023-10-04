@@ -9,29 +9,31 @@ import Foundation
 
 extension ELM327 {
     func getSupportedPIDs(_ obdProtocol: PROTOCOL) async -> [OBDCommand] {
-        let pidGetters = Modes.pidGetters
+        let pidGetters = OBDCommand.pidGetters
         var supportedPIDsSet: Set<OBDCommand> = Set()
 
         for pid in pidGetters {
             do {
-                let response = try await sendMessageAsync(pid.cmd)
+                let response = try await sendMessageAsync(pid.command(mode: "01"))
                 // find first instance of 41 plus command sent, from there we determine the position of everything else
                 // Ex.
                 //        || ||
                 // 7E8 06 41 00 BE 7F B8 13
-                let messages = call(response, idBits: obdProtocol.idBits)
+                guard let messages = call(response, idBits: obdProtocol.idBits) else {
+                   logger.error("No messages found")
+                    continue
+                }
 
                 // Convert ecuData to binary and extract supported PIDs
-                let binaryData = BitArray(data: messages[0].data)
+
+                let binaryData = BitArray(data: messages[0].data[2...])
 
                 let supportedPIDsByECU = extractSupportedPIDs(binaryData.binaryArray)
-                // Check if the supported PIDs are present in the predefined OBD commands
-                let modeCommands = Modes.mode1
-                // map supportedPIDsByECU to the modeCommands
-                for modeCommand in modeCommands
-                                where supportedPIDsByECU.contains(String(modeCommand.cmd.dropFirst(2))) {
-                           supportedPIDsSet.insert(modeCommand) // Add to supported PIDs set
-                   }
+                let commands = OBDCommand.allCases
+
+                // map supported PIDs to OBDCommand enum commands
+                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.command(mode: "")) }
+                supportedPIDsSet.formUnion(supportedPIDs)
             } catch {
                 logger.error("\(error.localizedDescription)")
             }
