@@ -1,11 +1,24 @@
 name: SMARTOBD2
 options:
   bundleIdPrefix: com.myapp
-
 targets:
-    SMARTOBD2:
-        type: application
-        platform: iOS
-        deploymentTarget: "15.0"
-        sources: [SMARTOBD2]
+  SMARTOBD2:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    info:
+      path: "SMARTOBD2/Info.plist"
+      properties:
+        CFBundleDisplayName: $(PRODUCT_NAME)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundlePackageType: $(PRODUCT_BUNDLE_PACKAGE_TYPE)
+        UILaunchStoryboardName: "LaunchScreen"
+        NSBluetoothAlwaysUsageDescription: "This app uses Bluetooth to connect to nearby devices."
+        NSBluetoothPeripheralUsageDescription: "This app uses Bluetooth to connect to nearby devices."
+        UIBackgroundModes: ["bluetooth-central"]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+    sources:
+      - path: "SMARTOBD2"
 
