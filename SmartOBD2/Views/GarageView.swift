@@ -6,64 +6,69 @@
 //
 
 import SwiftUI
-import Combine
-
-class GarageViewModel: ObservableObject {
-    @Published var garage: Garage
-
-    @Published var garageVehicles: [GarageVehicle] = []
-    private var cancellables = Set<AnyCancellable>()
-
-    init(garage: Garage) {
-        self.garage = garage
-        garage.$garageVehicles
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.garageVehicles, on: self)
-            .store(in: &cancellables)
-    }
-
-    func deleteVehicle(_ vehicle: GarageVehicle) {
-        garage.deleteVehicle(vehicle)
-    }
-}
 
 struct GarageView: View {
     @ObservedObject var viewModel: GarageViewModel
-    @Binding var selectedVehicle: Int
-
-    var garageVehicles: [GarageVehicle] {
-        viewModel.garageVehicles
-    }
+    @State private var showingSheet = false
 
     var body: some View {
-        VStack {
-            ForEach(garageVehicles) { vehicle in
-                HStack(spacing: 10) {
-                    Text(vehicle.make)
-                    Spacer()
-                    Text(vehicle.model)
-                    Spacer()
-                    Text(vehicle.year)
-                    Spacer()
-                    Button {
-                        viewModel.deleteVehicle(vehicle)
-                    } label: {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
+        ZStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                ForEach(viewModel.garage.garageVehicles) { vehicle in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(vehicle.make)
+                                .font(.system(size: 20, weight: .bold, design: .default))
+                                 .foregroundColor(.white)
+
+                            Text(vehicle.model)
+                                .font(.system(size: 14, weight: .bold, design: .default))
+                                .foregroundColor(.white)
+
+                            Text(vehicle.year)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        Spacer()
+                        Button {
+                            viewModel.deleteVehicle(vehicle)
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: 125, alignment: .leading)
+                    .background(viewModel.currentVehicle?.id == vehicle.id ? Color.blue : Color.clear)
+                    .padding(.bottom, 15)
+                    .onTapGesture {
+                        withAnimation {
+                            viewModel.garage.setCurrentVehicle(by: vehicle.id)
+                        }
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .modifier(RoundedRectangleStyle())
-                .onTapGesture {
-                    withAnimation {
-                        selectedVehicle =  vehicle.id
-                    }
-                }
+                Spacer()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Garage")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarItems(trailing: 
+            Button {
+                showingSheet.toggle()
+            } label: {
+                Image(systemName: "plus.circle")
+                    .foregroundColor(.white)
+                    .font(.system(size: 20))
+            }
+            .sheet(isPresented: $showingSheet) {
+                AddVehicleView(viewModel: AddVehicleViewModel(garage: viewModel.garage))
+            }
+        )
     }
 }
 
 #Preview {
-    GarageView(viewModel: GarageViewModel(garage: Garage()), selectedVehicle: .constant(1))
+    GarageView(viewModel: GarageViewModel(garage: Garage()))
+        .background(LinearGradient(.darkStart, .darkEnd))
 }

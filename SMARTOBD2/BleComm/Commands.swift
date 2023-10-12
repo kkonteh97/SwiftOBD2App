@@ -54,7 +54,7 @@ struct OBDCommandConfiguration {
     let fast: Bool
 }
 
-enum OBDCommand: CaseIterable, Codable {
+enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
     case pidsA
     case status
     case freezeDTC
@@ -99,75 +99,77 @@ enum OBDCommand: CaseIterable, Codable {
         }
     }
 
+    var id: UUID { UUID() }
+
     var description: String {
         switch self {
-        case .pidsA:                return "Supported PIDs [01-20]"
-        case .status:               return "Status since DTCs cleared"
-        case .freezeDTC:            return "DTC that triggered the freeze frame"
-        case .fuelStatus:           return "Fuel System Status"
-        case .engineLoad:           return "Calculated Engine Load"
-        case .coolantTemp:          return "Coolant temperature"
-        case .shortFuelTrim1:       return "Short Term Fuel Trim - Bank 1"
-        case .longFuelTrim1:        return "Long Term Fuel Trim - Bank 1"
-        case .shortFuelTrim2:       return "Short Term Fuel Trim - Bank 2"
-        case .longFuelTrim2:        return "Long Term Fuel Trim - Bank 2"
-        case .fuelPressure:         return "Fuel Pressure"
-        case .intakePressure:       return "Intake Manifold Pressure"
-        case .speed:                return "Vehicle Speed"
-        case .rpm:                  return "RPM"
-        case .timingAdvance:        return "Timing Advance"
-        case .intakeTemp:           return "Intake Air Temp"
-        case .maf:                  return "Air Flow Rate (MAF)"
-        case .throttlePos:          return "Throttle Position"
-        case .pidsB:                return "Supported PIDs [21-40]"
+        case .pidsA:              return "Supported PIDs [01-20]"
+        case .status:             return "Status since DTCs cleared"
+        case .freezeDTC:          return "DTC that triggered the freeze frame"
+        case .fuelStatus:         return "Fuel System Status"
+        case .engineLoad:         return "Calculated Engine Load"
+        case .coolantTemp:        return "Coolant temperature"
+        case .shortFuelTrim1:     return "Short Term Fuel Trim - Bank 1"
+        case .longFuelTrim1:      return "Long Term Fuel Trim - Bank 1"
+        case .shortFuelTrim2:     return "Short Term Fuel Trim - Bank 2"
+        case .longFuelTrim2:      return "Long Term Fuel Trim - Bank 2"
+        case .fuelPressure:       return "Fuel Pressure"
+        case .intakePressure:     return "Intake Manifold Pressure"
+        case .speed:              return "Vehicle Speed"
+        case .rpm:                return "RPM"
+        case .timingAdvance:      return "Timing Advance"
+        case .intakeTemp:         return "Intake Air Temp"
+        case .maf:                return "Air Flow Rate (MAF)"
+        case .throttlePos:        return "Throttle Position"
+        case .pidsB:              return "Supported PIDs [21-40]"
         }
     }
 
     var bytes: Int {
         switch self {
-        case .pidsA:                return 4
-        case .status:               return 4
-        case .freezeDTC:            return 4
-        case .fuelStatus:           return 4
-        case .engineLoad:           return 1
-        case .coolantTemp:          return 1
-        case .shortFuelTrim1:       return 2
-        case .longFuelTrim1:        return 2
-        case .shortFuelTrim2:       return 2
-        case .longFuelTrim2:        return 2
-        case .fuelPressure:         return 1
-        case .intakePressure:       return 2
-        case .rpm:                  return 2
-        case .speed:                return 1
-        case .timingAdvance:        return 2
-        case .intakeTemp:           return 1
-        case .maf:                  return 2
-        case .throttlePos:          return 1
-        case .pidsB:                return 4
+        case .pidsA:              return 4
+        case .status:             return 4
+        case .freezeDTC:          return 4
+        case .fuelStatus:         return 4
+        case .engineLoad:         return 1
+        case .coolantTemp:        return 1
+        case .shortFuelTrim1:     return 2
+        case .longFuelTrim1:      return 2
+        case .shortFuelTrim2:     return 2
+        case .longFuelTrim2:      return 2
+        case .fuelPressure:       return 1
+        case .intakePressure:     return 2
+        case .rpm:                return 2
+        case .speed:              return 1
+        case .timingAdvance:      return 2
+        case .intakeTemp:         return 1
+        case .maf:                return 2
+        case .throttlePos:        return 1
+        case .pidsB:              return 4
         }
     }
 
     var decoder: Decoder {
         switch self {
-        case .pidsA:                return .pid
-        case .status:               return .status
-        case .freezeDTC:            return .singleDTC
-        case .fuelStatus:           return .fuelStatus
-        case .engineLoad:           return .percent
-        case .coolantTemp:          return .temp
-        case .shortFuelTrim1:       return .percentCentered
-        case .longFuelTrim1:        return .percentCentered
-        case .shortFuelTrim2:       return .percentCentered
-        case .longFuelTrim2:        return .percentCentered
-        case .fuelPressure:         return .fuelPressure
-        case .intakePressure:       return .pressure
-        case .rpm:                  return .uas0x07
-        case .speed:                return .uas0x09
-        case .timingAdvance:        return .timingAdvance
-        case .intakeTemp:           return .temp
-        case .maf:                  return .uas0x27
-        case .throttlePos:          return .percent
-        case .pidsB:                return .pid
+        case .pidsA:             return .pid
+        case .status:            return .status
+        case .freezeDTC:         return .singleDTC
+        case .fuelStatus:        return .fuelStatus
+        case .engineLoad:        return .percent
+        case .coolantTemp:       return .temp
+        case .shortFuelTrim1:    return .percentCentered
+        case .longFuelTrim1:     return .percentCentered
+        case .shortFuelTrim2:    return .percentCentered
+        case .longFuelTrim2:     return .percentCentered
+        case .fuelPressure:      return .fuelPressure
+        case .intakePressure:    return .pressure
+        case .rpm:               return .uas0x07
+        case .speed:             return .uas0x09
+        case .timingAdvance:     return .timingAdvance
+        case .intakeTemp:        return .temp
+        case .maf:               return .uas0x27
+        case .throttlePos:       return .percent
+        case .pidsB:             return .pid
         }
     }
 
@@ -181,6 +183,7 @@ enum OBDCommand: CaseIterable, Codable {
         return getters
     }()
 }
+
 //
 // struct OBDCommand: Codable, Hashable {
 //    var name: String
@@ -204,7 +207,7 @@ enum OBDCommand: CaseIterable, Codable {
 //    static func generateCommand(_ name: String, mode: String, cmd: String, description: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) -> OBDCommand {
 //        return OBDCommand(name, description: description, cmd: "\(mode)\(cmd)", bytes: bytes, decoder: decoder, ecu: ecu, fast: fast)
 //    }
-//    
+//
 //    static var commands: [String: OBDCommand] {
 //            var commandDictionary = [String: OBDCommand]()
 //

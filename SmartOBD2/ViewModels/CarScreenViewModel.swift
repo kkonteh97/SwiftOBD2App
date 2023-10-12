@@ -9,15 +9,15 @@ import Foundation
 
 class CarScreenViewModel: ObservableObject {
 
-    let elm327: ELM327
+    let obdService: OBDService
 
     @Published var command: String = ""
 
-    init(elm327: ELM327) {
-        self.elm327 = elm327
+    init(obdService: OBDService) {
+        self.obdService = obdService
     }
 
     func sendMessage() async throws -> [String] {
-        return try await elm327.sendMessageAsync(command, withTimeoutSecs: 5)
+        return try await obdService.elm327.sendMessageAsync(command, withTimeoutSecs: 5)
     }
 }

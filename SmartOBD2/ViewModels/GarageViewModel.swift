@@ -1,42 +1,35 @@
 //
-//  HomeViewModel.swift
+//  GarageViewModel.swift
 //  SMARTOBD2
 //
-//  Created by kemo konteh on 9/30/23.
+//  Created by kemo konteh on 10/5/23.
 //
 
-import SwiftUI
+import Foundation
 import Combine
 
-class HomeViewModel: ObservableObject {
-    @Published var obdInfo = OBDInfo()
-
-    @Published var vinInput = ""
-    @Published var vinInfo: VINInfo?
-    @Published var selectedProtocol: PROTOCOL = .NONE
+class GarageViewModel: ObservableObject {
     @Published var garage: Garage
-
-    @Published var garageVehicles: [GarageVehicle] = []
-
     @Published var currentVehicle: GarageVehicle?
+    @Published var garageVehicles: [GarageVehicle] = []
 
     private var cancellables = Set<AnyCancellable>()
 
-    let obdService: OBDService
-
-    init(obdService: OBDService, garage: Garage) {
-        self.obdService = obdService
+    init(garage: Garage) {
         self.garage = garage
-
         garage.$garageVehicles
             .receive(on: DispatchQueue.main)
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
-
+        
         garage.$currentVehicleId
                 .sink { currentVehicleId in
                     self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
                 }
                 .store(in: &cancellables)
+    }
+
+    func deleteVehicle(_ vehicle: GarageVehicle) {
+        garage.deleteVehicle(vehicle)
     }
 }

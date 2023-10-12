@@ -5,28 +5,34 @@
 //  Created by kemo konteh on 9/30/23.
 //
 
-import Foundation
+import SwiftUI
 import Combine
 
 class BottomSheetViewModel: ObservableObject {
 
     @Published var garage: Garage
     @Published var obdInfo = OBDInfo()
-
     @Published var garageVehicles: [GarageVehicle] = []
 
     private var cancellables = Set<AnyCancellable>()
 
     let obdService: OBDService
+    @Published var currentVehicle: GarageVehicle?
+
 
     init(obdService: OBDService, garage: Garage) {
         self.obdService = obdService
         self.garage = garage
-
         garage.$garageVehicles
             .receive(on: DispatchQueue.main)
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
+
+        garage.$currentVehicleId
+                .sink { currentVehicleId in
+                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
+                }
+                .store(in: &cancellables)
     }
 
     func addVehicle(make: String, model: String, year: String, vin: String) {
@@ -47,10 +53,11 @@ class BottomSheetViewModel: ObservableObject {
         if let vin = obdInfo.vin {
                 if let vehicle =  garage.garageVehicles.first(where: { $0.vin == vin }) {
                     // set selected car
-//                    DispatchQueue.main.async {
-//                        self.selectedCar = vehicle
-//                    }
-
+                    DispatchQueue.main.async {
+                        self.garage.currentVehicleId = vehicle.id
+                    
+                    }
+                    return
                 }
 
                 let vinInfo = try await getVINInfo(vin: vin)

@@ -95,17 +95,17 @@ class ELM327: ObservableObject {
     func decodeDTC(response: [String]) async {
         guard let messages = call(response, idBits: obdProtocol.idBits) else {
             logger.error("could not parse")
-            // maybe header is off 
+            // maybe header is off
             return
         }
 
         let command = OBDCommand.status
-        guard let status = command.decoder.decode(data: messages) as? Status else {
+        guard let status = command.decoder.decode(data: messages[0].data) as? Status else {
             return
         }
         if status.MIL {
             logger.info("\(status.dtcCount)")
-            // get dtc's 
+            // get dtc's
         } else {
             logger.info("no dtc found")
         }
@@ -114,9 +114,9 @@ class ELM327: ObservableObject {
     func setupAdapter(setupOrder: [SetupStep], autoProtocol: Bool = false) async throws -> OBDInfo {
         var obdInfo = OBDInfo()
 
-        if connectionState != .connectedToAdapter {
-            try await connectToAdapter()
-        }
+//        if connectionState != .connectedToAdapter {
+//            try await connectToAdapter()
+//        }
 
         try await adapterInitialization(setupOrder: setupOrder)
 
@@ -222,15 +222,11 @@ class ELM327: ObservableObject {
                     try await testProtocol(obdProtocol: obdProtocol)
                     logger.info("Protocol: \(self.obdProtocol.description)")
                     return // Exit the loop if the protocol is found successfully
-                } catch SetupError.invalidProtocol {
-                    // Invalid response for the current protocol, try the next one
-                    obdProtocol = obdProtocol.nextProtocol()
                 } catch {
                     // Other errors are propagated
-                    throw error
+                    obdProtocol = obdProtocol.nextProtocol()
                 }
             }
-
             // If we reach this point, no protocol was found
             logger.error("No protocol found")
             throw SetupError.noProtocolFound
@@ -378,7 +374,7 @@ class ELM327: ObservableObject {
 }
 
 extension ELM327 {
-    func requestPIDs(_ pid: OBDCommand, completion: @escaping (PIDData?) -> Void) async {
+    func requestPIDs(_ pid: OBDCommand) async -> Measurement<Unit>? {
         // Ensure you're not already requesting
         do {
             let response = try await sendMessageAsync(pid.command(mode: "01"))
@@ -387,50 +383,26 @@ extension ELM327 {
             if let measurement = decodedValue {
                 // Convert the Measurement<Unit> to a string
                 let value = measurement.value
-                print(pid.description + " " + String(value))
                 let unitString = measurement.unit.symbol
-                let pidData = PIDData(pid: pid, value: value, unit: unitString)
-                completion(pidData) // Pass the result to the completion handler
+                 _ = PIDData(pid: pid, value: value, unit: unitString)
+                return measurement
             } else {
                 // Handle the case where response is nil (e.g., no response)
-                completion(nil)
+                return nil
             }
         } catch {
             logger.error("\(error.localizedDescription)")
-            completion(nil)
+            return nil
         }
     }
-
-    func requestPIDsPublisher(_ pid: OBDCommand) -> AnyPublisher<PIDData?, Error> {
-           return Future<PIDData?, Error> { promise in
-               Task {
-                   do {
-                       let response = try await self.sendMessageAsync(pid.command(mode: "01"))
-                       let decodedValue = await self.decodePIDs(response: response, pid: pid)
-
-                       if let measurement = decodedValue {
-                           let value = measurement.value
-                           let unitString = measurement.unit.symbol
-                           let pidData = PIDData(pid: pid, value: value, unit: unitString)
-                           promise(.success(pidData))
-                       } else {
-                           promise(.success(nil))
-                       }
-                   } catch {
-                       promise(.failure(error))
-                   }
-               }
-           }
-           .eraseToAnyPublisher()
-       }
 
     func decodePIDs(response: [String], pid: OBDCommand) async -> Measurement<Unit>? {
         guard let messages = call(response, idBits: obdProtocol.idBits) else {
             logger.error("could not parse")
-            // maybe header is off 
+            // maybe header is off
             return nil
         }
-        if let decodedValue = pid.decoder.decode(data: messages) {
+        if let decodedValue = pid.decoder.decode(data: messages[0].data.dropFirst()) {
             return decodedValue as? Measurement<Unit>
         } else {
             return nil

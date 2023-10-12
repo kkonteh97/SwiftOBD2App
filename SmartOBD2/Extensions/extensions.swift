@@ -56,6 +56,11 @@ extension Color {
     static let cyclamen = Color(red: 46 / 255, green: 64 / 255, blue: 89 / 255)
     static let pinknew = Color(red: 119 / 255, green: 141 / 255, blue: 169 / 255)
 
+    static let slategray = Color(red: 107 / 255, green: 113 / 255, blue: 125 / 255)
+    static let charcoal = Color(red: 63 / 255, green: 67 / 255, blue: 78 / 255)
+
+    static let raisinblack = Color(red: 36 / 255, green: 37 / 255, blue: 43 / 255)
+
     static let darkStart = Color(red: 50 / 255, green: 60 / 255, blue: 65 / 255)
     static let darkEnd = Color(red: 25 / 255, green: 25 / 255, blue: 30 / 255)
 }

@@ -7,80 +7,77 @@
 
 import SwiftUI
 import Combine
-class LiveDataViewModel: ObservableObject {
-    let pids: [OBDCommand] = [OBDCommand.speed, OBDCommand.rpm]
-
-    let obdService: OBDService
-
-    private var isRequestingPids = false
-
-    init(obdService: OBDService) {
-        self.obdService = obdService
-    }
-
-    @Published var pidData: [OBDCommand: PIDData] = [:]
-    fileprivate var cancellables = Set<AnyCancellable>()
-
-    func startRequestingPIDs() {
-
-        guard !isRequestingPids else {
-            return
-        }
-        isRequestingPids = true
-        Task {
-            while isRequestingPids {
-                for pid in pids {
-                    await obdService.elm327.requestPIDs(pid) { pidData in
-                        if let pidData = pidData {
-                            // Handle the valid PID data here
-                            DispatchQueue.main.async { // Ensure UI updates on the main thread
-                                self.pidData[pid] = pidData
-                            }
-                        } else {
-                            // Handle the case where the request failed or returned nil data
-                            print("Request failed or returned nil data")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 struct LiveDataView: View {
     @ObservedObject var viewModel: LiveDataViewModel
 
     @State private var rpm: Double = 0
     @State private var speed: Double = 0
+    @State private var showingSheet = false
 
     var body: some View {
         VStack {
-            Text("Speed: " + String(speed) + " km/h")
-                        .font(.title)
-                        .padding()
-            GaugeView(coveredRadius: 280, maxValue: 8, steperSplit: 1, value: $rpm)
-        }
-        .onAppear(
-            perform: {
-                viewModel.startRequestingPIDs()
-                viewModel.$pidData
-                    .sink { pidData in
-                        if let newRpm = pidData[OBDCommand.rpm]?.value {
-                            rpm = newRpm / 1000
-                        }
+            HStack(alignment: .top) {
+                Spacer()
+                Button {
+                    showingSheet.toggle()
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
+            .padding()
 
-                        if let newSpeed = pidData[OBDCommand.speed]?.value {
-                            speed = newSpeed
-                            print("ola", speed)
-                        }
-                    }
-                    .store(in: &viewModel.cancellables)
+            Button {
+                viewModel.startRequestingPIDs()
+            } label: {
+                Text("Start")
+                    .font(.title)
+                    .padding()
             }
 
-        )
+           ForEach(viewModel.pidsToRequest, id: \.self) { pid in
+                HStack {
+                    Text(pid.description)
+                        .font(.caption)
+                    Spacer()
+                    Text("\(viewModel.data[pid]??.value ?? 0, specifier: "%.0f") \(viewModel.data[pid]??.unit.symbol ?? "")")
+                        .font(.title)
+
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(RoundedRectangleStyle())
+            }
+
+            ScrollView(.vertical, showsIndicators: false) {
+                if let car = viewModel.currentVehicle {
+                    if let supportedPIDs = car.obdinfo?.supportedPIDs {
+                        ForEach(supportedPIDs, id: \.self) { pid in
+                            HStack {
+                                Text(pid.description)
+                                    .font(.caption)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .modifier(RoundedRectangleStyle())
+                            .onTapGesture {
+                                viewModel.addPIDToRequest(pid)
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer()
+        }
+        .sheet(isPresented: $showingSheet) {
+            AddPIDView(viewModel: viewModel)
+        }
     }
 }
 
 #Preview {
-    LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager())))
+    ZStack {
+        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()),
+                                                  garage: Garage()))
+    }
 }

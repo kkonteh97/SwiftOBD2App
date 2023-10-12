@@ -12,6 +12,47 @@ let imageSize: CGFloat = 50.0
 let borderWidth: CGFloat = 2.0
 let shadowRadius: CGFloat = 10.0
 
+struct ConnectButton: View {
+    let color: Color
+    let text: String
+    @Binding var isLoading: Bool
+    let action: () -> Void
+
+    init(color: Color,
+         text: String,
+         isLoading: Binding<Bool>,
+         action: @escaping () -> Void
+    ) {
+        self.color = color
+        self.text = text
+        self._isLoading = isLoading
+        self.action = action
+    }
+    var body: some View {
+        ZStack {
+            Button(action: {
+                action()
+            }) {
+                if !isLoading {
+                    Text(text)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(35)
+            .background(color)
+            .mask(
+                Circle()
+                    .frame(width: 80, height: 80)
+            )
+            .shadow(radius: shadowRadius)
+            .disabled(connectionState == .connectedToVehicle)
+
+            GoButtonAnimation(isLoading: $isLoading)
+        }
+    }
+}
+
 struct GoButtonAnimation: View {
     @State private var shouldGrow = false
     @Binding var isLoading: Bool

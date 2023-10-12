@@ -14,15 +14,28 @@ struct VehicleDiagnosticsView: View {
         ZStack {
             LinearGradient(.darkStart, .darkEnd)
                 .ignoresSafeArea()
+
             VStack {
-                Text("Vehicle Diagnostics")
-                    .font(.system(size: 30))
+                Text("Health Status")
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.bottom, 20)
+
+                Text("Last Store Trouble Codes")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.bottom, 20)
+
                 Button {
                     print("Button tapped")
                 } label: {
-                    Text("Start")
+                    Text("Check for Trouble Codes")
                         .font(.system(size: 20))
                         .foregroundColor(.white)
                         .padding()
@@ -31,9 +44,22 @@ struct VehicleDiagnosticsView: View {
                 }
             }
         }
+        .navigationTitle(navTitle)
+        .navigationBarTitleDisplayMode(.inline)
     }
+
+    var navTitle: String {
+           if let currentVehicle = viewModel.currentVehicle {
+               return "\(currentVehicle.year) \(currentVehicle.make) \(currentVehicle.model)"
+           } else {
+               return "Garage Empty"
+           }
+       }
 }
 
 #Preview {
-    VehicleDiagnosticsView(viewModel: HomeViewModel(obdService: OBDService(bleManager: BLEManager()), garage: Garage()))
+    ZStack {
+        VehicleDiagnosticsView(viewModel: HomeViewModel(obdService: OBDService(bleManager: BLEManager()),
+                                                        garage: Garage()))
+    }
 }

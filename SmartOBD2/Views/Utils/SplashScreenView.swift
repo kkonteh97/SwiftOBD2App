@@ -6,18 +6,6 @@
 //
 
 import SwiftUI
-import SpriteKit
-
-private class Smoking: SKScene {
-    override func sceneDidLoad() {
-        size = CGSize(width: 500, height: 500)
-        scaleMode = .fill
-        anchorPoint = CGPoint(x: 0.5, y: 0.5)
-
-        backgroundColor = .clear
-    }
-
-}
 
 struct SplashScreenView: View {
     @State private var isActive: Bool = false
@@ -34,12 +22,13 @@ struct SplashScreenView: View {
     let size1: CGFloat = 250
     var offset: CGFloat = 200
 
+    @AppStorage("selectedCarId") var selectedCarId: Int = 0
+
     let obdService = OBDService(bleManager: BLEManager())
-    let garage = Garage()
 
     var body: some View {
         if isActive {
-            MainView(garage: Garage())
+            MainView(garage: Garage(), obdService: obdService)
                 .transition(.opacity)
         } else {
             VStack {

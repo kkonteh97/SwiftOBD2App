@@ -16,47 +16,61 @@ struct CarlyObd {
 struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
     @State var displayType: BottomSheetType = .quarterScreen
-
-    let obdService = OBDService(bleManager: BLEManager())
+    @State private var tabSelection: TabBarItem = .dashBoard
 
     let homeViewModel: HomeViewModel
     let liveDataViewModel: LiveDataViewModel
     let bottomSheetViewModel: BottomSheetViewModel
     let garageViewModel: GarageViewModel
+    let carScreenViewModel: CarScreenViewModel
 
-    @AppStorage("selectedCarId") var selectedCarId: Int = 1
-
-    init(garage: Garage) {
+    init(garage: Garage, obdService: OBDService) {
         self.homeViewModel = HomeViewModel(obdService: obdService, garage: garage)
-        self.liveDataViewModel = LiveDataViewModel(obdService: obdService)
+        self.liveDataViewModel = LiveDataViewModel(obdService: obdService, garage: garage)
         self.bottomSheetViewModel = BottomSheetViewModel(obdService: obdService, garage: garage)
+        self.carScreenViewModel = CarScreenViewModel(obdService: obdService)
         self.garageViewModel = GarageViewModel(garage: garage)
     }
 
     var body: some View {
             GeometryReader { proxy in
-                BottomSheet(viewModel: bottomSheetViewModel,
-                            displayType: $displayType,
-                            selectedCar: $selectedCarId,
-                            maxHeight: proxy.size.height
+                CustomTabBarContainerView(selection: $tabSelection,
+                                          displayType: $displayType,
+                                          maxHeight: proxy.size.height,
+                                          viewModel: bottomSheetViewModel
                 ) {
                     NavigationView {
-                    HomeView(
-                             viewModel: homeViewModel,
-                             liveDataViewModel: liveDataViewModel,
-                             garageViewModel: garageViewModel,
-                             displayType: $displayType,
-                             selectedVehicle: $selectedCarId
-                        )
-                        .navigationBarTitle("SMARTOBD2")
-                        .navigationBarTitleDisplayMode(.large)
+                        HomeView(viewModel: homeViewModel,
+                                 garageViewModel: garageViewModel,
+                                 displayType: $displayType)
                         .background(LinearGradient(.darkStart, .darkEnd))
                     }
+                    .navigationViewStyle(StackNavigationViewStyle())
+                    .tabBarItem(tab: .dashBoard, selection: $tabSelection)
+
+                    NavigationView {
+                        DashBoardView(
+                            liveDataViewModel: liveDataViewModel,
+                            displayType: $displayType
+                        )
+                        .background(LinearGradient(.slategray, .raisinblack))
+                    }
+                    .navigationViewStyle(StackNavigationViewStyle())
+                    .tabBarItem(tab: .features, selection: $tabSelection)
+//                    NavigationView {
+//                        CarScreen(
+//                            viewModel: carScreenViewModel
+//                        )
+//                        .background(LinearGradient(.slategray, .raisinblack))
+//                    }
+//                    .navigationViewStyle(StackNavigationViewStyle())
+//                    .tabBarItem(tab: .features, selection: $tabSelection)
             }
         }
     }
 }
 
 #Preview {
-    MainView(garage: Garage())
+    MainView(garage: Garage(),
+             obdService: OBDService(bleManager: BLEManager()))
 }

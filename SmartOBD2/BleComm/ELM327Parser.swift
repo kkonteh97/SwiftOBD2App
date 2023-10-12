@@ -38,7 +38,6 @@ enum FrameError: Error {
 }
 
 extension ELM327 {
-
     func call(_ lines: [String], idBits: Int) -> [Message]? {
 
         let (obdLines, nonOBDLines) = lines.reduce(into: ([String](), [String]())) { result, line in
@@ -170,7 +169,12 @@ extension ELM327 {
         //             [      Frame       ]
         //                [     Data      ]
         // 00 00 07 E8 06 41 00 BE 7F B8 13 xx xx xx xx, anything else is ignored
-        message.data = Data(frame.data[1..<(1 + Int(frame.dataLen!))])
+        guard let dataLen = frame.dataLen, dataLen > 0 else {
+            print("Received single frame with no data")
+            return false
+        }
+
+        message.data = Data(frame.data[2..<(1 + Int(dataLen))])
         return true
     }
 
@@ -224,22 +228,13 @@ extension ELM327 {
     }
 
     func assembleData(firstFrame: Frame, consecutiveFrames: [Frame]) -> Data? {
-        var assembledData = Data()
-        // Extract data from the first frame, skipping the PCI byte and length code
-        if let firstFrameData = extractDataFromFrame(firstFrame, startIndex: 2) {
-            assembledData.append(firstFrameData)
-        } else {
-            return nil
-        }
+        let assembledFrame: Frame = firstFrame
         // Extract data from consecutive frames, skipping the PCI byte
         for frame in consecutiveFrames {
-            if let frameData = extractDataFromFrame(frame, startIndex: 1) {
-                assembledData.append(frameData)
-            } else {
-                return nil
-            }
+            print("Assembling frame with sequence index \(frame.seqIndex)")
+            assembledFrame.data.append(frame.data)
         }
-        return assembledData
+        return extractDataFromFrame(assembledFrame, startIndex: 3)
     }
 
     func extractDataFromFrame(_ frame: Frame, startIndex: Int) -> Data? {

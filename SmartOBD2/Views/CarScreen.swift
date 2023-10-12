@@ -19,7 +19,43 @@ struct CarScreen: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        ZStack {
+        VStack {
+            HStack {
+                TextField("Enter Command", text: $viewModel.command)
+                    .font(.system(size: 16))
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                    )
+                    .padding(.horizontal, 10)
+                    .frame(height: 40)
+                Button {
+                    guard !viewModel.command.isEmpty else { return }
+                    Task {
+                        do {
+                            print(viewModel.command)
+                            let response = try await viewModel.sendMessage()
+                            history.append(History(command: viewModel.command,
+                                                   response: response.joined(separator: "\n"))
+                            )
+                            viewModel.command = ""
+                        } catch {
+                            print("Error setting up adapter: \(error)")
+                        }
+                    }
+
+                } label: {
+                    Image(systemName: "arrow.up.circle")
+                        .resizable()
+                        .frame(width: 29, height: 30)
+                        .foregroundColor(.blue)
+                        .padding(10)
+                }
+                .padding(.trailing)
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             ScrollView(.vertical, showsIndicators: false) {
                 ForEach(history) { history in
                     VStack {
@@ -33,56 +69,14 @@ struct CarScreen: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(10)
                     .padding()
-
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                HStack {
-                    TextField("Enter Command", text: $viewModel.command)
-                        .font(.system(size: 16))
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 25)
-                        )
-                        .padding(.horizontal, 10)
-                        .frame(height: 40)
-                    Button {
-                        guard !viewModel.command.isEmpty else { return }
-                        Task {
-                            do {
-                                print(viewModel.command)
-                                let response = try await viewModel.sendMessage()
-                                history.append(History(command: viewModel.command,
-                                                       response: response.joined(separator: "\n"))
-                                )
-                                viewModel.command = ""
-                            } catch {
-                                print("Error setting up adapter: \(error)")
-                            }
-                        }
-
-                    } label: {
-                        Image(systemName: "arrow.up.circle")
-                            .resizable()
-                            .frame(width: 29, height: 30)
-                            .foregroundColor(.blue)
-                            .padding(10)
-
-                    }
-                    .padding(.trailing)
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            }
-
         }
     }
 }
 
 struct CarScreen_Previews: PreviewProvider {
     static var previews: some View {
-        CarScreen(viewModel: CarScreenViewModel(elm327: ELM327(bleManager: BLEManager())))
-
+        CarScreen(viewModel: CarScreenViewModel(obdService: OBDService(bleManager: BLEManager())))
     }
 }

@@ -111,7 +111,7 @@ enum Decoder: Codable {
 //    case dtc
 //    case fuelRate
 
-    func decode(data: [Message]) -> Any? {
+    func decode(data: Data) -> Any? {
         switch self {
         case .pid:                   return nil
         case .status:                return status(data)
@@ -128,17 +128,14 @@ enum Decoder: Codable {
         case .pressure:              return pressure(data)
         case .timingAdvance:         return timingAdvance(data)
         case .uas0x27:               return decodeUAS(data, id: 0x27)
-
         }
     }
 
-    func decodeUAS(_ messages: [Message], id: UInt8) -> Measurement<Unit>? {
-        let bytes = messages[0].data[2...]
-        return uasIDS[id]?.decode(bytes: bytes)
+    func decodeUAS(_ data: Data, id: UInt8) -> Measurement<Unit>? {
+        return uasIDS[id]?.decode(bytes: data)
     }
 
-    func singleDtc(_ messages: [Message]) -> String? {
-        let data = messages[0].data[2...]
+    func singleDtc(_ data: Data) -> String? {
         return parseDTC(data)
     }
 
@@ -163,14 +160,14 @@ enum Decoder: Codable {
 //        guard let data = messages.first?.data.dropFirst(2) else {
 //            return (nil, nil)
 //        }
-//        
+//
 //        let FUEL_STATUS = ["Status1", "Status2", "Status3"]
 //
 //        let bits = BitArray(data: data).binaryArray
 //
 //        var status1: String? = nil
 //        var status2: String? = nil
-//        
+//
 //        if bits[0..<8].count(1) == 1 {
 //                if let index = bits[0..<8].firstIndex(of: true), 7 - index < FUEL_STATUS.count {
 //                    status1 = FUEL_STATUS[7 - index]
@@ -195,42 +192,36 @@ enum Decoder: Codable {
 //    }
 
     // 0 to 765 kPa
-    func fuelPressure(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
+    func fuelPressure(_ data: Data) -> Measurement<Unit>? {
         var value = data[0]
         value *= 3
         return Measurement(value: Double(value), unit: .kilopascal)
     }
 
     // 0 to 255 kPa
-    func pressure(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
+    func pressure(_ data: Data) -> Measurement<Unit>? {
         let value = data[0]
         return Measurement(value: Double(value), unit: .kilopascal)
     }
 
-    func percent(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        var value = Double(data[0])
+    func percent(_ data: Data) -> Measurement<Unit>? {
+        var value = Double(data.first ?? 0)
         value = value * 100.0 / 255.0
         return Measurement(value: value, unit: .percent)
     }
 
-    func percentCentered(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
-        var value = Double(data[0])
+    func percentCentered(_ data: Data) -> Measurement<Unit>? {
+        var value = Double(data.first ?? 0)
         value = (value - 128) * 100.0 / 128.0
         return Measurement(value: value, unit: .percent)
     }
 
-    func currentCentered(_ messages: [Message]) -> Measurement<Unit>? {
-         let data = messages[0].data[2...]
+    func currentCentered(_ data: Data) -> Measurement<Unit>? {
             let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
          return Measurement(value: value, unit: UnitElectricCurrent.milliamperes)
      }
 
-    func airStatus(_ messages: [Message]) -> Measurement<Unit>? {
-           let data = messages[0].data[2...]
+    func airStatus(_ data: Data) -> Measurement<Unit>? {
            let bits = BitArray(data: data).binaryArray
 
            let numSet = bits.filter { $0 == 1 }.count
@@ -241,20 +232,17 @@ enum Decoder: Codable {
            return nil
        }
 
-    func temp(_ messages: [Message]) -> Measurement<Unit>? {
-        let data = messages[0].data[2...]
+    func temp(_ data: Data) -> Measurement<Unit>? {
         let value = Double(bytesToInt(data)) - 40.0
         return Measurement(value: value, unit: UnitTemperature.celsius)
     }
 
-    func timingAdvance(_ messages: [Message]) -> Measurement<Unit>? {
-            let data = messages[0].data[2...]
+    func timingAdvance(_ data: Data) -> Measurement<Unit>? {
             let value = (Double(data[0]) - 128) / 2.0
             return Measurement(value: value, unit: UnitAngle.degrees)
     }
 
-    func status(_ messages: [Message]) -> Status {
-        let data = messages[0].data[2...]
+    func status(_ data: Data) -> Status {
         let IGNITIONTYPE = ["Spark", "Compression"]
 
         //            ┌Components not ready
@@ -299,7 +287,6 @@ enum Decoder: Codable {
             break
         }
     }
-
 }
 
 struct UAS {

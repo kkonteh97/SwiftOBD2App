@@ -5,14 +5,13 @@
 //  Created by kemo konteh on 9/30/23.
 //
 
-import Foundation
-import UIKit
+import SwiftUI
+import Combine
 
 struct GarageVehicle: Codable, Identifiable, Equatable {
     static func == (lhs: GarageVehicle, rhs: GarageVehicle) -> Bool {
         return lhs.id == rhs.id
     }
-
     let id: Int
     var vin: String = ""
     let make: String
@@ -23,33 +22,54 @@ struct GarageVehicle: Codable, Identifiable, Equatable {
 
 class Garage: ObservableObject {
     @Published var garageVehicles: [GarageVehicle] = [
-           GarageVehicle(id: 1, make: "Nissan", model: "Altima", year: "2016")
+        GarageVehicle(id: 0, vin: "1FMCU9J93DUA00001", make: "Ford", model: "Escape", year: "2013")
     ]
 
-    private var nextId = 2 // Initialize with the next integer ID
+    private var nextId = 1 // Initialize with the next integer ID
+
+    @Published var currentVehicleId: Int? {
+        didSet {
+            if let currentVehicleId = currentVehicleId {
+                UserDefaults.standard.set(currentVehicleId, forKey: "currentCarId")
+            }
+        }
+    }
 
     init () {
         // Load garageVehicles from UserDefaults
         if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
            let decodedVehicles = try? JSONDecoder().decode([GarageVehicle].self, from: data) {
-            self.garageVehicles = decodedVehicles
+            self.garageVehicles += decodedVehicles
         }
 
         // Determine the next available integer ID
         if let maxId = garageVehicles.map({ $0.id }).max() {
               self.nextId = maxId + 1
         }
+
+        // Load currentVehicleId from UserDefaults
+        self.currentVehicleId = UserDefaults.standard.integer(forKey: "currentCarId")
     }
 
     func addVehicle(make: String, model: String, year: String, vin: String = "", obdinfo: OBDInfo? = nil) {
             let vehicle = GarageVehicle(id: nextId, vin: vin, make: make, model: model, year: year, obdinfo: obdinfo)
             garageVehicles.append(vehicle)
+            nextId += 1
             saveGarageVehicles()
-            nextId += 1 // Increment the ID for the next vehicle
+            currentVehicleId = vehicle.id
+            print("Added vehicle \(vehicle)")
+    }
+
+    // set current vehicle by id
+    func setCurrentVehicle(by id: Int) {
+        currentVehicleId = id
     }
 
     func deleteVehicle(_ car: GarageVehicle) {
         garageVehicles.removeAll(where: { $0.id == car.id })
+        if car.id == currentVehicleId { // check if the deleted car was the current one
+            currentVehicleId = garageVehicles.first?.id // make the first car in the garage as the current car
+        }
         saveGarageVehicles()
     }
 

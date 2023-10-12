@@ -15,6 +15,7 @@ enum ConnectionState {
     case connectedToAdapter
     case connectedToVehicle
     case failed
+    case initailized
 
     var description: String {
         switch self {
@@ -28,6 +29,8 @@ enum ConnectionState {
             return "Connected to Vehicle"
         case .failed:
             return "Failed"
+        case .initailized:
+            return "Initialized"
         }
     }
 }
@@ -35,30 +38,43 @@ enum ConnectionState {
 var connectionState: ConnectionState = .notInitialized
 
 class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralManagerDelegate {
-
-    // MARK: Properties
     let logger = Logger.bleCom
 
+    // MARK: Properties
+
+    static let RestoreIdentifierKey: String = "CarlyOBD2"
+    static let UserDevice: [DeviceInfo] = [
+        DeviceInfo(DeviceName: "Carly", serviceUUID: "FFE0", peripheralUUID: "5B6EE3F4-2FCA-CE45-6AE7-8D7390E64D6D")
+    ]
+
     // BLUETOOTH
-    @Published var peripherals: [CBPeripheral] = []
     @Published var ecuCharacteristic: CBCharacteristic?
     @Published var elmAdapter: CBPeripheral?
-    private var centralManager: CBCentralManager?
     @Published var discoveredServicesAndCharacteristics: [(CBService, [CBCharacteristic])] = []
+    private var centralManager: CBCentralManager!
 
-    @Published var connected: Bool = false
     var linesToParse = [String]()
     var adapterReady = false
-    var debug = false
+    var debug = true
+
+    struct DeviceInfo {
+            let DeviceName: String
+            let serviceUUID: String
+            let peripheralUUID: String
+    }
+
     var buffer = Data()
 
     var sendMessageCompletion: (([String]?, Error?) -> Void)?
+    var connectionCompletion: ((CBPeripheral) -> Void)?
 
     // MARK: Initialization
 
     override init() {
         super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager = CBCentralManager(delegate: self, 
+                                          queue: nil,
+                                          options: [CBCentralManagerOptionRestoreIdentifierKey: BLEManager.RestoreIdentifierKey])
     }
 
     // MARK: Central Manager Delegate Methods
@@ -68,29 +84,38 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-//            self.centralManager?
-//                .scanForPeripherals(withServices: [CBUUID(string: CarlyObd.elmServiceUUID)], options: nil)
+            guard let device = elmAdapter else {
+                logger.debug("scanning")
+                startScan()
+                return
+            }
             connectionState = .connecting
+            connect(to: device)
+
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
-            self.connected = false
             connectionState = .notInitialized
-
+        case .unsupported:
+            logger.error("This device does not support Bluetooth Low Energy.")
+            connectionState = .failed
+        case .unauthorized:
+            logger.error("This app is not authorized to use Bluetooth Low Energy.")
+            connectionState = .failed
         case .resetting:
             logger.warning("Bluetooth is resetting.")
         default:
+            logger.error("Bluetooth is not powered on.")
             fatalError()
         }
     }
 
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-                        advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        // ... (peripheral discovery logic)
-        if let name = peripheral.name {
-            if name.contains("Carly") {
-                logger.debug("Found Carly Adapter")
-                centralManager?.stopScan()
-                connect(to: peripheral)
+    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        if let peripherals = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] {
+            logger.debug("Restoring \(peripherals.count) peripherals")
+            for peripheral in peripherals {
+                logger.debug("Restoring peripheral: \(peripheral.name ?? "Unnamed")")
+                elmAdapter = peripheral
+                elmAdapter?.delegate = self
             }
         }
     }
@@ -101,26 +126,52 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        self.connected = false
         logger.warning("Disconnected from peripheral: \(peripheral.name ?? "Unnamed")")
+        elmAdapter = nil
+        connectionState = .notInitialized
+    }
+
+    private func isDevicePeripheral(_ peripheral: CBPeripheral) -> Bool {
+        return BLEManager.UserDevice.contains { $0.peripheralUUID == peripheral.identifier.uuidString }
     }
 
     // MARK: Peripheral Delegate Methods
-    var connectionCompletion: ((CBPeripheral) -> Void)?
+
+    func centralManager(
+           _ central: CBCentralManager,
+           didDiscover peripheral: CBPeripheral,
+           advertisementData: [String: Any],
+           rssi RSSI: NSNumber
+    ) {
+           if isDevicePeripheral(peripheral) {
+               stopScan()
+               elmAdapter = peripheral
+               peripheral.delegate = self // Set the delegate of the connected peripheral
+               connect(to: peripheral)
+           }
+       }
 
     func connect(to peripheral: CBPeripheral) {
         // ... (peripheral connection logic)
         centralManager?.connect(peripheral, options: nil)
-        elmAdapter = peripheral
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         logger.debug("Connected to peripheral: \(peripheral.name ?? "Unnamed")")
-        elmAdapter = peripheral
+        discoverPeripheralServices(peripheral)
         connectionState = .connectedToAdapter
-        connected = true
-        peripheral.delegate = self // Set the delegate of the connected peripheral
-        peripheral.discoverServices(nil) // Start discovering all services of the connected peripheral
+    }
+
+    private func startScan() {
+        centralManager?.scanForPeripherals(withServices: [CBUUID(string: BLEManager.UserDevice[0].serviceUUID)], options: nil)
+    }
+
+    private func stopScan() {
+        centralManager?.stopScan()
+    }
+
+    private func discoverPeripheralServices(_ peripheral: CBPeripheral) {
+        peripheral.discoverServices(nil)
     }
 
     func scanAndConnectAsync(services: [CBUUID]) async throws -> CBPeripheral {
@@ -130,40 +181,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             // Set up a timeout timer
                 self.connectionCompletion = { peripheral in
                     continuation.resume(returning: peripheral)
-                }
-        }
-    }
-
-    // MARK: Sending Messages
-
-    func sendMessageAsync(_ message: String) async throws -> [String] {
-        // ... (sending message logic)
-        let message = "\(message)\r"
-        if debug {
-            logger.info("Sending: \(message)")
-        }
-
-        guard let connectedPeripheral = self.elmAdapter,
-              let ecuCharacteristic = self.ecuCharacteristic,
-              let data = message.data(using: .ascii) else {
-                logger.error("Error: Missing peripheral or characteristic.")
-                throw SendMessageError.missingPeripheralOrCharacteristic
-        }
-
-        connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
-            // Set up a timeout timer
-                self.sendMessageCompletion = { response, error in
-                    if let response = response {
-                        continuation.resume(returning: response)
-
-                    } else if let error = error {
-                        continuation.resume(throwing: error)
-
-                    } else {
-                        continuation.resume(throwing: SendMessageError.timeout)
-                    }
                 }
         }
     }
@@ -197,10 +214,47 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
                 connectionCompletion?(peripheral)
                 logger.info("Adapter Ready")
             default:
-                logger.info("Unhandled Characteristic UUID: \(characteristic.uuid)")
+                if debug {
+                    logger.info("Unhandled Characteristic UUID: \(characteristic.uuid)")
+                }
                 if characteristic.properties.contains(.notify) {
                     peripheral.setNotifyValue(true, for: characteristic)
 
+                }
+            }
+        }
+    }
+
+    // MARK: Sending Messages
+
+    func sendMessageAsync(_ message: String) async throws -> [String] {
+        // ... (sending message logic)
+        let message = "\(message)\r"
+        if debug {
+            logger.info("Sending: \(message)")
+        }
+
+        guard let connectedPeripheral = self.elmAdapter,
+              let ecuCharacteristic = self.ecuCharacteristic,
+              let data = message.data(using: .ascii
+        ) else {
+                logger.error("Error: Missing peripheral or characteristic.")
+                throw SendMessageError.missingPeripheralOrCharacteristic
+        }
+
+        connectedPeripheral.writeValue(data, for: ecuCharacteristic, type: .withResponse)
+
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[String], Error>) in
+            // Set up a timeout timer
+                self.sendMessageCompletion = { response, error in
+                    if let response = response {
+                        continuation.resume(returning: response)
+
+                    } else if let error = error {
+                        continuation.resume(throwing: error)
+
+                    } else {
+                        continuation.resume(throwing: SendMessageError.timeout)
                 }
             }
         }
@@ -232,26 +286,20 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
         }
     }
 
-    func discoverDescriptors(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
-        peripheral.discoverDescriptors(for: characteristic)
-    }
-
-    func handleResponse(completion: ((String?, Error?) -> Void)?) {
-
-    }
-
     func processReceivedData(_ data: Data, completion: (([String]?, Error?) -> Void)?) {
 
         buffer.append(data)
 
         guard var string = String(data: buffer, encoding: .utf8) else {
-                    logger.warning("Failed to convert data to a string")
-                    return
-                }
+            logger.warning("Failed to convert data to a string")
+            buffer.removeAll()
+            return
+        }
 
         if string.contains(">") {
-            string = string.replacingOccurrences(of: "\u{00}", with: "")
-            string = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            string = string
+                .replacingOccurrences(of: "\u{00}", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
             // Split into lines while removing empty lines
             var lines = string
@@ -266,29 +314,6 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             completion?(lines, nil)
             buffer.removeAll()
         }
-
-//        guard let responseString = String(data: data, encoding: .ascii) else {
-//            completion?(nil, SendMessageError.stringConversionFailed)
-//            return
-//        }
-//        let endMarker = ">"
-//        
-//        // Split the response into lines using line breaks as the separator
-//        let lines = responseString.components(separatedBy: .newlines)
-//        
-//        for line in lines {
-//            // Process each line here
-//            self.linesToParse.append(line)
-//            // Check if the line contains the end marker
-//            if line.contains(endMarker) {
-//                // Handle the complete response, e.g., call handleResponse
-//                let strippedResponse = linesToParse
-//                                            .map { $0.replacingOccurrences(of: ">", with: "") }
-//                                            .joined()
-//                logger.info("Response: \(strippedResponse)")
-//                linesToParse.removeAll()
-//            }
-//        }
     }
 
     enum SendMessageError: Error {
