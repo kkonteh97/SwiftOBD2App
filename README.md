@@ -1,13 +1,9 @@
 # OBD2 Swift App
 
 Welcome to the OBD2 Swift App! This app will allow you to read error codes and view Parameter IDs (PIDs) from your vehicle's OBD2 system using Swift and CoreBluetooth.
-
-## current looK
-
-
-https://github.com/kkonteh97/SmartOBD2/assets/55326260/fa31daaf-4f2d-4da9-9f6e-c27830d08980
-
-
+![IMG_1826](https://github.com/kkonteh97/SmartOBD2/assets/55326260/3449cc92-82eb-4dc5-a31d-a7008758740e)
+![IMG_1827](https://github.com/kkonteh97/SmartOBD2/assets/55326260/52dbd5d4-261c-43da-9e74-69b3bca8b01d)
+![IMG_1828](https://github.com/kkonteh97/SmartOBD2/assets/55326260/f3dd2720-f4c9-40ed-a197-4b44e5afe3a7)
 
 ## MileStones
 
