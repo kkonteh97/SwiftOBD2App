@@ -25,8 +25,10 @@ https://github.com/kkonteh97/SmartOBD2/assets/55326260/fa31daaf-4f2d-4da9-9f6e-c
 ## Setup
 
 1. Clone this repository to your local machine.
-2. Open the Xcode project file (`SmartOBD2.xcodeproj`).
-3. Build and run the app on a compatible iOS device.
+2. Navigate to project directory on the terminal
+3. Run command "xcodegen"
+4. Open the Xcode project file (`SmartOBD2.xcodeproj`).
+5. Build and run the app on a compatible iOS device.
 
 ## Usage
 
