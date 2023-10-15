@@ -11,8 +11,6 @@ import Combine
 struct LiveDataView: View {
     @ObservedObject var viewModel: LiveDataViewModel
 
-    @State private var rpm: Double = 0
-    @State private var speed: Double = 0
     @State private var showingSheet = false
 
     var body: some View {
@@ -36,41 +34,26 @@ struct LiveDataView: View {
                     .font(.title)
                     .padding()
             }
+            .sheet(isPresented: $showingSheet) {
+                AddPIDView(viewModel: viewModel)
+            }
 
-           ForEach(viewModel.pidsToRequest, id: \.self) { pid in
+            ForEach(viewModel.data, id: \.command) { dataItem in
                 HStack {
-                    Text(pid.description)
+                    Text(dataItem.command.description)
                         .font(.caption)
+
                     Spacer()
-                    Text("\(viewModel.data[pid]??.value ?? 0, specifier: "%.0f") \(viewModel.data[pid]??.unit.symbol ?? "")")
-                        .font(.title)
+                    Text("\(viewModel.decodeMeasurementToString(dataItem.measurement))")
 
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .modifier(RoundedRectangleStyle())
             }
-
-            ScrollView(.vertical, showsIndicators: false) {
-                if let car = viewModel.currentVehicle {
-                    if let supportedPIDs = car.obdinfo?.supportedPIDs {
-                        ForEach(supportedPIDs, id: \.self) { pid in
-                            HStack {
-                                Text(pid.description)
-                                    .font(.caption)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .modifier(RoundedRectangleStyle())
-                            .onTapGesture {
-                                viewModel.addPIDToRequest(pid)
-                            }
-                        }
-                    }
-                }
-            }
             Spacer()
         }
-        .sheet(isPresented: $showingSheet) {
-            AddPIDView(viewModel: viewModel)
+        .onAppear {
+            print("helo")
         }
     }
 }

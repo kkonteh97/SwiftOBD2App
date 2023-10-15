@@ -10,6 +10,7 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject var garageViewModel: GarageViewModel
+    @ObservedObject var settingsViewModel: SettingsViewModel
 
     @Binding var displayType: BottomSheetType
 
@@ -40,7 +41,7 @@ struct HomeView: View {
 
                 Divider().background(Color.white).padding(.horizontal, 20)
                 NavigationLink {
-                    SettingsView()
+                    SettingsView(viewModel: settingsViewModel)
                 } label: {
                     SettingsAboutSectionView(title: "Settings", iconName: "gear", iconColor: .green.opacity(0.6))
                 }
@@ -105,12 +106,6 @@ struct SettingsAboutSectionView: View {
     }
 }
 
-struct SettingsView: View {
-    var body: some View {
-        Text("Settings")
-    }
-}
-
 #Preview {
     ZStack {
         LinearGradient(.darkStart, .darkEnd)
@@ -118,6 +113,8 @@ struct SettingsView: View {
         HomeView(
             viewModel: HomeViewModel(obdService: OBDService(bleManager: BLEManager()),
                                      garage: Garage()),
-            garageViewModel: GarageViewModel(garage: Garage()), displayType: .constant(.quarterScreen))
+            garageViewModel: GarageViewModel(garage: Garage()), 
+            settingsViewModel: SettingsViewModel(bleManager: BLEManager()),
+            displayType: .constant(.quarterScreen))
     }
 }

@@ -8,7 +8,11 @@
 import SwiftUI
 
 struct SplashScreenView: View {
-    @State private var isActive: Bool = false
+    @Binding private var isActive: Bool
+    init(isActive: Binding<Bool>) {
+        self._isActive = isActive
+    }
+
     @State private var size = 0.7
     @State private var opacity = 0.4
     @State private var animate = false
@@ -22,15 +26,7 @@ struct SplashScreenView: View {
     let size1: CGFloat = 250
     var offset: CGFloat = 200
 
-    @AppStorage("selectedCarId") var selectedCarId: Int = 0
-
-    let obdService = OBDService(bleManager: BLEManager())
-
     var body: some View {
-        if isActive {
-            MainView(garage: Garage(), obdService: obdService)
-                .transition(.opacity)
-        } else {
             VStack {
                 VStack {
                     ZStack {
@@ -75,16 +71,15 @@ struct SplashScreenView: View {
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     withAnimation {
-                        self.isActive = true
+                        self.isActive = false
                     }
                 }
             }
             .preferredColorScheme(.dark)
 //            .background(LinearGradient(.darkStart, .darkEnd))
-        }
     }
 }
 
 #Preview {
-    SplashScreenView()
+    SplashScreenView(isActive: .constant(false))
 }

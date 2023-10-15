@@ -8,8 +8,24 @@
 import SwiftUI
 import Combine
 
+enum Constants {
+    static let radius: CGFloat = 16
+    static let snapRatio: CGFloat = 0.25
+    static let minHeightRatio: CGFloat = 0.1
+    static let indicatorHeight: CGFloat = 6
+    static let indicatorWidth: CGFloat = 60
+    static let maxHeightRatio: CGFloat = 0.9
+}
+
+enum BottomSheetType {
+    case fullScreen
+    case halfScreen
+    case quarterScreen
+    case none
+}
+
 struct CustomTabBarView<Content: View>: View {
-    @ObservedObject var viewModel: BottomSheetViewModel
+    @ObservedObject var viewModel: CustomTabBarViewModel
 
     @State private var isLoading = false
     @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -35,7 +51,7 @@ struct CustomTabBarView<Content: View>: View {
 
     init(
         tabs: [TabBarItem],
-        viewModel: BottomSheetViewModel,
+        viewModel: CustomTabBarViewModel,
         selection: Binding<TabBarItem>,
         displayType: Binding<BottomSheetType>,
         maxHeight: CGFloat,
@@ -73,7 +89,7 @@ struct CustomTabBarView<Content: View>: View {
                     withAnimation {
                         self.isLoading = false
                         self.displayType = .halfScreen
-                        connectionState = .initailized
+                        viewModel.connectionState = .initialized
                         self.animateWhiteStreak()
                     }
                 }
@@ -83,8 +99,10 @@ struct CustomTabBarView<Content: View>: View {
                     }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
-                                                     blendDuration: 0)) {
+                    withAnimation(.interactiveSpring(response: 0.5, 
+                                                     dampingFraction: 0.8,
+                                                     blendDuration: 0)
+                    ) {
                         self.displayType = .quarterScreen
                     }
                 }
@@ -105,11 +123,17 @@ struct CustomTabBarView<Content: View>: View {
                     }})
                     .frame(maxHeight: maxHeight * 0.1)
 
-                carInfoView
+                VStack {
+                    if viewModel.connectionState != .initialized {
+                            bluetoothDevicesView
+                        } else {
+                            carInfoView
+                        }
+                    }
                     .padding(.horizontal, 20)
                     .padding(.top, 40)
                     .frame(maxWidth: .infinity, maxHeight: maxHeight * 0.4 - maxHeight * 0.1)
-
+                    .transition(.move(edge: .top))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background {
@@ -141,7 +165,7 @@ struct CustomTabBarView<Content: View>: View {
                         }
                     }))
 
-            if connectionState != .initailized {
+            if viewModel.connectionState != .initialized  {
                 ConnectButton(color: Color(red: 39/255, green: 110/255, blue: 241/255),
                               text: "Connect",
                               isLoading: $isLoading
@@ -153,8 +177,18 @@ struct CustomTabBarView<Content: View>: View {
                                               blendDuration: 0), value: gestureOffset)
                 .transition(.move(edge: .bottom))
             }
-
         }
+    }
+
+    // Blur Radius for BG...
+    func getOpacityRadius() -> CGFloat {
+        let progress = (offset + gestureOffset) / ((UIScreen.main.bounds.height) * 0.50)
+        return progress
+    }
+
+    func getBlurRadius() -> CGFloat {
+        let progress = 1 - (offset + gestureOffset) / (UIScreen.main.bounds.height * 0.50)
+        return progress * 30
     }
 }
 
@@ -205,7 +239,6 @@ extension CustomTabBarView {
     }
 
     private var carInfoView: some View {
-        VStack {
             HStack(spacing: 20) {
                 if let car =  viewModel.currentVehicle {
                         VStack(alignment: .leading, spacing: 10) {
@@ -219,7 +252,6 @@ extension CustomTabBarView {
                                        .font(.system(size: 22, weight: .bold, design: .rounded))
                                        .fontWeight(.bold)
                                        .foregroundColor(.green)
-
                                 }
                             }
                             .padding(10)
@@ -251,20 +283,53 @@ extension CustomTabBarView {
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
             }
         }
+    }
+    private var bluetoothDevicesView: some View {
+        VStack {
+            Text("Bluetooth Adapters")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .fontWeight(.bold)
+                .padding(.top, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Divider().background(Color.white)
+            ForEach(viewModel.peripherals, id: \.self) { peripheral in
+                HStack {
+                    Text(peripheral.name ?? "Unknown")
+                    Spacer()
+                    Button {
+                        Task {
+                            do {
+                                try await viewModel.obdService.connectToAdapter(peripheral: peripheral)
+                                viewModel.connectionState = .connectedToAdapter
+                            } catch {
+                                print(error)
+                            }
+                        }
+                    } label: {
+                        if viewModel.connectionState.isConnected {
+                            Text("Connected")
+                        } else {
+                            Text("Connect")
+                        }
+                    }
+                }
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
     }
 }
 
 #Preview {
     GeometryReader { proxy in
         CustomTabBarView(tabs: [.dashBoard, .features],
-                         viewModel: BottomSheetViewModel(obdService: OBDService(bleManager: BLEManager()),
+                         viewModel: CustomTabBarViewModel(obdService: OBDService(bleManager: BLEManager()),
                                                          garage: Garage()),
                          selection: .constant(.dashBoard),
-                         displayType: .constant(.halfScreen),
+                         displayType: .constant(.fullScreen),
                          maxHeight: proxy.size.height
         ) {
             Color.blue

@@ -7,12 +7,16 @@
 
 import SwiftUI
 import Combine
+import CoreBluetooth
 
-class BottomSheetViewModel: ObservableObject {
+class CustomTabBarViewModel: ObservableObject {
 
     @Published var garage: Garage
     @Published var obdInfo = OBDInfo()
     @Published var garageVehicles: [GarageVehicle] = []
+    @Published var peripherals: [CBPeripheral] = []
+    @Published var connectionState: ConnectionState = .notInitialized
+
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -33,6 +37,18 @@ class BottomSheetViewModel: ObservableObject {
                     self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
                 }
                 .store(in: &cancellables)
+
+        obdService.elm327.bleManager.$foundPeripherals
+            .sink { peripherals in
+                self.peripherals = peripherals
+            }
+            .store(in: &cancellables)
+
+        obdService.elm327.bleManager.$connectionState
+            .sink { connectionState in
+                self.connectionState = connectionState
+            }
+            .store(in: &cancellables)
     }
 
     func addVehicle(make: String, model: String, year: String, vin: String) {

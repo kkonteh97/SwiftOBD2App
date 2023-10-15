@@ -52,17 +52,20 @@ struct VINInfo: Codable, Hashable {
 
 class OBDService {
     let elm327: ELM327
+    
     @Published var elmAdapter: CBPeripheral?
     private var cancellables = Set<AnyCancellable>()
     @Published var statusMessage: String?
+    private var bleManager: BLEManager
 
     init(bleManager: BLEManager) {
+        self.bleManager = bleManager
         self.elm327 = ELM327(bleManager: bleManager)
         subscribeToElmAdapterChanges()
     }
 
     private func subscribeToElmAdapterChanges() {
-        elm327.bleManager.$elmAdapter
+        elm327.bleManager.$connectedPeripheral
             .sink { [weak self] elmAdapter in
                 self?.elmAdapter = elmAdapter
             }
@@ -78,6 +81,12 @@ class OBDService {
     func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
         return try await elm327.setupAdapter(setupOrder: setupOrder)
     }
+
+    // connect to the adapter
+    func connectToAdapter(peripheral: CBPeripheral) async throws {
+        _ = try await self.bleManager.connectAsync(peripheral: peripheral)
+    }
+
 
     func requestDTC() async {
         do {

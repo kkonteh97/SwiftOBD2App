@@ -17,10 +17,10 @@ class AddPIDViewModel: ObservableObject {
     init(garage: Garage) {
         self.garage = garage
         garage.$currentVehicleId
-                .sink { currentVehicleId in
-                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
-                }
-                .store(in: &cancellables)
+            .sink { currentVehicleId in
+                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -28,23 +28,42 @@ struct AddPIDView: View {
     @ObservedObject var viewModel: LiveDataViewModel
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            if let car = viewModel.currentVehicle {
-                if let supportedPIDs = car.obdinfo?.supportedPIDs {
-                    ForEach(supportedPIDs, id: \.self) { pid in
-                        HStack {
-                            Text(pid.description)
-                                .font(.caption)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .modifier(RoundedRectangleStyle())
-                        .onTapGesture {
-                            viewModel.addPIDToRequest(pid)
+        if let car = viewModel.currentVehicle {
+            VStack(alignment: .leading) {
+                Text("Supported sensors for \(car.year) \(car.make) \(car.model)")
+                Divider().background(Color.white)
+
+                ScrollView(.vertical, showsIndicators: false) {
+                    if let supportedPIDs = car.obdinfo?.supportedPIDs {
+                        ForEach(supportedPIDs, id: \.self) { pid in
+                            HStack {
+                                Text(pid.description)
+                                    .font(.caption)
+                                    .padding()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.endColor())
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(viewModel.pidsToRequest.contains(pid) ? Color.blue : Color.clear, lineWidth: 2)
+                                    )
+                            )
+                            .padding(.horizontal)
+                            .padding(.vertical, 5)
+                            .onTapGesture {
+                                viewModel.addPIDToRequest(pid)
+                            }
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+
     }
 }
 

@@ -47,13 +47,47 @@ struct BitArray {
     }
 }
 
+struct UAS {
+    let signed: Bool
+    let scale: Double
+    let unit: Unit
+    let offset: Double
+
+    init(signed: Bool, scale: Double, unit: Unit, offset: Double = 0.0) {
+        self.signed = signed
+        self.scale = scale
+        self.unit = unit
+        self.offset = offset
+    }
+
+    func twosComp(_ value: Int, length: Int) -> Int {
+        let mask = (1 << length) - 1
+        return value & mask
+    }
+
+    func decode(bytes: Data) -> Measurement<Unit>? {
+        var value = bytesToInt(bytes)
+
+        if signed {
+            value = twosComp(value, length: bytes.count * 8)
+        }
+
+        let scaledValue = Double(value) * scale + offset
+        return Measurement(value: scaledValue, unit: unit)
+    }
+}
+
 extension Unit {
     static let percent = Unit(symbol: "%")
     static let count = Unit(symbol: "count")
-    static let degreeCelsius = Unit(symbol: "°C")
-    static let kph = Unit(symbol: "kph")
+    static let celsius = Unit(symbol: "°C")
+    static let degrees = Unit(symbol: "°")
+    static let gramsPerSecond = Unit(symbol: "g/s")
+    static let none = Unit(symbol: "")
+    static let kmh = Unit(symbol: "km/h")
     static let rpm = Unit(symbol: "rpm")
-    static let kilopascal = Unit(symbol: "kPa")
+    static let kPa = Unit(symbol: "kPa")
+    static let bar = Unit(symbol: "bar")
 }
 
 let uasIDS: [UInt8: UAS] = [
@@ -61,7 +95,7 @@ let uasIDS: [UInt8: UAS] = [
     0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
     0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
     0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
-    0x09: UAS(signed: false, scale: 1, unit: Unit.kph),
+    0x09: UAS(signed: false, scale: 1, unit: Unit.kmh),
     0x12: UAS(signed: false, scale: 1, unit: UnitDuration.seconds),
 
     // Signed
@@ -81,24 +115,24 @@ enum Decoder: Codable {
     case pressure
     case uas0x07
     case uas0x09
-//    case uas0x12
+    case uas0x12
     case timingAdvance
     case uas0x27
     case airStatus
-//    case o2Sensors
-//    case sensorVoltage
-//    case obdCompliance
-//    case o2SensorsAlt
-//    case auxInputStatus
-//    case uas0x25
-//    case uas0x19
-//    case uas0x1B
-//    case uas0x01
-//    case uas0x16
-//    case uas0x0B
-//    case uas0x1E
-//    case evapPressure
-//    case sensorVoltageBig
+    case o2Sensors
+    case sensorVoltage
+    case obdCompliance
+    case o2SensorsAlt
+    case auxInputStatus
+    case uas0x25
+    case uas0x19
+    case uas0x1B
+    case uas0x01
+    case uas0x16
+    case uas0x0B
+    case uas0x1E
+    case evapPressure
+    case sensorVoltageBig
     case currentCentered
 //    case absoluteLoad
 //    case drop
@@ -111,23 +145,92 @@ enum Decoder: Codable {
 //    case dtc
 //    case fuelRate
 
-    func decode(data: Data) -> Any? {
+    func decode(data: Data) -> OBDDecodeResult? {
         switch self {
-        case .pid:                   return nil
-        case .status:                return status(data)
-        case .uas0x09:               return decodeUAS(data, id: 0x09)
-        case .uas0x07:               return decodeUAS(data, id: 0x07)
-        case .temp:                  return temp(data)
-        case .percent:               return percent(data)
-        case .currentCentered:       return currentCentered(data)
-        case .airStatus:             return airStatus(data)
-        case .singleDTC:             return singleDtc(data)
-        case .fuelStatus:            return nil
-        case .percentCentered:       return percentCentered(data)
-        case .fuelPressure:          return fuelPressure(data)
-        case .pressure:              return pressure(data)
-        case .timingAdvance:         return timingAdvance(data)
-        case .uas0x27:               return decodeUAS(data, id: 0x27)
+        case .pid:                   
+            return nil
+        case .status:                
+            return .statusResult(status(data))
+        case .uas0x09:
+            guard let measurement = decodeUAS(data, id: 0x09) else { return .noResult }
+            return .measurementResult(measurement)
+        case .uas0x07:
+            print(data.prefix(2).compactMap { String(format: "%02x", $0) }.joined(separator: " "))
+            guard let measurement = decodeUAS(data.prefix(2), id: 0x07) else { return .noResult }
+            return .measurementResult(measurement)
+        case .temp: 
+            guard let temp = temp(data) else { return .noResult }
+            return .measurementResult(temp)
+        case .percent:
+            guard let percent = percent(data) else { return .noResult }
+            return .measurementResult(percent)
+        case .currentCentered:
+            guard let currentCentered = currentCentered(data) else { return .noResult }
+            return .measurementResult(currentCentered)
+        case .airStatus:
+            guard let airStatus = currentCentered(data) else { return .noResult }
+            return .measurementResult(airStatus)
+        case .singleDTC:
+            guard let dtcs = singleDtc(data) else { return .noResult }
+            return .stringResult(dtcs)
+        case .fuelStatus:
+            return nil
+        case .percentCentered:
+            guard let percentCentered = percent(data) else { return .noResult }
+            return .measurementResult(percentCentered)
+        case .fuelPressure:
+            guard let fuelPressure = percent(data) else { return .noResult }
+            return .measurementResult(fuelPressure)
+        case .pressure:
+            guard let pressure = pressure(data) else { return .noResult }
+            return .measurementResult(pressure)
+        case .timingAdvance: 
+            guard let timingAdvance = timingAdvance(data)else { return .noResult }
+            return .measurementResult(timingAdvance)
+        case .uas0x27:
+            guard let uasValue = decodeUAS(data, id: 0x27) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .obdCompliance:
+            return nil
+        case .o2SensorsAlt:
+            return nil
+        case .uas0x12:
+            guard let uasValue =  decodeUAS(data, id: 0x12) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .o2Sensors:
+            return nil
+
+        case .sensorVoltage:
+            return nil
+
+        case .auxInputStatus:
+            return nil
+
+        case .uas0x25:
+            guard let uasValue = decodeUAS(data, id: 0x25) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x19:
+            guard let uasValue = decodeUAS(data, id: 0x19) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x1B:
+            guard let uasValue = decodeUAS(data, id: 0x1B) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x01:
+            guard let uasValue = decodeUAS(data, id: 0x01) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x16:
+            guard let uasValue = decodeUAS(data, id: 0x16) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x0B:
+            guard let uasValue = decodeUAS(data, id: 0x0B) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x1E:
+            guard let uasValue = decodeUAS(data, id: 0x1E) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .sensorVoltageBig:
+            return nil
+        case .evapPressure:
+            return nil
         }
     }
 
@@ -156,69 +259,34 @@ enum Decoder: Codable {
         return dtcString
     }
 
-//    func fuelStatus(_ messages: [Message]) -> (String?, String?) {
-//        guard let data = messages.first?.data.dropFirst(2) else {
-//            return (nil, nil)
-//        }
-//
-//        let FUEL_STATUS = ["Status1", "Status2", "Status3"]
-//
-//        let bits = BitArray(data: data).binaryArray
-//
-//        var status1: String? = nil
-//        var status2: String? = nil
-//
-//        if bits[0..<8].count(1) == 1 {
-//                if let index = bits[0..<8].firstIndex(of: true), 7 - index < FUEL_STATUS.count {
-//                    status1 = FUEL_STATUS[7 - index]
-//                } else {
-//                    NSLog("Invalid response for fuel status (high bits set)")
-//                }
-//            } else {
-//                NSLog("Invalid response for fuel status (multiple/no bits set)")
-//            }
-//
-//            if bits[8..<16].count(true) == 1 {
-//                if let index = bits[8..<16].firstIndex(of: true), 7 - index < FUEL_STATUS.count {
-//                    status2 = FUEL_STATUS[7 - index]
-//                } else {
-//                    NSLog("Invalid response for fuel status (high bits set)")
-//                }
-//            } else {
-//                NSLog("Invalid response for fuel status (multiple/no bits set)")
-//            }
-//
-//            return (status1, status2)
-//    }
-
     // 0 to 765 kPa
     func fuelPressure(_ data: Data) -> Measurement<Unit>? {
         var value = data[0]
         value *= 3
-        return Measurement(value: Double(value), unit: .kilopascal)
+        return  Measurement(value: Double(value), unit: UnitPressure.kilopascals)
     }
 
     // 0 to 255 kPa
     func pressure(_ data: Data) -> Measurement<Unit>? {
         let value = data[0]
-        return Measurement(value: Double(value), unit: .kilopascal)
+        return Measurement(value: Double(value), unit: UnitPressure.kilopascals)
     }
 
     func percent(_ data: Data) -> Measurement<Unit>? {
         var value = Double(data.first ?? 0)
         value = value * 100.0 / 255.0
-        return Measurement(value: value, unit: .percent)
+        return Measurement(value: value, unit: Unit.percent)
     }
 
     func percentCentered(_ data: Data) -> Measurement<Unit>? {
         var value = Double(data.first ?? 0)
         value = (value - 128) * 100.0 / 128.0
-        return Measurement(value: value, unit: .percent)
+        return Measurement(value: value, unit: Unit.percent)
     }
 
     func currentCentered(_ data: Data) -> Measurement<Unit>? {
-            let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
-         return Measurement(value: value, unit: UnitElectricCurrent.milliamperes)
+         let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
+         return Measurement(value: value, unit: UnitElectricCurrent.amperes)
      }
 
     func airStatus(_ data: Data) -> Measurement<Unit>? {
@@ -227,7 +295,7 @@ enum Decoder: Codable {
            let numSet = bits.filter { $0 == 1 }.count
            if numSet == 1 {
                let index = 7 - bits.firstIndex(of: 1)!
-               return Measurement(value: Double(index), unit: Unit.count)
+               return Measurement(value: Double(index), unit: UnitElectricCurrent.amperes)
            }
            return nil
        }
@@ -239,7 +307,7 @@ enum Decoder: Codable {
 
     func timingAdvance(_ data: Data) -> Measurement<Unit>? {
             let value = (Double(data[0]) - 128) / 2.0
-            return Measurement(value: value, unit: UnitAngle.degrees)
+            return  Measurement(value: value, unit: UnitAngle.degrees)
     }
 
     func status(_ data: Data) -> Status {
@@ -287,36 +355,42 @@ enum Decoder: Codable {
             break
         }
     }
-}
 
-struct UAS {
-    let signed: Bool
-    let scale: Double
-    let unit: Unit
-    let offset: Double
 
-    init(signed: Bool, scale: Double, unit: Unit, offset: Double = 0.0) {
-        self.signed = signed
-        self.scale = scale
-        self.unit = unit
-        self.offset = offset
-    }
-
-    func twosComp(_ value: Int, length: Int) -> Int {
-        let mask = (1 << length) - 1
-        return value & mask
-    }
-
-    func decode(bytes: Data) -> Measurement<Unit>? {
-        var value = bytesToInt(bytes)
-
-        if signed {
-            value = twosComp(value, length: bytes.count * 8)
-        }
-
-        let scaledValue = Double(value) * scale + offset
-        return Measurement(value: scaledValue, unit: unit)
-    }
+    //    func fuelStatus(_ messages: [Message]) -> (String?, String?) {
+    //        guard let data = messages.first?.data.dropFirst(2) else {
+    //            return (nil, nil)
+    //        }
+    //
+    //        let FUEL_STATUS = ["Status1", "Status2", "Status3"]
+    //
+    //        let bits = BitArray(data: data).binaryArray
+    //
+    //        var status1: String? = nil
+    //        var status2: String? = nil
+    //
+    //        if bits[0..<8].count(1) == 1 {
+    //                if let index = bits[0..<8].firstIndex(of: true), 7 - index < FUEL_STATUS.count {
+    //                    status1 = FUEL_STATUS[7 - index]
+    //                } else {
+    //                    NSLog("Invalid response for fuel status (high bits set)")
+    //                }
+    //            } else {
+    //                NSLog("Invalid response for fuel status (multiple/no bits set)")
+    //            }
+    //
+    //            if bits[8..<16].count(true) == 1 {
+    //                if let index = bits[8..<16].firstIndex(of: true), 7 - index < FUEL_STATUS.count {
+    //                    status2 = FUEL_STATUS[7 - index]
+    //                } else {
+    //                    NSLog("Invalid response for fuel status (high bits set)")
+    //                }
+    //            } else {
+    //                NSLog("Invalid response for fuel status (multiple/no bits set)")
+    //            }
+    //
+    //            return (status1, status2)
+    //    }
 }
 
 let baseTests = [

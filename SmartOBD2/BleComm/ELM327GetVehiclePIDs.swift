@@ -14,7 +14,7 @@ extension ELM327 {
 
         for pid in pidGetters {
             do {
-                let response = try await sendMessageAsync(pid.command(mode: "01"))
+                let response = try await sendMessageAsync("01" + pid.command)
                 // find first instance of 41 plus command sent, from there we determine the position of everything else
                 // Ex.
                 //        || ||
@@ -26,13 +26,13 @@ extension ELM327 {
 
                 // Convert ecuData to binary and extract supported PIDs
 
-                let binaryData = BitArray(data: messages[0].data[2...])
+                let binaryData = BitArray(data: messages[0].data[1...])
 
                 let supportedPIDsByECU = extractSupportedPIDs(binaryData.binaryArray)
                 let commands = OBDCommand.allCases
 
                 // map supported PIDs to OBDCommand enum commands
-                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.command(mode: "")) }
+                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.command) }
                 supportedPIDsSet.formUnion(supportedPIDs)
             } catch {
                 logger.error("\(error.localizedDescription)")

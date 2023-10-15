@@ -23,7 +23,7 @@ extension Logger {
 struct SmartOBD2App: App {
     var body: some Scene {
         WindowGroup {
-            SplashScreenView()
+            MainView(garage: Garage())
         }
     }
 }

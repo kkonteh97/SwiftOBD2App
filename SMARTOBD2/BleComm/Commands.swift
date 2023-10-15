@@ -73,29 +73,121 @@ enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
     case intakeTemp
     case maf
     case throttlePos
+    case airStatus
+    case O2Sensor
+    case O2Bank1Sensor1
+    case O2Bank1Sensor2
+    case O2Bank1Sensor3
+    case O2Bank1Sensor4
+    case O2Bank2Sensor1
+    case O2Bank2Sensor2
+    case O2Bank2Sensor3
+    case O2Bank2Sensor4
+    case obdcompliance
+    case O2SensorsALT
+    case auxInputStatus
+    case runTime
     case pidsB
+    case distanceWMIL
+    case fuelRailPressureVac
+    case fuelRailPressureDirect
+    case O2Sensor1WRVolatage
+    case O2Sensor2WRVolatage
+    case O2Sensor3WRVolatage
+    case O2Sensor4WRVolatage
+    case O2Sensor5WRVolatage
+    case O2Sensor6WRVolatage
+    case O2Sensor7WRVolatage
+    case O2Sensor8WRVolatage
+    case commandedEGR
+    case EGRError
+    case evaporativePurge
+    case fuelLevel
+    case warmUpsSinceDTCCleared
+    case distanceSinceDTCCleared
+    case evapVaporPressure
+    case barometricPressure
+    case O2Sensor1WRCurrent
+    case O2Sensor2WRCurrent
+    case O2Sensor3WRCurrent
+    case O2Sensor4WRCurrent
+    case O2Sensor5WRCurrent
+    case O2Sensor6WRCurrent
+    case O2Sensor7WRCurrent
+    case O2Sensor8WRCurrent
+    case catalystTempB1S1
+    case catalystTempB2S1
+    case catalystTempB1S2
+    case catalystTempB2S2
+    case pidsC
 
-    func command(mode: String) -> String {
+    var command: String {
         switch self {
-        case .pidsA:              return mode + "00"
-        case .status:             return mode + "01"
-        case .freezeDTC:          return mode + "02"
-        case .fuelStatus:         return mode + "03"
-        case .engineLoad:         return mode + "04"
-        case .coolantTemp:        return mode + "05"
-        case .shortFuelTrim1:     return mode + "06"
-        case .longFuelTrim1:      return mode + "07"
-        case .shortFuelTrim2:     return mode + "08"
-        case .longFuelTrim2:      return mode + "09"
-        case .fuelPressure:       return mode + "0A"
-        case .intakePressure:     return mode + "0B"
-        case .rpm:                return mode + "0C"
-        case .speed:              return mode + "0D"
-        case .timingAdvance:      return mode + "0E"
-        case .intakeTemp:         return mode + "0F"
-        case .maf:                return mode + "10"
-        case .throttlePos:        return mode + "11"
-        case .pidsB:              return mode + "20"
+        case .pidsA:                    return "00"
+        case .status:                   return "01"
+        case .freezeDTC:                return "02"
+        case .fuelStatus:               return "03"
+        case .engineLoad:               return "04"
+        case .coolantTemp:              return "05"
+        case .shortFuelTrim1:           return "06"
+        case .longFuelTrim1:            return "07"
+        case .shortFuelTrim2:           return "08"
+        case .longFuelTrim2:            return "09"
+        case .fuelPressure:             return "0A"
+        case .intakePressure:           return "0B"
+        case .rpm:                      return "0C"
+        case .speed:                    return "0D"
+        case .timingAdvance:            return "0E"
+        case .intakeTemp:               return "0F"
+        case .maf:                      return "10"
+        case .throttlePos:              return "11"
+        case .airStatus:                return "12"
+        case .O2Sensor:                 return "13"
+        case .O2Bank1Sensor1:           return "14"
+        case .O2Bank1Sensor2:           return "15"
+        case .O2Bank1Sensor3:           return "16"
+        case .O2Bank1Sensor4:           return "17"
+        case .O2Bank2Sensor1:           return "18"
+        case .O2Bank2Sensor2:           return "19"
+        case .O2Bank2Sensor3:           return "1A"
+        case .O2Bank2Sensor4:           return "1B"
+        case .obdcompliance:            return "1C"
+        case .O2SensorsALT:             return "1D"
+        case .auxInputStatus:           return "1E"
+        case .runTime:                  return "1F"
+        case .pidsB:                    return "20"
+        case .distanceWMIL:             return "21"
+        case .fuelRailPressureVac:      return "22"
+        case .fuelRailPressureDirect:   return "23"
+        case .O2Sensor1WRVolatage:      return "24"
+        case .O2Sensor2WRVolatage:      return "25"
+        case .O2Sensor3WRVolatage:      return "26"
+        case .O2Sensor4WRVolatage:      return "27"
+        case .O2Sensor5WRVolatage:      return "28"
+        case .O2Sensor6WRVolatage:      return "29"
+        case .O2Sensor7WRVolatage:      return "2A"
+        case .O2Sensor8WRVolatage:      return "2B"
+        case .commandedEGR:             return "2C"
+        case .EGRError:                 return "2D"
+        case .evaporativePurge:         return "2E"
+        case .fuelLevel:                return "2F"
+        case .warmUpsSinceDTCCleared:   return "30"
+        case .distanceSinceDTCCleared:  return "31"
+        case .evapVaporPressure:        return "32"
+        case .barometricPressure:       return "33"
+        case .O2Sensor1WRCurrent:       return "34"
+        case .O2Sensor2WRCurrent:       return "35"
+        case .O2Sensor3WRCurrent:       return "36"
+        case .O2Sensor4WRCurrent:       return "37"
+        case .O2Sensor5WRCurrent:       return "38"
+        case .O2Sensor6WRCurrent:       return "39"
+        case .O2Sensor7WRCurrent:       return "3A"
+        case .O2Sensor8WRCurrent:       return "3B"
+        case .catalystTempB1S1:         return "3C"
+        case .catalystTempB2S1:         return "3D"
+        case .catalystTempB1S2:         return "3E"
+        case .catalystTempB2S2:         return "3F"
+        case .pidsC:                    return "40"
         }
     }
 
@@ -103,73 +195,211 @@ enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
 
     var description: String {
         switch self {
-        case .pidsA:              return "Supported PIDs [01-20]"
-        case .status:             return "Status since DTCs cleared"
-        case .freezeDTC:          return "DTC that triggered the freeze frame"
-        case .fuelStatus:         return "Fuel System Status"
-        case .engineLoad:         return "Calculated Engine Load"
-        case .coolantTemp:        return "Coolant temperature"
-        case .shortFuelTrim1:     return "Short Term Fuel Trim - Bank 1"
-        case .longFuelTrim1:      return "Long Term Fuel Trim - Bank 1"
-        case .shortFuelTrim2:     return "Short Term Fuel Trim - Bank 2"
-        case .longFuelTrim2:      return "Long Term Fuel Trim - Bank 2"
-        case .fuelPressure:       return "Fuel Pressure"
-        case .intakePressure:     return "Intake Manifold Pressure"
-        case .speed:              return "Vehicle Speed"
-        case .rpm:                return "RPM"
-        case .timingAdvance:      return "Timing Advance"
-        case .intakeTemp:         return "Intake Air Temp"
-        case .maf:                return "Air Flow Rate (MAF)"
-        case .throttlePos:        return "Throttle Position"
-        case .pidsB:              return "Supported PIDs [21-40]"
+        case .pidsA:                    return "Supported PIDs [01-20]"
+        case .status:                   return "Status since DTCs cleared"
+        case .freezeDTC:                return "DTC that triggered the freeze frame"
+        case .fuelStatus:               return "Fuel System Status"
+        case .engineLoad:               return "Calculated Engine Load"
+        case .coolantTemp:              return "Coolant temperature"
+        case .shortFuelTrim1:           return "Short Term Fuel Trim - Bank 1"
+        case .longFuelTrim1:            return "Long Term Fuel Trim - Bank 1"
+        case .shortFuelTrim2:           return "Short Term Fuel Trim - Bank 2"
+        case .longFuelTrim2:            return "Long Term Fuel Trim - Bank 2"
+        case .fuelPressure:             return "Fuel Pressure"
+        case .intakePressure:           return "Intake Manifold Pressure"
+        case .speed:                    return "Vehicle Speed"
+        case .rpm:                      return "RPM"
+        case .timingAdvance:            return "Timing Advance"
+        case .intakeTemp:               return "Intake Air Temp"
+        case .maf:                      return "Air Flow Rate (MAF)"
+        case .throttlePos:              return "Throttle Position"
+        case .airStatus:                return "Secondary Air Status"
+        case .O2Sensor:                 return "O2 Sensors Present"
+        case .O2Bank1Sensor1:           return "O2: Bank 1 - Sensor 1 Voltage"
+        case .O2Bank1Sensor2:           return "O2: Bank 1 - Sensor 2 Voltage"
+        case .O2Bank1Sensor3:           return "O2: Bank 1 - Sensor 3 Voltage"
+        case .O2Bank1Sensor4:           return "O2: Bank 1 - Sensor 4 Voltage"
+        case .O2Bank2Sensor1:           return "O2: Bank 2 - Sensor 1 Voltage"
+        case .O2Bank2Sensor2:           return "O2: Bank 2 - Sensor 2 Voltage"
+        case .O2Bank2Sensor3:           return "O2: Bank 2 - Sensor 3 Voltage"
+        case .O2Bank2Sensor4:           return "O2: Bank 2 - Sensor 4 Voltage"
+        case .obdcompliance:            return "OBD Standards Compliance"
+        case .O2SensorsALT:             return "O2 Sensors Present (alternate)"
+        case .auxInputStatus:           return "Auxiliary input status (power take off)"
+        case .runTime:                  return "Engine Run Time"
+        case .pidsB:                    return "Supported PIDs [21-40]"
+        case .distanceWMIL:             return "Distance Traveled with MIL on"
+        case .fuelRailPressureVac:      return "Fuel Rail Pressure (relative to vacuum)"
+        case .fuelRailPressureDirect:   return "Fuel Rail Pressure (direct inject)"
+        case .O2Sensor1WRVolatage:      return "02 Sensor 1 WR Lambda Voltage"
+        case .O2Sensor2WRVolatage:      return "02 Sensor 2 WR Lambda Voltage"
+        case .O2Sensor3WRVolatage:      return "02 Sensor 3 WR Lambda Voltage"
+        case .O2Sensor4WRVolatage:      return "02 Sensor 4 WR Lambda Voltage"
+        case .O2Sensor5WRVolatage:      return "02 Sensor 5 WR Lambda Voltage"
+        case .O2Sensor6WRVolatage:      return "02 Sensor 6 WR Lambda Voltage"
+        case .O2Sensor7WRVolatage:      return "02 Sensor 7 WR Lambda Voltage"
+        case .O2Sensor8WRVolatage:      return "02 Sensor 8 WR Lambda Voltage"
+        case .commandedEGR:             return "Commanded EGR"
+        case .EGRError:                 return "EGR Error"
+        case .evaporativePurge:         return "Commanded Evaporative Purge"
+        case .fuelLevel:                return "Number of warm-ups since codes cleared"
+        case .warmUpsSinceDTCCleared:   return "Distance traveled since codes cleared"
+        case .distanceSinceDTCCleared:  return "Distance traveled since codes cleared"
+        case .evapVaporPressure:        return "Evaporative system vapor pressure"
+        case .barometricPressure:       return "Barometric Pressure"
+        case .O2Sensor1WRCurrent:       return "02 Sensor 1 WR Lambda Current"
+        case .O2Sensor2WRCurrent:       return "02 Sensor 2 WR Lambda Current"
+        case .O2Sensor3WRCurrent:       return "02 Sensor 3 WR Lambda Current"
+        case .O2Sensor4WRCurrent:       return "02 Sensor 4 WR Lambda Current"
+        case .O2Sensor5WRCurrent:       return "02 Sensor 5 WR Lambda Current"
+        case .O2Sensor6WRCurrent:       return "02 Sensor 6 WR Lambda Current"
+        case .O2Sensor7WRCurrent:       return "02 Sensor 7 WR Lambda Current"
+        case .O2Sensor8WRCurrent:       return "02 Sensor 8 WR Lambda Current"
+        case .catalystTempB1S1:         return "Catalyst Temperature: Bank 1 - Sensor 1"
+        case .catalystTempB2S1:         return "Catalyst Temperature: Bank 2 - Sensor 1"
+        case .catalystTempB1S2:         return "Catalyst Temperature: Bank 1 - Sensor 2"
+        case .catalystTempB2S2:         return "Catalyst Temperature: Bank 1 - Sensor 2"
+        case .pidsC:                    return "Supported PIDs [41-60]"
         }
     }
 
     var bytes: Int {
         switch self {
-        case .pidsA:              return 4
-        case .status:             return 4
-        case .freezeDTC:          return 4
-        case .fuelStatus:         return 4
-        case .engineLoad:         return 1
-        case .coolantTemp:        return 1
-        case .shortFuelTrim1:     return 2
-        case .longFuelTrim1:      return 2
-        case .shortFuelTrim2:     return 2
-        case .longFuelTrim2:      return 2
-        case .fuelPressure:       return 1
-        case .intakePressure:     return 2
-        case .rpm:                return 2
-        case .speed:              return 1
-        case .timingAdvance:      return 2
-        case .intakeTemp:         return 1
-        case .maf:                return 2
-        case .throttlePos:        return 1
-        case .pidsB:              return 4
+        case .pidsA:                    return 5
+        case .status:                   return 5
+        case .freezeDTC:                return 5
+        case .fuelStatus:               return 5
+        case .engineLoad:               return 2
+        case .coolantTemp:              return 2
+        case .shortFuelTrim1:           return 3
+        case .longFuelTrim1:            return 3
+        case .shortFuelTrim2:           return 3
+        case .longFuelTrim2:            return 3
+        case .fuelPressure:             return 2
+        case .intakePressure:           return 3
+        case .rpm:                      return 4
+        case .speed:                    return 2
+        case .timingAdvance:            return 3
+        case .intakeTemp:               return 2
+        case .maf:                      return 3
+        case .throttlePos:              return 2
+        case .airStatus:                return 2
+        case .O2Sensor:                 return 2
+        case .O2Bank1Sensor1:           return 2
+        case .O2Bank1Sensor2:           return 2
+        case .O2Bank1Sensor3:           return 2
+        case .O2Bank1Sensor4:           return 2
+        case .O2Bank2Sensor1:           return 2
+        case .O2Bank2Sensor2:           return 2
+        case .O2Bank2Sensor3:           return 2
+        case .O2Bank2Sensor4:           return 2
+        case .obdcompliance:            return 2
+        case .O2SensorsALT:             return 2
+        case .auxInputStatus:           return 2
+        case .runTime:                  return 2
+        case .pidsB:                    return 5
+        case .distanceWMIL:             return 4
+        case .fuelRailPressureVac:      return 4
+        case .fuelRailPressureDirect:   return 4
+        case .O2Sensor1WRVolatage:      return 6
+        case .O2Sensor2WRVolatage:      return 6
+        case .O2Sensor3WRVolatage:      return 6
+        case .O2Sensor4WRVolatage:      return 6
+        case .O2Sensor5WRVolatage:      return 6
+        case .O2Sensor6WRVolatage:      return 6
+        case .O2Sensor7WRVolatage:      return 6
+        case .O2Sensor8WRVolatage:      return 6
+        case .commandedEGR:             return 4
+        case .EGRError:                 return 4
+        case .evaporativePurge:         return 4
+        case .fuelLevel:                return 4
+        case .warmUpsSinceDTCCleared:   return 4
+        case .distanceSinceDTCCleared:  return 4
+        case .evapVaporPressure:        return 4
+        case .barometricPressure:       return 4
+        case .O2Sensor1WRCurrent:       return 4
+        case .O2Sensor2WRCurrent:       return 4
+        case .O2Sensor3WRCurrent:       return 4
+        case .O2Sensor4WRCurrent:       return 4
+        case .O2Sensor5WRCurrent:       return 4
+        case .O2Sensor6WRCurrent:       return 4
+        case .O2Sensor7WRCurrent:       return 4
+        case .O2Sensor8WRCurrent:       return 4
+        case .catalystTempB1S1:         return 4
+        case .catalystTempB2S1:         return 4
+        case .catalystTempB1S2:         return 4
+        case .catalystTempB2S2:         return 4
+        case .pidsC:                    return 6
         }
     }
 
     var decoder: Decoder {
         switch self {
-        case .pidsA:             return .pid
-        case .status:            return .status
-        case .freezeDTC:         return .singleDTC
-        case .fuelStatus:        return .fuelStatus
-        case .engineLoad:        return .percent
-        case .coolantTemp:       return .temp
-        case .shortFuelTrim1:    return .percentCentered
-        case .longFuelTrim1:     return .percentCentered
-        case .shortFuelTrim2:    return .percentCentered
-        case .longFuelTrim2:     return .percentCentered
-        case .fuelPressure:      return .fuelPressure
-        case .intakePressure:    return .pressure
-        case .rpm:               return .uas0x07
-        case .speed:             return .uas0x09
-        case .timingAdvance:     return .timingAdvance
-        case .intakeTemp:        return .temp
-        case .maf:               return .uas0x27
-        case .throttlePos:       return .percent
-        case .pidsB:             return .pid
+        case .pidsA:                    return .pid
+        case .status:                   return .status
+        case .freezeDTC:                return .singleDTC
+        case .fuelStatus:               return .fuelStatus
+        case .engineLoad:               return .percent
+        case .coolantTemp:              return .temp
+        case .shortFuelTrim1:           return .percentCentered
+        case .longFuelTrim1:            return .percentCentered
+        case .shortFuelTrim2:           return .percentCentered
+        case .longFuelTrim2:            return .percentCentered
+        case .fuelPressure:             return .fuelPressure
+        case .intakePressure:           return .pressure
+        case .rpm:                      return .uas0x07
+        case .speed:                    return .uas0x09
+        case .timingAdvance:            return .timingAdvance
+        case .intakeTemp:               return .temp
+        case .maf:                      return .uas0x27
+        case .throttlePos:              return .percent
+        case .airStatus:                return .airStatus
+        case .O2Sensor:                 return .o2Sensors
+        case .O2Bank1Sensor1:           return .sensorVoltage
+        case .O2Bank1Sensor2:           return .sensorVoltage
+        case .O2Bank1Sensor3:           return .sensorVoltage
+        case .O2Bank1Sensor4:           return .sensorVoltage
+        case .O2Bank2Sensor1:           return .sensorVoltage
+        case .O2Bank2Sensor2:           return .sensorVoltage
+        case .O2Bank2Sensor3:           return .sensorVoltage
+        case .O2Bank2Sensor4:           return .sensorVoltage
+        case .obdcompliance:            return .obdCompliance
+        case .O2SensorsALT:             return .o2SensorsAlt
+        case .auxInputStatus:           return .auxInputStatus
+        case .runTime:                  return .uas0x12
+        case .pidsB:                    return .pid
+        case .distanceWMIL:             return .uas0x25
+        case .fuelRailPressureVac:      return .uas0x19
+        case .fuelRailPressureDirect:   return .uas0x1B
+        case .O2Sensor1WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor2WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor3WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor4WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor5WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor6WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor7WRVolatage:      return .sensorVoltageBig
+        case .O2Sensor8WRVolatage:      return .sensorVoltageBig
+        case .commandedEGR:             return .percent
+        case .EGRError:                 return .percentCentered
+        case .evaporativePurge:         return .percent
+        case .fuelLevel:                return .percent
+        case .warmUpsSinceDTCCleared:   return .uas0x01
+        case .distanceSinceDTCCleared:  return .uas0x25
+        case .evapVaporPressure:        return .evapPressure
+        case .barometricPressure:       return .pressure
+        case .O2Sensor1WRCurrent:       return .currentCentered
+        case .O2Sensor2WRCurrent:       return .currentCentered
+        case .O2Sensor3WRCurrent:       return .currentCentered
+        case .O2Sensor4WRCurrent:       return .currentCentered
+        case .O2Sensor5WRCurrent:       return .currentCentered
+        case .O2Sensor6WRCurrent:       return .currentCentered
+        case .O2Sensor7WRCurrent:       return .currentCentered
+        case .O2Sensor8WRCurrent:       return .currentCentered
+        case .catalystTempB1S1:         return .uas0x16
+        case .catalystTempB2S1:         return .uas0x16
+        case .catalystTempB1S2:         return .uas0x16
+        case .catalystTempB2S2:         return .uas0x16
+        case .pidsC:                    return .pid
         }
     }
 
@@ -256,6 +486,8 @@ enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
 //            generateCommand("AUX_INPUT_STATUS", mode: "01", cmd: "1E", description: "Auxiliary input status (power take off)", bytes: 3, decoder: .auxInputStatus, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("RUN_TIME", mode: "01", cmd: "1F", description: "Engine Run Time", bytes: 4, decoder: .uas0x12, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("PIDS_B", mode: "01", cmd: "20", description: "Supported PIDs [21-40]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
+
+
 //            generateCommand("DISTANCE_W_MIL", mode: "01", cmd: "21", description: "Distance Traveled with MIL on", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("FUEL_RAIL_PRESSURE_VAC", mode: "01", cmd: "22", description: "Fuel Rail Pressure (relative to vacuum)", bytes: 4, decoder: .uas0x19, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("FUEL_RAIL_PRESSURE_DIRECT", mode: "01", cmd: "23", description: "Fuel Rail Pressure (direct inject)", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
@@ -267,6 +499,13 @@ enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
 //            generateCommand("O2_S6_WR_VOLTAGE", mode: "01", cmd: "29", description: "02 Sensor 6 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("O2_S7_WR_VOLTAGE", mode: "01", cmd: "2A", description: "02 Sensor 7 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("O2_S8_WR_VOLTAGE", mode: "01", cmd: "2B", description: "02 Sensor 8 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
+
+
+
+
+
+
+
 //            generateCommand("COMMANDED_EGR", mode: "01", cmd: "2C", description: "Commanded EGR", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("EGR_ERROR", mode: "01", cmd: "2D", description: "EGR Error", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("EVAPORATIVE_PURGE", mode: "01", cmd: "2E", description: "Commanded Evaporative Purge", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
@@ -283,6 +522,8 @@ enum OBDCommand: CaseIterable, Codable, Identifiable, Comparable {
 //            generateCommand("O2_S6_WR_CURRENT", mode: "01", cmd: "39", description: "02 Sensor 6 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("O2_S7_WR_CURRENT", mode: "01", cmd: "3A", description: "02 Sensor 7 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("O2_S8_WR_CURRENT", mode: "01", cmd: "3B", description: "02 Sensor 8 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
+
+
 //            generateCommand("CATALYST_TEMP_B1S1", mode: "01", cmd: "3C", description: "Catalyst Temperature: Bank 1 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("CATALYST_TEMP_B2S1", mode: "01", cmd: "3D", description: "Catalyst Temperature: Bank 2 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
 //            generateCommand("CATALYST_TEMP_B1S2", mode: "01", cmd: "3E", description: "Catalyst Temperature: Bank 1 - Sensor 2", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),

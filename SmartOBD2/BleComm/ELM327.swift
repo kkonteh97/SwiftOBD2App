@@ -122,11 +122,10 @@ class ELM327: ObservableObject {
 
         try await connectToVehicle(autoProtocol: autoProtocol)
 
-        connectionState = .connectedToVehicle
-
         obdInfo.obdProtocol = obdProtocol
         obdInfo.supportedPIDs = await getSupportedPIDs(obdProtocol)
         try await _ = okResponse(message: "ATH0")
+
         // Setup Complete will attempt to get the VIN Number
         if let vin = await requestVin() {
             obdInfo.vin = vin
@@ -270,13 +269,6 @@ class ELM327: ObservableObject {
         }
     }
 
-    // connect to the adapter
-    func connectToAdapter() async throws {
-        connectionState = .connecting
-        _ = try await self.bleManager.scanAndConnectAsync(services: [self.elmServiceUUID])
-        connectionState = .connectedToAdapter
-    }
-
     func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID]? {
         let engineTXID = 0
         let transmissionTXID = 1
@@ -373,37 +365,60 @@ class ELM327: ObservableObject {
     }
 }
 
-extension ELM327 {
-    func requestPIDs(_ pid: OBDCommand) async -> Measurement<Unit>? {
-        // Ensure you're not already requesting
-        do {
-            let response = try await sendMessageAsync(pid.command(mode: "01"))
-            let decodedValue = await decodePIDs(response: response, pid: pid)
+struct BatchedResponse {
+    private var buffer: Data
 
-            if let measurement = decodedValue {
-                // Convert the Measurement<Unit> to a string
-                let value = measurement.value
-                let unitString = measurement.unit.symbol
-                 _ = PIDData(pid: pid, value: value, unit: unitString)
-                return measurement
-            } else {
-                // Handle the case where response is nil (e.g., no response)
+    init(response: Data) {
+        self.buffer = response
+    }
+
+    mutating func getValueForCommand(_ cmd: OBDCommand) -> PidData? {
+        if buffer.count < cmd.bytes {
+            return nil
+        }
+        // value is first occurence of cmd.command to cmd.bytes
+        let value = buffer.prefix(cmd.bytes)
+
+        print("value ",value.compactMap { String(format: "%02X ", $0) }.joined())
+
+        buffer.removeFirst(cmd.bytes)
+        print("Buffer: \(buffer.compactMap { String(format: "%02X ", $0) }.joined())")
+
+        guard let measurement = cmd.decoder.decode(data: value.dropFirst()) else {
+            return nil
+        }
+        print("Measurement: \(String(describing: measurement))")
+
+        return PidData(pid: cmd, value: measurement)
+    }
+}
+
+extension ELM327 {
+    func requestPIDs(_ pids: [OBDCommand]) async -> [PidData]? {
+        do {
+            let response = try await sendMessageAsync("01" + pids.compactMap { $0.command }.joined())
+            guard let messages = call(response, idBits: obdProtocol.idBits) else {
                 return nil
             }
+            let data = messages[0].data
+
+            var res = BatchedResponse(response: data)
+
+            return pids.compactMap { cmd in res.getValueForCommand(cmd) }
         } catch {
             logger.error("\(error.localizedDescription)")
             return nil
         }
     }
 
-    func decodePIDs(response: [String], pid: OBDCommand) async -> Measurement<Unit>? {
+    func decodePIDs(response: [String], pid: OBDCommand) async -> OBDDecodeResult? {
         guard let messages = call(response, idBits: obdProtocol.idBits) else {
             logger.error("could not parse")
             // maybe header is off
             return nil
         }
         if let decodedValue = pid.decoder.decode(data: messages[0].data.dropFirst()) {
-            return decodedValue as? Measurement<Unit>
+            return decodedValue
         } else {
             return nil
         }

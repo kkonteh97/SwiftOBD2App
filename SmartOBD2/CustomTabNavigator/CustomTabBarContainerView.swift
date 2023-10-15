@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CustomTabBarContainerView<Content: View>: View {
-    @ObservedObject var viewModel: BottomSheetViewModel
+    @ObservedObject var viewModel: CustomTabBarViewModel
 
     @Binding var selection: TabBarItem
     let maxHeight: Double
@@ -20,7 +20,7 @@ struct CustomTabBarContainerView<Content: View>: View {
          selection: Binding<TabBarItem>,
          displayType: Binding<BottomSheetType>,
          maxHeight: Double,
-         viewModel: BottomSheetViewModel,
+         viewModel: CustomTabBarViewModel,
          @ViewBuilder content: () -> Content
     ) {
         self._selection = selection
@@ -61,7 +61,7 @@ struct CustomTabBarContainerView_Previews: PreviewProvider {
             CustomTabBarContainerView(selection: .constant(tabs.first!),
                                       displayType: .constant(.quarterScreen),
                                       maxHeight: proxy.size.height,
-                                      viewModel: BottomSheetViewModel(obdService: OBDService(bleManager: BLEManager()),
+                                      viewModel: CustomTabBarViewModel(obdService: OBDService(bleManager: BLEManager()),
                                                                       garage: Garage())
             ) {
                 Color.red

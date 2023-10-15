@@ -46,8 +46,6 @@ struct ConnectButton: View {
                     .frame(width: 80, height: 80)
             )
             .shadow(radius: shadowRadius)
-            .disabled(connectionState == .connectedToVehicle)
-
             GoButtonAnimation(isLoading: $isLoading)
         }
     }
