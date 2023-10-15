@@ -98,7 +98,7 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
 
     func startScan(service: String) {
         let scanOption = [CBCentralManagerScanOptionAllowDuplicatesKey: true]
-        centralManager?.scanForPeripherals(withServices: [CBUUID(string: service)], options: nil)
+        centralManager?.scanForPeripherals(withServices: [CBUUID(string: service)], options: scanOption)
         isSearching = true
     }
 
@@ -136,21 +136,20 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             if isDevicePeripheral(peripheral) {
                 stopScan()
                 connect(to: peripheral)
-            }
         }
+    }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
             // Scan for peripherals if BLE is turned on
             logger.debug("Bluetooth is On.")
-            startScan(service: BLEManager.UserDevice[0].serviceUUID)
-//            guard let device = elmAdapter else {
-//                startScan(service: BLEManager.UserDevice[0].serviceUUID)
-//                return
-//            }
-//            connectionState = .connecting
-//            connect(to: device)
+            guard let device = connectedPeripheral else {
+                startScan(service: BLEManager.UserDevice[0].serviceUUID)
+                return
+            }
+            connectionState = .connecting
+            connect(to: device)
 
         case .poweredOff:
             logger.warning("Bluetooth is currently powered off.")
@@ -174,6 +173,8 @@ class BLEManager: NSObject, CBPeripheralDelegate, ObservableObject, CBCentralMan
             logger.debug("Restoring \(peripherals.count) peripherals")
             for peripheral in peripherals {
                 logger.debug("Restoring peripheral: \(peripheral.name ?? "Unnamed")")
+                foundPeripherals.append(peripheral)
+                connectionState = .connectedToAdapter
                 connectedPeripheral = peripheral
                 connectedPeripheral?.delegate = self
             }

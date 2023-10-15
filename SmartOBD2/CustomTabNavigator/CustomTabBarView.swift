@@ -98,7 +98,7 @@ struct CustomTabBarView<Content: View>: View {
                         self.showConnectedText = false
                     }
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
                     withAnimation(.interactiveSpring(response: 0.5, 
                                                      dampingFraction: 0.8,
                                                      blendDuration: 0)
@@ -167,7 +167,7 @@ struct CustomTabBarView<Content: View>: View {
 
             if viewModel.connectionState != .initialized  {
                 ConnectButton(color: Color(red: 39/255, green: 110/255, blue: 241/255),
-                              text: "Connect",
+                              text: "START",
                               isLoading: $isLoading
                 ) {
                     handleConnectButtonTapped()
