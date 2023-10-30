@@ -28,7 +28,7 @@ struct CustomTabBarView<Content: View>: View {
     @ObservedObject var viewModel: CustomTabBarViewModel
 
     @State private var isLoading = false
-    @State private var setupOrder: [SetupStep] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
+    @State private var setupOrder: [OBDCommand] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
     @State var localSelection: TabBarItem
     @State private var whiteStreakProgress: CGFloat = 0.0
     @State private var showConnectedText = false
@@ -294,9 +294,9 @@ extension CustomTabBarView {
                 .padding(.top, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Divider().background(Color.white)
-            ForEach(viewModel.peripherals, id: \.self) { peripheral in
+            ForEach(viewModel.peripherals) { peripheral in
                 HStack {
-                    Text(peripheral.name ?? "Unknown")
+                    Text(peripheral.name)
                     Spacer()
                     Button {
                         Task {

@@ -17,7 +17,7 @@ struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
     @State var SplashScreenIsActive: Bool = true
     @State var displayType: BottomSheetType = .halfScreen
-    @State private var tabSelection: TabBarItem = .dashBoard
+    @State private var tabSelection: TabBarItem = .features
 
 
     let homeViewModel: HomeViewModel

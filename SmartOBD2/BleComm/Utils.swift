@@ -65,21 +65,6 @@ public func withTimeout<R>(
 //    }
 // }
 
-enum SetupStep: String, CaseIterable, Identifiable {
-    case ATD
-    case ATZ
-    case ATRV
-    case ATL0
-    case ATE0
-    case ATH1
-    case ATH0
-    case ATAT1
-    case ATSTFF
-    case ATDPN
-    case AT0902
-    var id: String { self.rawValue }
-}
-
 enum PROTOCOL: String, Codable {
     case
     protocol1 = "1",

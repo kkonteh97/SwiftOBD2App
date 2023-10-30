@@ -26,7 +26,6 @@ class AddPIDViewModel: ObservableObject {
 
 struct AddPIDView: View {
     @ObservedObject var viewModel: LiveDataViewModel
-
     var body: some View {
         if let car = viewModel.currentVehicle {
             VStack(alignment: .leading) {
@@ -37,7 +36,7 @@ struct AddPIDView: View {
                     if let supportedPIDs = car.obdinfo?.supportedPIDs {
                         ForEach(supportedPIDs, id: \.self) { pid in
                             HStack {
-                                Text(pid.description)
+                                Text(pid.properties.description)
                                     .font(.caption)
                                     .padding()
                             }
@@ -47,7 +46,7 @@ struct AddPIDView: View {
                                     .fill(Color.endColor())
                                     .background(
                                         RoundedRectangle(cornerRadius: 20)
-                                            .stroke(viewModel.pidsToRequest.contains(pid) ? Color.blue : Color.clear, lineWidth: 2)
+                                            .stroke(viewModel.data.keys.contains(pid) ? Color.blue : Color.clear, lineWidth: 2)
                                     )
                             )
                             .padding(.horizontal)

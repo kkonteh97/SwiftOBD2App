@@ -93,14 +93,12 @@ class ELM327: ObservableObject {
     }
 
     func decodeDTC(response: [String]) async {
-        guard let messages = call(response, idBits: obdProtocol.idBits) else {
-            logger.error("could not parse")
-            // maybe header is off
+        let messages = try! OBDParcer(response, idBits: obdProtocol.idBits).messages
+        guard let data = messages[0].data else {
             return
         }
-
         let command = OBDCommand.status
-        guard let status = command.decoder.decode(data: messages[0].data) as? Status else {
+        guard let status = command.properties.decoder.decode(data: data) as? Status else {
             return
         }
         if status.MIL {
@@ -111,7 +109,7 @@ class ELM327: ObservableObject {
         }
     }
 
-    func setupAdapter(setupOrder: [SetupStep], autoProtocol: Bool = false) async throws -> OBDInfo {
+    func setupAdapter(setupOrder: [OBDCommand], autoProtocol: Bool = true) async throws -> OBDInfo {
         var obdInfo = OBDInfo()
 
 //        if connectionState != .connectedToAdapter {
@@ -148,24 +146,24 @@ class ELM327: ObservableObject {
         }
     }
 
-    func adapterInitialization(setupOrder: [SetupStep]) async throws {
+    private func adapterInitialization(setupOrder: [OBDCommand]) async throws {
         do {
             for step in setupOrder {
                 switch step {
                 case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF, .ATH0:
-                    _ = try await okResponse(message: step.rawValue)
+                    _ = try await okResponse(message: step.properties.command)
                 case .ATZ:
-                    _ = try await sendMessageAsync("ATZ")
+                    _ = try await sendMessageAsync(step.properties.command)
                 case .ATRV:
                     // get the voltage
-                    let voltage = try await sendMessageAsync("ATRV")
+                    let voltage = try await sendMessageAsync(step.properties.command)
                     logger.info("Voltage: \(voltage)")
                 case .ATDPN:
                     // Describe current protocol number
-                    let protocolNumber = try await sendMessageAsync("ATDPN")
+                    let protocolNumber = try await sendMessageAsync(step.properties.command)
                     self.obdProtocol = PROTOCOL(rawValue: protocolNumber[0]) ?? .protocol9
                 default:
-                    logger.error("Invalid Setup Step here: \(step.rawValue)")
+                    logger.error("Invalid Setup Step here: \(step.properties.description)")
                 }
             }
         } catch {
@@ -186,7 +184,7 @@ class ELM327: ObservableObject {
         }
     }
 
-    func setHeader(header: String) async {
+    private func setHeader(header: String) async {
         do {
             _ = try await okResponse(message: "AT SH " + header + " ")
         } catch {
@@ -196,16 +194,18 @@ class ELM327: ObservableObject {
 
     // MARK: - Protocol Selection
 
-    func autoProtocolDetection() async throws -> PROTOCOL? {
+    private func autoProtocolDetection() async throws -> PROTOCOL? {
         do {
             _ = try await okResponse(message: "ATSP0")
-
-            try await testProtocol(obdProtocol: obdProtocol)
+            _ = try await sendMessageAsync("0100", withTimeoutSecs: 10)
 
             let obdProtocolNumber = try await sendMessageAsync("ATDPN")
-            guard let obdProtocol = PROTOCOL(rawValue: obdProtocolNumber[0]) else {
+            print(obdProtocolNumber[0].dropFirst())
+            guard let obdProtocol = PROTOCOL(rawValue: String(obdProtocolNumber[0].dropFirst())) else {
                 throw SetupError.invalidResponse
             }
+
+            try await testProtocol(obdProtocol: obdProtocol)
 
             return obdProtocol
         } catch {
@@ -214,7 +214,7 @@ class ELM327: ObservableObject {
         }
     }
 
-    func manualProtocolDetection() async throws {
+    private func manualProtocolDetection() async throws {
         do {
             while obdProtocol != .NONE {
                 do {
@@ -237,7 +237,7 @@ class ELM327: ObservableObject {
 
     // MARK: - Protocol Testing
 
-    func testProtocol(obdProtocol: PROTOCOL) async throws {
+    private func testProtocol(obdProtocol: PROTOCOL) async throws {
         do {
             // test protocol by sending 0100 and checking for 41 00 response
             _ = try await okResponse(message: obdProtocol.cmd)
@@ -257,10 +257,7 @@ class ELM327: ObservableObject {
             logger.info("Protocol \(obdProtocol.rawValue) found")
 
             let response = try await sendMessageAsync("0100", withTimeoutSecs: 10)
-            guard let messages = call(response, idBits: obdProtocol.idBits) else {
-                logger.error("Invalid response to 0100")
-                throw SetupError.invalidProtocol
-            }
+            let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
 
             _ = populateECUMap(messages)
         } catch {
@@ -269,7 +266,7 @@ class ELM327: ObservableObject {
         }
     }
 
-    func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID]? {
+    private func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID]? {
         let engineTXID = 0
         let transmissionTXID = 1
         var ecuMap: [UInt8: ECUID] = [:]
@@ -281,7 +278,7 @@ class ELM327: ObservableObject {
 
         // If there is only one message, assume it's from the engine
         if messages.count == 1 {
-            ecuMap[messages[0].txID ?? 0] = .engine
+            ecuMap[messages[0].ecu?.rawValue ?? 0] = .engine
             return ecuMap
         }
 
@@ -289,7 +286,7 @@ class ELM327: ObservableObject {
         var foundEngine = false
 
         for message in messages {
-            guard let txID = message.txID else {
+            guard let txID = message.ecu?.rawValue else {
                 logger.error("parse_frame failed to extract TX_ID")
                 continue
             }
@@ -308,10 +305,13 @@ class ELM327: ObservableObject {
             var bestTXID: UInt8?
 
             for message in messages {
-                let bits = message.data.bitCount()
+                guard let bits = message.data?.bitCount() else {
+                    logger.error("parse_frame failed to extract data")
+                    continue
+                }
                 if bits > bestBits {
                     bestBits = bits
-                    bestTXID = message.txID
+                    bestTXID = message.ecu?.rawValue
                 }
             }
 
@@ -321,14 +321,14 @@ class ELM327: ObservableObject {
         }
 
         // Assign transmission ECU to messages without an ECU assignment
-        for message in messages where ecuMap[message.txID ?? 0] == nil {
-            ecuMap[message.txID ?? 0] = .transmission
+        for message in messages where ecuMap[message.ecu?.rawValue ?? 0] == nil {
+            ecuMap[message.ecu?.rawValue ?? 0] = .transmission
         }
 
         return ecuMap
     }
 
-    func decodeVIN(response: String) async -> String {
+    private func decodeVIN(response: String) async -> String {
         // Find the index of the occurrence of "49 02"
         guard let prefixIndex = response.range(of: "49 02")?.upperBound else {
             logger.error("Prefix not found in the response")
@@ -372,55 +372,28 @@ struct BatchedResponse {
         self.buffer = response
     }
 
-    mutating func getValueForCommand(_ cmd: OBDCommand) -> PidData? {
-        if buffer.count < cmd.bytes {
-            return nil
+    mutating func getValueForCommand(_ cmd: OBDCommand) -> OBDDecodeResult? {
+        guard buffer.count >= cmd.properties.bytes else {
+                return nil
         }
-        // value is first occurence of cmd.command to cmd.bytes
-        let value = buffer.prefix(cmd.bytes)
+        let value = buffer.prefix(cmd.properties.bytes)
+//        print("value ",value.compactMap { String(format: "%02X ", $0) }.joined())
 
-        print("value ",value.compactMap { String(format: "%02X ", $0) }.joined())
+        buffer.removeFirst(cmd.properties.bytes)
+//        print("Buffer: \(buffer.compactMap { String(format: "%02X ", $0) }.joined())")
 
-        buffer.removeFirst(cmd.bytes)
-        print("Buffer: \(buffer.compactMap { String(format: "%02X ", $0) }.joined())")
-
-        guard let measurement = cmd.decoder.decode(data: value.dropFirst()) else {
-            return nil
-        }
-        print("Measurement: \(String(describing: measurement))")
-
-        return PidData(pid: cmd, value: measurement)
+        return cmd.properties.decoder.decode(data: value.dropFirst()).map { $0 }
     }
 }
 
 extension ELM327 {
-    func requestPIDs(_ pids: [OBDCommand]) async -> [PidData]? {
+    func requestPIDs(_ pids: [OBDCommand]) async -> [Message] {
         do {
-            let response = try await sendMessageAsync("01" + pids.compactMap { $0.command }.joined())
-            guard let messages = call(response, idBits: obdProtocol.idBits) else {
-                return nil
-            }
-            let data = messages[0].data
-
-            var res = BatchedResponse(response: data)
-
-            return pids.compactMap { cmd in res.getValueForCommand(cmd) }
+            let response = try await sendMessageAsync("01" + pids.compactMap { $0.properties.command }.joined())
+            return try OBDParcer(response, idBits: obdProtocol.idBits).messages
         } catch {
             logger.error("\(error.localizedDescription)")
-            return nil
         }
-    }
-
-    func decodePIDs(response: [String], pid: OBDCommand) async -> OBDDecodeResult? {
-        guard let messages = call(response, idBits: obdProtocol.idBits) else {
-            logger.error("could not parse")
-            // maybe header is off
-            return nil
-        }
-        if let decodedValue = pid.decoder.decode(data: messages[0].data.dropFirst()) {
-            return decodedValue
-        } else {
-            return nil
-        }
+        return []
     }
 }

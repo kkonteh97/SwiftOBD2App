@@ -12,7 +12,7 @@ struct DashBoardView: View {
     @Binding var displayType: BottomSheetType
 
     var body: some View {
-        LiveDataView(viewModel: liveDataViewModel)
+        LiveDataView(viewModel: liveDataViewModel, displayType: $displayType)
     }
 }
 

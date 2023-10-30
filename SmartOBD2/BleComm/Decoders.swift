@@ -98,6 +98,8 @@ let uasIDS: [UInt8: UAS] = [
     0x09: UAS(signed: false, scale: 1, unit: Unit.kmh),
     0x12: UAS(signed: false, scale: 1, unit: UnitDuration.seconds),
 
+    0x27: UAS(signed: false, scale:  0.01, unit: Unit.gramsPerSecond),
+
     // Signed
     0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
     0x82: UAS(signed: true, scale: 0.1, unit: Unit.count)
@@ -144,6 +146,7 @@ enum Decoder: Codable {
 //    case injectTiming
 //    case dtc
 //    case fuelRate
+    case none
 
     func decode(data: Data) -> OBDDecodeResult? {
         switch self {
@@ -155,8 +158,7 @@ enum Decoder: Codable {
             guard let measurement = decodeUAS(data, id: 0x09) else { return .noResult }
             return .measurementResult(measurement)
         case .uas0x07:
-            print(data.prefix(2).compactMap { String(format: "%02x", $0) }.joined(separator: " "))
-            guard let measurement = decodeUAS(data.prefix(2), id: 0x07) else { return .noResult }
+            guard let measurement = decodeUAS(data, id: 0x07) else { return .noResult }
             return .measurementResult(measurement)
         case .temp: 
             guard let temp = temp(data) else { return .noResult }
@@ -185,11 +187,9 @@ enum Decoder: Codable {
             guard let pressure = pressure(data) else { return .noResult }
             return .measurementResult(pressure)
         case .timingAdvance: 
-            guard let timingAdvance = timingAdvance(data)else { return .noResult }
+            guard let timingAdvance = timingAdvance(data) else { return .noResult }
             return .measurementResult(timingAdvance)
-        case .uas0x27:
-            guard let uasValue = decodeUAS(data, id: 0x27) else { return .noResult }
-            return .measurementResult(uasValue)
+
         case .obdCompliance:
             return nil
         case .o2SensorsAlt:
@@ -201,14 +201,11 @@ enum Decoder: Codable {
             return nil
 
         case .sensorVoltage:
-            return nil
-
+            guard let voltage = voltage(data) else { return .noResult }
+            return .measurementResult(voltage)
         case .auxInputStatus:
             return nil
 
-        case .uas0x25:
-            guard let uasValue = decodeUAS(data, id: 0x25) else { return .noResult }
-            return .measurementResult(uasValue)
         case .uas0x19:
             guard let uasValue = decodeUAS(data, id: 0x19) else { return .noResult }
             return .measurementResult(uasValue)
@@ -227,11 +224,25 @@ enum Decoder: Codable {
         case .uas0x1E:
             guard let uasValue = decodeUAS(data, id: 0x1E) else { return .noResult }
             return .measurementResult(uasValue)
+        case .uas0x25:
+            guard let uasValue = decodeUAS(data, id: 0x25) else { return .noResult }
+            return .measurementResult(uasValue)
+        case .uas0x27:
+            guard let uasValue = decodeUAS(data, id: 0x27) else { return .noResult }
+            return .measurementResult(uasValue)
         case .sensorVoltageBig:
             return nil
         case .evapPressure:
             return nil
+        case .none:
+            return nil
         }
+    }
+
+    func voltage(_ data: Data) -> Measurement<Unit>? {
+        guard data.count == 2 else { return nil }
+        let voltage = Double(data.first ?? 0) / 200
+        return Measurement(value: voltage, unit: UnitElectricPotentialDifference.volts)
     }
 
     func decodeUAS(_ data: Data, id: UInt8) -> Measurement<Unit>? {
@@ -306,7 +317,7 @@ enum Decoder: Codable {
     }
 
     func timingAdvance(_ data: Data) -> Measurement<Unit>? {
-            let value = (Double(data[0]) - 128) / 2.0
+            let value = Double(data.first ?? 0) / 2.0 - 64.0
             return  Measurement(value: value, unit: UnitAngle.degrees)
     }
 

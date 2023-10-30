@@ -7,22 +7,6 @@
 
 import Foundation
 
-class Frame {
-    var raw: String
-    var data = Data()
-    var priority: UInt8?
-    var addrMode: UInt8?
-    var rxID: UInt8?
-    var txID: ECUID?
-    var type: FrameType?
-    var seqIndex: UInt8 = 0 // Only used when type = CF
-    var dataLen: UInt8?
-
-    init(raw: String) {
-        self.raw = raw
-    }
-}
-
 enum FrameType: UInt8, Codable {
     case singleFrame = 0x00
     case firstFrame = 0x10
@@ -31,254 +15,175 @@ enum FrameType: UInt8, Codable {
 
 enum FrameError: Error {
     case oddFrame
-    case invalidSize
+    case invalidFrameSize
+    case invalidSingleFrame
+    case noDataInSingleFrame
     case missingDataLength
     case invalidDataLength
     case nonContiguousFrame
+    case missingDataInFrame
+    case missingFirstFrame
+    case missingAssembledData
+    case missingDataLengthInFrame
 }
 
-extension ELM327 {
-    func call(_ lines: [String], idBits: Int) -> [Message]? {
+extension String {
+    var isHex: Bool {
+        return !isEmpty && allSatisfy { $0.isHexDigit }
+    }
+}
 
-        let (obdLines, nonOBDLines) = lines.reduce(into: ([String](), [String]())) { result, line in
-            let lineNoSpaces = line.replacingOccurrences(of: " ", with: "")
-            if isHex(lineNoSpaces) {
-                result.0.append(lineNoSpaces)
+struct OBDParcer {
+    let idBits: Int
+    let messages: [Message]
+    let frames: [Frame]
+
+    init(_ lines: [String], idBits: Int) throws {
+        self.idBits = idBits
+        let obdLines = lines
+            .compactMap { $0.replacingOccurrences(of: " ", with: "") }
+            .filter { $0.isHex }
+
+        self.frames = obdLines.compactMap {
+            if let frame = Frame(raw: $0, idBits: idBits) {
+                return frame
             } else {
-                result.1.append(line)
+                print("Failed to create Frame for raw data: \($0)")
+                return nil
             }
         }
 
-        let frames = obdLines.compactMap { raw in
-            let frame = Frame(raw: raw)
-            return parseFrame(frame, idBits: idBits) ? frame : nil
+        let framesByECU = Dictionary(grouping: frames) { $0.txID }
+
+        self.messages = try framesByECU.values.compactMap {
+            try Message(frames: $0)
         }
 
-        var framesByECU = [ECUID: [Frame]]()
-        for frame in frames {
-            if let txID = frame.txID {
-                if var frameArray = framesByECU[txID] {
-                    frameArray.append(frame)
-                    framesByECU[txID] = frameArray
-                } else {
-                    framesByECU[txID] = [frame]
-                }
-            }
-        }
-
-        var messages = [Message]()
-        for ecu in framesByECU.keys {
-            let message = Message(frames: framesByECU[ecu] ?? [])
-            if parseMessage(message) {
-                message.ecu = ECUID(rawValue: ecu.rawValue) ?? ECUID.unknown
-                messages.append(message)
-            }
-        }
-
-        let nonOBDMessages = nonOBDLines.map { line in
-            Message(frames: [Frame(raw: line)])
-        }
-
-        messages.append(contentsOf: nonOBDMessages)
-
-        return messages.isEmpty ? nil : messages
-    }
-
-    func parseFrame(_ frame: Frame, idBits: Int) -> Bool {
-        var raw = frame.raw
-        if idBits == 11 {
-            raw = "00000" + raw
-        }
-
-        guard validateFrame(raw: raw, idBits: idBits, frame: frame) else {
-            return false
-        }
-
-        if idBits == 11 {
-            parse11BitFrame(raw: raw, frame: frame)
-        } else {
-            parse29BitFrame(raw: raw, frame: frame)
-        }
-
-        return true
-    }
-
-    private func parse11BitFrame(raw: String, frame: Frame) {
-        frame.priority = raw.hexBytes[2] & 0x0F
-        frame.addrMode = raw.hexBytes[3] & 0xF0
-
-        if frame.addrMode == 0xD0 {
-            frame.rxID = raw.hexBytes[3] & 0x0F
-            frame.txID = ECUID(rawValue: 0xF1)
-        } else if (raw.hexBytes[3] & 0x08) != 0 {
-            frame.rxID = 0xF1
-            frame.txID = ECUID(rawValue: raw.hexBytes[3] & 0x07)
-        } else {
-            frame.txID = ECUID(rawValue: 0xF1)
-            frame.rxID = raw.hexBytes[3] & 0x07
-        }
-
-        frame.data = Data(raw.hexBytes[4...])
-        frame.type = FrameType(rawValue: frame.data[0] & 0xF0) ?? nil
-
-        if ![.singleFrame, .firstFrame, .consecutiveFrame].contains(frame.type) {
-            print("Dropping frame carrying unknown PCI frame type")
-            return
-        }
-        if frame.type == .singleFrame {
-            frame.dataLen = UInt8(frame.data[0] & 0x0F)
-            if frame.dataLen == 0 {
-                return
-            }
-        } else if frame.type == .firstFrame {
-            frame.dataLen = UInt8((UInt16(frame.data[0] & 0x0F) << 8) + UInt16(frame.data[1]))
-            if frame.dataLen == 0 {
-                return
-            }
-        } else if frame.type == .consecutiveFrame {
-            frame.seqIndex = frame.data[0] & 0x0F
+        guard !messages.isEmpty else {
+            throw OBDParcerError.noMessages
         }
     }
+}
 
-    func parse29BitFrame(raw: String, frame: Frame) {
-        frame.priority = raw.hexBytes[0]
-        frame.addrMode = raw.hexBytes[1]
-        frame.rxID = raw.hexBytes[2]
-        frame.txID = ECUID(rawValue: raw.hexBytes[3])
-        frame.data = Data(raw.hexBytes[4...])
-        frame.type = FrameType(rawValue: frame.data[0] & 0xF0) ?? nil
+struct Message {
+    var frames: [Frame]
+    var data: Data? {
+          do {
+              switch frames.count {
+              case 1:
+                  return try parseSingleFrameMessage(frames)
+              case 2...:
+                  return try parseMultiFrameMessage(frames)
+              default:
+                  print(FrameError.invalidFrameSize)
+                  return nil
+              }
+          } catch {
+              print(error)
+              return nil
+          }
+      }
+
+    var ecu: ECUID? {
+        return frames.first?.txID
     }
 
-    func parseMessage(_ message: Message) -> Bool {
-        let frames = message.frames
-
-        if frames.count == 1 {
-            return parseSingleFrameMessage(message)
-        } else {
-            return parseMultiFrameMessage(message)
+    init(frames: [Frame], data: Data = Data()) throws {
+        guard !frames.isEmpty else {
+            throw FrameError.invalidFrameSize
         }
+        self.frames = frames
     }
 
-    func parseSingleFrameMessage(_ message: Message) -> Bool {
-        guard let frame = message.frames.first, frame.type == .singleFrame else {
-            print("Received lone frame not marked as single frame")
-            return false
+    private func parseSingleFrameMessage(_ frames: [Frame]) throws -> Data {
+        guard let frame = frames.first, frame.type == .singleFrame, let dataLen = frame.dataLen, dataLen > 0 else {
+            throw FrameError.invalidSingleFrame
         }
-
-        // extract data, ignore PCI byte and anything after the marked length
-        //             [      Frame       ]
-        //                [     Data      ]
-        // 00 00 07 E8 06 41 00 BE 7F B8 13 xx xx xx xx, anything else is ignored
-        guard let dataLen = frame.dataLen, dataLen > 0 else {
-            print("Received single frame with no data")
-            return false
-        }
-
-        message.data = Data(frame.data[2..<(1 + Int(dataLen))])
-        return true
+        return Data(frame.data[2..<(1 + Int(dataLen))])
     }
 
-    func parseMultiFrameMessage(_ message: Message) -> Bool {
-        let firstFrames = message.frames.filter { $0.type == .firstFrame }
-        let consecutiveFrames = message.frames.filter { $0.type == .consecutiveFrame }
-
-        guard firstFrames.count == 1 else {
-            print("Received multiple frames marked FF")
-            return false
+    private func parseMultiFrameMessage(_ frames: [Frame]) throws -> Data {
+        guard let firstFrameValid = frames.first(where: { $0.type == .firstFrame }),
+              let assembledData = try? assembleData(firstFrame: firstFrameValid, consecutiveFrames: frames.filter { $0.type == .consecutiveFrame }) else {
+            throw FrameError.missingFirstFrame
         }
-
-        guard !consecutiveFrames.isEmpty else {
-            print("Never received frame marked CF")
-            return false
-        }
-        // Calculate sequence indices, sort, and check contiguity
-        let sortedConsecutiveFrames = sortAndCheckContiguity(consecutiveFrames)
-        // Extract and assemble data
-        if let assembledData = assembleData(firstFrame: firstFrames[0], consecutiveFrames: sortedConsecutiveFrames) {
-            message.data = assembledData
-            return true
-        } else {
-            return false
-        }
+        return assembledData
     }
 
-    func sortAndCheckContiguity(_ consecutiveFrames: [Frame]) -> [Frame] {
-        // Sort the frames by their sequence index
-        let sortedFrames = consecutiveFrames.sorted { $0.seqIndex < $1.seqIndex }
-        // Check contiguity and filter out any frames that are not contiguous
-        var contiguousFrames: [Frame] = [sortedFrames[0]]
-        for index in 1..<sortedFrames.count {
-            let prev = contiguousFrames.last!
-            let curr = sortedFrames[index]
-
-            // Calculate the expected next sequence index
-            let expectedSeqIndex = (prev.seqIndex + 1) & 0x0F
-
-            if curr.seqIndex == expectedSeqIndex {
-                // The frame is contiguous, add it to the list
-                contiguousFrames.append(curr)
-            } else {
-                // The frame is not contiguous, print a warning
-                print("""
-                      Received non-contiguous frame with sequence index \(curr.seqIndex), expected \(expectedSeqIndex)
-                      """)
-            }
-        }
-        return contiguousFrames
-    }
-
-    func assembleData(firstFrame: Frame, consecutiveFrames: [Frame]) -> Data? {
-        let assembledFrame: Frame = firstFrame
+    private func assembleData(firstFrame: Frame, consecutiveFrames: [Frame]) throws -> Data? {
+        var assembledFrame: Frame = firstFrame
         // Extract data from consecutive frames, skipping the PCI byte
         for frame in consecutiveFrames {
-            print("Assembling frame with sequence index \(frame.seqIndex)")
-            assembledFrame.data.append(frame.data)
+            assembledFrame.data.append(frame.data[1...])
         }
-        return extractDataFromFrame(assembledFrame, startIndex: 3)
+        guard let extractedData = try extractDataFromFrame(assembledFrame, startIndex: 3) else {
+            throw FrameError.missingDataInFrame
+        }
+        return extractedData
     }
 
-    func extractDataFromFrame(_ frame: Frame, startIndex: Int) -> Data? {
+    private func extractDataFromFrame(_ frame: Frame, startIndex: Int) throws -> Data? {
         guard let frameDataLen = frame.dataLen else {
-            print("Missing data length in frame")
-            return nil
+            throw FrameError.missingDataLengthInFrame
         }
-        let endIndex = startIndex + Int(frameDataLen)
+        let endIndex = startIndex + Int(frameDataLen) - 1
         guard endIndex <= frame.data.count else {
-            print("Invalid data length in frame")
-            return nil
+            return frame.data[startIndex...]
         }
         return frame.data[startIndex..<endIndex]
     }
+}
 
-    func isContiguous(_ indices: [UInt8]) -> Bool {
-        var last = indices[0]
-        for indice in indices {
-            if indice != last + 1 {
-                return false
-            }
-            last = indice
-        }
-        return true
-    }
+struct Frame {
+    var raw: String
+    var data = Data()
+    var priority: UInt8
+    var addrMode: UInt8
+    var rxID: UInt8
+    var txID: ECUID
+    var type: FrameType
+    var seqIndex: UInt8 = 0 // Only used when type = CF
+    var dataLen: UInt8?
 
-    func isHex(_ str: String) -> Bool {
-        let hexChars = CharacterSet(charactersIn: "0123456789ABCDEF")
-        return str.uppercased().rangeOfCharacter(from: hexChars.inverted) == nil
-    }
-
-    func validateFrame(raw: String, idBits: Int, frame: Frame) -> Bool {
-        if raw.count % 2 != 0 {
-            print("Dropping frame for being odd")
-            return false
+    init?(raw: String, idBits: Int) {
+        self.raw = raw
+        var rawData = raw
+        if idBits == 11 {
+            rawData = "00000" + raw
         }
 
-        let rawBytes = raw.hexBytes
+        let dataBytes = Data(rawData.hexBytes)
 
-        if rawBytes.count < 6 || rawBytes.count > 12 {
-            print("Dropped frame for invalid size")
-            return false
+        self.data = Data(dataBytes.dropFirst(4))
+
+        guard dataBytes.count % 2 == 0, dataBytes.count >= 6, dataBytes.count <= 12 else {
+                    print("invalid frame size")
+                    print(dataBytes.compactMap { String(format: "%02X", $0) }.joined(separator: " ") )
+                    return nil
         }
 
-        return true
+        guard let txID = ECUID(rawValue: dataBytes[3] & 0x07),
+              let type = FrameType(rawValue: data[0] & 0xF0) else {
+                    return nil
+        }
+
+        self.priority = dataBytes[2] & 0x0F
+        self.addrMode = dataBytes[3] & 0xF0
+        self.rxID = dataBytes[2]
+        self.txID = txID
+        self.type = type
+
+        switch type {
+            case .singleFrame:
+                self.dataLen = (data[0] & 0x0F)
+            case .firstFrame:
+                self.dataLen = ((UInt8(data[0] & 0x0F) << 8) + UInt8(data[1]))
+            case .consecutiveFrame:
+                self.seqIndex = data[0] & 0x0F
+        }
     }
+}
+
+enum OBDParcerError: Error {
+    case noMessages
 }

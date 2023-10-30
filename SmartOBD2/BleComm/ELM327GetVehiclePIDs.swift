@@ -14,25 +14,29 @@ extension ELM327 {
 
         for pid in pidGetters {
             do {
-                let response = try await sendMessageAsync("01" + pid.command)
+                let response = try await sendMessageAsync("01" + pid.properties.command)
                 // find first instance of 41 plus command sent, from there we determine the position of everything else
                 // Ex.
                 //        || ||
                 // 7E8 06 41 00 BE 7F B8 13
-                guard let messages = call(response, idBits: obdProtocol.idBits) else {
-                   logger.error("No messages found")
-                    continue
+                let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
+
+                guard !messages.isEmpty else {
+                    return []
                 }
 
                 // Convert ecuData to binary and extract supported PIDs
+                guard let ecuData = messages[0].data else {
+                    return []
+                }
 
-                let binaryData = BitArray(data: messages[0].data[1...])
+                let binaryData = BitArray(data: ecuData)
 
                 let supportedPIDsByECU = extractSupportedPIDs(binaryData.binaryArray)
                 let commands = OBDCommand.allCases
 
                 // map supported PIDs to OBDCommand enum commands
-                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.command) }
+                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.properties.command) }
                 supportedPIDsSet.formUnion(supportedPIDs)
             } catch {
                 logger.error("\(error.localizedDescription)")

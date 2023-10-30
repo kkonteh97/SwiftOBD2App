@@ -33,12 +33,6 @@ struct Model: Codable {
     let years: [Int]
 }
 
-struct PIDData {
-    let pid: OBDCommand
-    var value: Double
-    var unit: String
-}
-
 struct VINResults: Codable {
     let Results: [VINInfo]
 }
@@ -53,7 +47,7 @@ struct VINInfo: Codable, Hashable {
 class OBDService {
     let elm327: ELM327
     
-    @Published var elmAdapter: CBPeripheral?
+    @Published var elmAdapter: Peripheral?
     private var cancellables = Set<AnyCancellable>()
     @Published var statusMessage: String?
     private var bleManager: BLEManager
@@ -78,12 +72,12 @@ class OBDService {
             .store(in: &cancellables)
     }
 
-    func setupAdapter(setupOrder: [SetupStep]) async throws -> OBDInfo {
+    func setupAdapter(setupOrder: [OBDCommand]) async throws -> OBDInfo {
         return try await elm327.setupAdapter(setupOrder: setupOrder)
     }
 
     // connect to the adapter
-    func connectToAdapter(peripheral: CBPeripheral) async throws {
+    func connectToAdapter(peripheral: Peripheral) async throws {
         _ = try await self.bleManager.connectAsync(peripheral: peripheral)
     }
 

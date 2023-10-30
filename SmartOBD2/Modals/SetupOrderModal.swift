@@ -9,8 +9,8 @@ import SwiftUI
 
 struct SetupOrderModal: View {
     @Binding var isModalPresented: Bool
-    @Binding var setupOrder: [SetupStep]
-    @State private var newItem: SetupStep = .ATD
+    @Binding var setupOrder: [OBDCommand]
+    @State private var newItem: OBDCommand = .ATD
 
     func move(from source: IndexSet, to destination: Int) {
         setupOrder.move(fromOffsets: source, toOffset: destination)
@@ -21,7 +21,7 @@ struct SetupOrderModal: View {
             VStack {
                 List {
                     ForEach(setupOrder, id: \.self) { step in
-                        Text(step.rawValue.uppercased())
+                        Text(step.properties.description.uppercased())
                             .font(.title)
                             .foregroundColor(.blue)
                     }
@@ -35,9 +35,9 @@ struct SetupOrderModal: View {
                 }))
                 HStack {
                     Picker("Add Step", selection: $newItem) {
-                        ForEach(SetupStep.allCases, id: \.self) { step in
-                            Text(step.rawValue.uppercased())
-                        }
+//                        ForEach(SetupStep.allCases, id: \.self) { step in
+//                            Text(step.rawValue.uppercased())
+//                        }
                     }
                     .pickerStyle(MenuPickerStyle())
                     Button("Add", action: {

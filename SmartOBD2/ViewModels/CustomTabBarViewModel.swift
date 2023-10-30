@@ -14,7 +14,7 @@ class CustomTabBarViewModel: ObservableObject {
     @Published var garage: Garage
     @Published var obdInfo = OBDInfo()
     @Published var garageVehicles: [GarageVehicle] = []
-    @Published var peripherals: [CBPeripheral] = []
+    @Published var peripherals: [Peripheral] = []
     @Published var connectionState: ConnectionState = .notInitialized
 
 
@@ -59,7 +59,7 @@ class CustomTabBarViewModel: ObservableObject {
         garage.deleteVehicle(vehicle)
     }
 
-    func setupAdapter(setupOrder: [SetupStep]) async throws {
+    func setupAdapter(setupOrder: [OBDCommand]) async throws {
         let obdInfo = try await obdService.setupAdapter(setupOrder: setupOrder)
 
         DispatchQueue.main.async {

@@ -10,7 +10,7 @@ import Combine
 import CoreBluetooth
 
 class SettingsViewModel: ObservableObject {
-    @Published var peripherals: [CBPeripheral] = []
+    @Published var peripherals: [Peripheral] = []
 
     let bleManager: BLEManager
     private var cancellables = Set<AnyCancellable>()
@@ -31,10 +31,22 @@ struct SettingsView: View {
     var body: some View {
         VStack {
             List {
-                ForEach(viewModel.peripherals, id: \.self) { peripheral in
-                    Text(peripheral.name ?? "Unknown")
-                }
+              // list of peripherals
+              ForEach(viewModel.peripherals) { peripheral in
+                  PeripheralRow(peripheral: peripheral)
+              }
             }
+        }
+    }
+}
+
+struct PeripheralRow: View {
+    let peripheral: Peripheral
+    var body: some View {
+        HStack {
+            Text(peripheral.name)
+            Spacer()
+            Text("\(peripheral.rssi)")
         }
     }
 }

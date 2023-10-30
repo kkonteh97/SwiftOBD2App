@@ -17,20 +17,6 @@ extension String {
     }
 }
 
-class Message {
-    var frames: [Frame]
-    var ecu: ECUID?
-    var data = Data()
-    var txID: UInt8? {
-        return frames.first?.txID?.rawValue
-    }
-    init(frames: [Frame], ecu: ECUID = ECUID.unknown, data: Data = Data()) {
-        self.frames = frames
-        self.ecu = ecu
-        self.data = data
-    }
-}
-
 enum ECUID: UInt8, Codable {
     case engine = 0x00
     case transmission = 0x01
