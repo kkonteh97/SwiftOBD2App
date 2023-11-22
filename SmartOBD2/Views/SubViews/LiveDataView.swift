@@ -28,7 +28,6 @@ struct LiveDataView: View {
 
     var columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
 
-
     init(viewModel: LiveDataViewModel, 
          displayType: Binding<BottomSheetType>
     ) {
@@ -40,7 +39,6 @@ struct LiveDataView: View {
         GeometryReader { geometry in
             VStack {
                 headerButtons
-
                 Picker("Display Mode", selection: $displayMode) {
                     Text("Gauges").tag(DataDisplayMode.gauges)
                     Text("Graphs").tag(DataDisplayMode.graphs)
@@ -51,30 +49,9 @@ struct LiveDataView: View {
                 switch displayMode {
                 case .gauges:
                     if !enLarge {
-                        LazyVGrid(columns: columns) {
-                            ForEach(viewModel.order, id: \.self) { cmd in
-                                if let dataItem = viewModel.data[cmd] {
-                                    GaugeView(dataItem: dataItem, 
-                                              value: dataItem.value,
-                                              geometry: geometry,
-                                              selectedGauge: nil
-                                    )
-                                    .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 0.0) {
-                                        selectedPID = dataItem
-                                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                            enLarge.toggle()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .matchedGeometryEffect(id: "Gauge", in: namespace)
+                        gaugeView
                     } else {
-                        GaugePickerView(viewModel: viewModel,
-                                        enLarge: $enLarge,
-                                        selectedPID: $selectedPID,
-                                        namespace: namespace
-                        )
+                        gaugePicker
                     }
 
                 case .graphs:
@@ -92,10 +69,44 @@ struct LiveDataView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 15)
                 }
             }
         }
+        .sheet(isPresented: $showingSheet) {
+            AddPIDView(viewModel: viewModel)
+        }
+        .onDisappear {
+            viewModel.saveDataItems()
+        }
+    }
+
+    private var gaugeView: some View {
+        LazyVGrid(columns: columns) {
+            ForEach(viewModel.order, id: \.self) { cmd in
+                if let dataItem = viewModel.data[cmd] {
+                    GaugeView(dataItem: dataItem,
+                              value: dataItem.value,
+                              selectedGauge: nil
+                    )
+                    .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 0.0) {
+                        selectedPID = dataItem
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                            enLarge.toggle()
+                        }
+                    }
+                }
+            }
+        }
+        .matchedGeometryEffect(id: "Gauge", in: namespace)
+    }
+
+    private var gaugePicker: some View {
+        GaugePickerView(viewModel: viewModel,
+                        enLarge: $enLarge,
+                        selectedPID: $selectedPID,
+                        namespace: namespace
+        )
     }
 
     private var headerButtons: some View {
@@ -125,7 +136,6 @@ struct LiveDataView: View {
             }
         }
 }
-
 
 //                .chartYAxis {
 //                    AxisMarks(position: .leading)

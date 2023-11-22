@@ -9,8 +9,8 @@ import SwiftUI
 
 struct SetupOrderModal: View {
     @Binding var isModalPresented: Bool
-    @Binding var setupOrder: [OBDCommand]
-    @State private var newItem: OBDCommand = .ATD
+    @Binding var setupOrder: [OBDCommand.General]
+    @State private var newItem: OBDCommand.General = .ATD
 
     func move(from source: IndexSet, to destination: Int) {
         setupOrder.move(fromOffsets: source, toOffset: destination)

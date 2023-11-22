@@ -30,6 +30,13 @@ struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
     var body: some View {
         VStack {
+            HStack {
+                VStack {
+                    ForEach(OBDDevices.allCases, id: \.self) { OBDDevice in
+                        Text(OBDDevice.properties.DeviceName)
+                    }
+                }
+            }
             List {
               // list of peripherals
               ForEach(viewModel.peripherals) { peripheral in

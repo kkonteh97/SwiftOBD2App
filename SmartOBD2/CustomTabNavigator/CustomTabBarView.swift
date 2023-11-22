@@ -28,7 +28,7 @@ struct CustomTabBarView<Content: View>: View {
     @ObservedObject var viewModel: CustomTabBarViewModel
 
     @State private var isLoading = false
-    @State private var setupOrder: [OBDCommand] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
+    @State private var setupOrder: [OBDCommand.General] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
     @State var localSelection: TabBarItem
     @State private var whiteStreakProgress: CGFloat = 0.0
     @State private var showConnectedText = false
@@ -45,7 +45,7 @@ struct CustomTabBarView<Content: View>: View {
     let backgroundView: Content
     let tabs: [TabBarItem]
 
-    var garageVehicles: [GarageVehicle] {
+    var garageVehicles: [Vehicle] {
         viewModel.garageVehicles
     }
 

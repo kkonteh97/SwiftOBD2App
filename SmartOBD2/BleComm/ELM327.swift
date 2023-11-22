@@ -33,6 +33,15 @@ enum DataValidationError: Error {
 
 // MARK: - ELM327 Class
 
+func decodeToStatus(_ result: OBDDecodeResult) -> Status? {
+    switch result {
+    case .statusResult(let value):
+        return value
+    default:
+        return nil
+    }
+}
+
 class ELM327: ObservableObject {
 
     // MARK: - Properties
@@ -81,6 +90,31 @@ class ELM327: ObservableObject {
         }
     }
 
+    func scanForTroubleCodes() async throws -> [TroubleCode]? {
+        do {
+            let command = OBDCommand.Mode3.GET_DTC
+            let response = try await sendMessageAsync(command.properties.command)
+            let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
+
+            guard let data = messages[0].data else {
+                return nil
+            }
+            guard let decodedValue = command.properties.decoder.decode(data: data) else {
+                return nil
+            }
+
+            switch decodedValue {
+                case .troubleCode(let value):
+                    return value
+                default:
+                    return nil
+            }
+        } catch {
+            logger.error("\(error.localizedDescription)")
+            throw error
+        }
+    }
+
     func requestDTC() async throws {
         do {
             let response = try await sendMessageAsync("0101")
@@ -93,23 +127,34 @@ class ELM327: ObservableObject {
     }
 
     func decodeDTC(response: [String]) async {
-        let messages = try! OBDParcer(response, idBits: obdProtocol.idBits).messages
-        guard let data = messages[0].data else {
-            return
-        }
-        let command = OBDCommand.status
-        guard let status = command.properties.decoder.decode(data: data) as? Status else {
-            return
-        }
-        if status.MIL {
-            logger.info("\(status.dtcCount)")
-            // get dtc's
-        } else {
-            logger.info("no dtc found")
+        do {
+            let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
+
+            guard let data = messages[0].data else {
+                return
+            }
+
+            let command: OBDCommand.Mode1 = .status
+
+            guard let decodedValue = command.properties.decoder.decode(data: data) else {
+                return
+            }
+
+            guard let status = decodeToStatus(decodedValue) else {
+                return
+            }
+            if status.MIL {
+                logger.info("\(status.dtcCount)")
+                // get dtc's
+            } else {
+                logger.info("no dtc found")
+            }
+        } catch {
+
         }
     }
 
-    func setupAdapter(setupOrder: [OBDCommand], autoProtocol: Bool = true) async throws -> OBDInfo {
+    func setupAdapter(setupOrder: [OBDCommand.General], autoProtocol: Bool = true) async throws -> OBDInfo {
         var obdInfo = OBDInfo()
 
 //        if connectionState != .connectedToAdapter {
@@ -121,6 +166,8 @@ class ELM327: ObservableObject {
         try await connectToVehicle(autoProtocol: autoProtocol)
 
         obdInfo.obdProtocol = obdProtocol
+        await setHeader(header: ECUHeader.ENGINE)
+
         obdInfo.supportedPIDs = await getSupportedPIDs(obdProtocol)
         try await _ = okResponse(message: "ATH0")
 
@@ -130,7 +177,6 @@ class ELM327: ObservableObject {
         }
         try await _ = okResponse(message: "ATH1")
 
-        await setHeader(header: ECUHeader.ENGINE)
 
         return obdInfo
     }
@@ -146,7 +192,7 @@ class ELM327: ObservableObject {
         }
     }
 
-    private func adapterInitialization(setupOrder: [OBDCommand]) async throws {
+    private func adapterInitialization(setupOrder: [OBDCommand.General]) async throws {
         do {
             for step in setupOrder {
                 switch step {
@@ -389,7 +435,7 @@ struct BatchedResponse {
 extension ELM327 {
     func requestPIDs(_ pids: [OBDCommand]) async -> [Message] {
         do {
-            let response = try await sendMessageAsync("01" + pids.compactMap { $0.properties.command }.joined())
+            let response = try await sendMessageAsync(pids.compactMap { $0.properties.command }.joined())
             return try OBDParcer(response, idBits: obdProtocol.idBits).messages
         } catch {
             logger.error("\(error.localizedDescription)")

@@ -9,12 +9,12 @@ import Foundation
 import CoreBluetooth
 import Combine
 
-struct Vehicle: Codable {
-    let make: String
-    let model: String
-    let year: Int
-    let obdinfo: OBDInfo
-}
+//struct Vehicle: Codable {
+//    let make: String
+//    let model: String
+//    let year: Int
+//    let obdinfo: OBDInfo
+//}
 
 struct OBDInfo: Codable {
     var vin: String?
@@ -72,7 +72,7 @@ class OBDService {
             .store(in: &cancellables)
     }
 
-    func setupAdapter(setupOrder: [OBDCommand]) async throws -> OBDInfo {
+    func setupAdapter(setupOrder: [OBDCommand.General]) async throws -> OBDInfo {
         return try await elm327.setupAdapter(setupOrder: setupOrder)
     }
 
@@ -81,13 +81,7 @@ class OBDService {
         _ = try await self.bleManager.connectAsync(peripheral: peripheral)
     }
 
-
-    func requestDTC() async {
-        do {
-            try await elm327.requestDTC()
-
-        } catch {
-            print(error.localizedDescription)
-        }
+    func scanForTroubleCodes() async throws -> [TroubleCode]? {
+        return try await elm327.scanForTroubleCodes()
     }
 }

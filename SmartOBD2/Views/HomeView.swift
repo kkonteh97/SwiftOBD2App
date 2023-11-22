@@ -9,14 +9,17 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
+    @ObservedObject var diagnosticsViewModel: VehicleDiagnosticsViewModel
+
     @ObservedObject var garageViewModel: GarageViewModel
     @ObservedObject var settingsViewModel: SettingsViewModel
+    @ObservedObject var carScreenViewModel: CarScreenViewModel
 
     @Binding var displayType: BottomSheetType
 
     @Environment(\.colorScheme) var colorScheme
 
-    var garageVehicles: [GarageVehicle] {
+    var garageVehicles: [Vehicle] {
         viewModel.garageVehicles
     }
 
@@ -27,7 +30,7 @@ struct HomeView: View {
                     SectionView(title: "Diagnostics", 
                                 subtitle: "Read Vehicle Health",
                                 iconName: "wrench.and.screwdriver",
-                                destination: VehicleDiagnosticsView(viewModel: viewModel))
+                                destination: VehicleDiagnosticsView(viewModel: diagnosticsViewModel))
                     SectionView(title: "Logs",
                                 subtitle: "View Logs",
                                 iconName: "flowchart",
@@ -73,6 +76,14 @@ struct HomeView: View {
                     SettingsAboutSectionView(title: "About", iconName: "info.circle", iconColor: .secondary)
                 }
                 Divider().background(Color.white).padding(.horizontal, 20)
+                NavigationLink {
+                    CarScreen(viewModel: carScreenViewModel)
+                        .background(LinearGradient(.darkStart, .darkEnd))
+                } label: {
+                    SettingsAboutSectionView(title: "Message", iconName: "car.circle", iconColor: .blue.opacity(0.6))
+                }
+
+                Divider().background(Color.white).padding(.horizontal, 20)
             }
             .padding()
         }
@@ -113,8 +124,11 @@ struct SettingsAboutSectionView: View {
         HomeView(
             viewModel: HomeViewModel(obdService: OBDService(bleManager: BLEManager()),
                                      garage: Garage()),
-            garageViewModel: GarageViewModel(garage: Garage()), 
-            settingsViewModel: SettingsViewModel(bleManager: BLEManager()),
+            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(bleManager: BLEManager()),
+                           garage: Garage()),
+            garageViewModel: GarageViewModel(garage: Garage()),
+            settingsViewModel: SettingsViewModel(bleManager: BLEManager()), 
+            carScreenViewModel: CarScreenViewModel(obdService: OBDService(bleManager: BLEManager())),
             displayType: .constant(.quarterScreen))
     }
 }

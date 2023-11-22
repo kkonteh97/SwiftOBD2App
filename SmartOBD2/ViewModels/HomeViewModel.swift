@@ -16,9 +16,9 @@ class HomeViewModel: ObservableObject {
     @Published var selectedProtocol: PROTOCOL = .NONE
     @Published var garage: Garage
 
-    @Published var garageVehicles: [GarageVehicle] = []
+    @Published var garageVehicles: [Vehicle] = []
 
-    @Published var currentVehicle: GarageVehicle?
+    @Published var currentVehicle: Vehicle?
 
     private var cancellables = Set<AnyCancellable>()
 

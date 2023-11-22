@@ -26,6 +26,7 @@ struct MainView: View {
     let garageViewModel: GarageViewModel
     let settingsViewModel: SettingsViewModel
     let carScreenViewModel: CarScreenViewModel
+    let diagnosticsViewModel: VehicleDiagnosticsViewModel
 
     init(garage: Garage) {
         let bleManager = BLEManager()
@@ -36,6 +37,7 @@ struct MainView: View {
         self.carScreenViewModel = CarScreenViewModel(obdService: obdService)
         self.settingsViewModel = SettingsViewModel(bleManager: bleManager)
         self.garageViewModel = GarageViewModel(garage: garage)
+        self.diagnosticsViewModel = VehicleDiagnosticsViewModel(obdService: obdService, garage: garage)
     }
 
     var body: some View {
@@ -50,8 +52,10 @@ struct MainView: View {
                     ) {
                         NavigationView {
                             HomeView(viewModel: homeViewModel,
+                                     diagnosticsViewModel: diagnosticsViewModel,
                                      garageViewModel: garageViewModel,
-                                     settingsViewModel: settingsViewModel,
+                                     settingsViewModel: settingsViewModel, 
+                                     carScreenViewModel: carScreenViewModel,
                                      displayType: $displayType)
                             .background(LinearGradient(.darkStart, .darkEnd))
                         }
@@ -67,14 +71,6 @@ struct MainView: View {
                         }
                         .navigationViewStyle(StackNavigationViewStyle())
                         .tabBarItem(tab: .features, selection: $tabSelection)
-                        //                    NavigationView {
-                        //                        CarScreen(
-                        //                            viewModel: carScreenViewModel
-                        //                        )
-                        //                        .background(LinearGradient(.slategray, .raisinblack))
-                        //                    }
-                        //                    .navigationViewStyle(StackNavigationViewStyle())
-                        //                    .tabBarItem(tab: .features, selection: $tabSelection)
                     }
                 }
         }
@@ -84,3 +80,12 @@ struct MainView: View {
 #Preview {
     MainView(garage: Garage())
 }
+
+//                    NavigationView {
+//                        CarScreen(
+//                            viewModel: carScreenViewModel
+//                        )
+//                        .background(LinearGradient(.slategray, .raisinblack))
+//                    }
+//                    .navigationViewStyle(StackNavigationViewStyle())
+//                    .tabBarItem(tab: .features, selection: $tabSelection)

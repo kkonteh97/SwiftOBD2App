@@ -10,53 +10,55 @@ import Foundation
 extension ELM327 {
     func getSupportedPIDs(_ obdProtocol: PROTOCOL) async -> [OBDCommand] {
         let pidGetters = OBDCommand.pidGetters
-        var supportedPIDsSet: Set<OBDCommand> = Set()
+        var supportedPIDs: [OBDCommand] = []
 
-        for pid in pidGetters {
+        for pidGetter in pidGetters {
             do {
-                let response = try await sendMessageAsync("01" + pid.properties.command)
+                let response = try await sendMessageAsync(pidGetter.properties.command)
                 // find first instance of 41 plus command sent, from there we determine the position of everything else
                 // Ex.
                 //        || ||
                 // 7E8 06 41 00 BE 7F B8 13
-                let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
-
-                guard !messages.isEmpty else {
-                    return []
+                guard let supportedPidsByECU = try? parseResponse(response, obdProtocol) else {
+                    continue
                 }
 
-                // Convert ecuData to binary and extract supported PIDs
-                guard let ecuData = messages[0].data else {
-                    return []
-                }
+                let supportedCommands = OBDCommand.allCommands
+                    .filter { supportedPidsByECU.contains(String($0.properties.command.dropFirst(2))) }
+                    .map { $0 }
 
-                let binaryData = BitArray(data: ecuData)
-
-                let supportedPIDsByECU = extractSupportedPIDs(binaryData.binaryArray)
-                let commands = OBDCommand.allCases
-
-                // map supported PIDs to OBDCommand enum commands
-                let supportedPIDs = commands.filter { supportedPIDsByECU.contains($0.properties.command) }
-                supportedPIDsSet.formUnion(supportedPIDs)
+                supportedPIDs.append(contentsOf: supportedCommands)
             } catch {
                 logger.error("\(error.localizedDescription)")
             }
         }
-        // Convert the set back to an array before returning it
-        let supportedPIDsArray = Array(supportedPIDsSet)
-
-        return supportedPIDsArray
+        // remove duplicates
+        return Array(Set(supportedPIDs))
     }
 
-    func extractSupportedPIDs(_ binaryData: [Int]) -> [String] {
-        return binaryData.enumerated()
-            .compactMap { index, bit -> String? in
-                if bit == 1 {
-                    let pidNumber = String(format: "%02X", index + 1)
-                    return pidNumber
-                }
-                return nil
+    private func parseResponse(_ response: [String], _ obdProtocol: PROTOCOL) throws -> Set<String> {
+        let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
+
+        guard !messages.isEmpty,
+              let ecuData = messages[0].data else {
+            throw NSError(domain: "Invalid data format", code: 0, userInfo: nil)
+        }
+        print(ecuData[1...].compactMap { String(format: "%02X", $0) }.joined(separator: " "))
+        let binaryData = BitArray(data: ecuData[1...]).binaryArray
+        print(binaryData)
+        return extractSupportedPIDs(binaryData)
+    }
+
+    func extractSupportedPIDs(_ binaryData: [Int]) -> Set<String> {
+        var supportedPIDs: Set<String> = []
+
+        for (index, value) in binaryData.enumerated() {
+            if value == 1 {
+                let pid = String(format: "%02X", index + 1)
+                supportedPIDs.insert(pid)
             }
+        }
+        return supportedPIDs
     }
 
     func extractDataLength(_ startIndex: Int, _ response: [String]) throws -> Int? {

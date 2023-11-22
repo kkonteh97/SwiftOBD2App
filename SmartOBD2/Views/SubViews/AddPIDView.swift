@@ -12,7 +12,7 @@ class AddPIDViewModel: ObservableObject {
     let garage: Garage
     var cancellables = Set<AnyCancellable>()
 
-    @Published var currentVehicle: GarageVehicle?
+    @Published var currentVehicle: Vehicle?
 
     init(garage: Garage) {
         self.garage = garage

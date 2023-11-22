@@ -8,14 +8,7 @@
 import Combine
 import SwiftUI
 
-enum OBDDecodeResult {
-    case stringResult(String)
-    case statusResult(Status)
-    case measurementResult(Measurement<Unit>)
-    case noResult
-}
-
-struct PIDMeasurement: Identifiable, Comparable, Hashable {
+struct PIDMeasurement: Identifiable, Comparable, Hashable, Codable {
     static func < (lhs: PIDMeasurement, rhs: PIDMeasurement) -> Bool {
         lhs.id < rhs.id
     }
@@ -29,8 +22,7 @@ struct PIDMeasurement: Identifiable, Comparable, Hashable {
        }
 }
 
-class DataItem: Identifiable, ObservableObject {
-    let id = UUID()
+class DataItem: Identifiable, Codable {
     let command: OBDCommand
     var value: Double
     var unit: String?
@@ -54,34 +46,48 @@ class DataItem: Identifiable, ObservableObject {
 class LiveDataViewModel: ObservableObject {
     let obdService: OBDService
     let garage: Garage
+
     private var cancellables = Set<AnyCancellable>()
 
-
-    @Published var currentVehicle: GarageVehicle?
+    @Published var currentVehicle: Vehicle?
 
     @Published var isRequestingPids = false
 
-    @Published var data: [OBDCommand : DataItem] = [.speed: DataItem(command: .speed, selectedGauge: .gaugeType1),
-                                                    .rpm: DataItem( command: .rpm, selectedGauge: .gaugeType1)]
+    @Published var data: [OBDCommand : DataItem] = [:]
 
-    @Published var order: [OBDCommand] = [.speed, .rpm]
+    @Published var order: [OBDCommand] = []
 
     private var timer: Timer?
     private var appendMeasurementsTimer: DispatchSourceTimer?
-    private let measurementTimeLimit: TimeInterval = 600 // 10 minutes
+    private let measurementTimeLimit: TimeInterval = 120
 
     init(obdService: OBDService, garage: Garage) {
         self.obdService = obdService
         self.garage = garage
         garage.$currentVehicleId
-                .sink { currentVehicleId in
-                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
-                }
-                .store(in: &cancellables)
+            .sink { currentVehicleId in
+                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
+            }
+            .store(in: &cancellables)
+
+        if let piddata = UserDefaults.standard.data(forKey: "pidData"),
+           let pidData = try? JSONDecoder().decode([DataItem].self, from: piddata) {
+            for item in pidData {
+                self.data[item.command] = item
+                self.order.append(item.command)
+            }
+        }
     }
 
+    func saveDataItems() {
+        print("saving data items")
+        if let encodedData = try? JSONEncoder().encode(Array(data.values)) {
+            UserDefaults.standard.set(encodedData, forKey: "pidData")
+        }
+    }
 
     func addPIDToRequest(_ pid: OBDCommand) {
+        guard order.count < 6 else { return }
         if !data.keys.contains(pid) {
             data[pid] = DataItem(command: pid, selectedGauge: .gaugeType1)
             order.append(pid)
@@ -91,11 +97,6 @@ class LiveDataViewModel: ObservableObject {
                 order.remove(at: index)
             }
         }
-    }
-
-    private func restartTimer() {
-        stopTimer()
-        startTimer()
     }
 
     private func stopTimer() {
@@ -138,6 +139,8 @@ class LiveDataViewModel: ObservableObject {
         DispatchQueue.main.async {
               for (_, item) in self.data {
                   item.measurements.append(PIDMeasurement(time: Date(), value: item.value))
+                  // Remove old measurements
+                  item.measurements = item.measurements.filter { $0.id.timeIntervalSinceNow > -self.measurementTimeLimit }
             }
         }
     }
@@ -183,11 +186,11 @@ func decodeMeasurementToBindingDouble(_ measurement: OBDDecodeResult?) -> Bindin
     switch measurement {
     case .stringResult(let value):
         return .constant(Double(value) ?? 0)
-    case .statusResult(_):
-        return .constant(0)
     case .measurementResult(let value):
         return .constant(value.value)
     case .noResult:
+        return .constant(0)
+    default:
         return .constant(0)
     }
 }
@@ -208,11 +211,9 @@ func decodeMeasurementToDouble(_ measurement: OBDDecodeResult?) -> Double {
     switch measurement {
     case .stringResult(let value):
         return Double(value) ?? 0
-    case .statusResult(_):
-        return 0
     case .measurementResult(let value):
         return value.value
-    case .noResult:
+    default:
         return 0
     }
 }
@@ -224,11 +225,11 @@ func decodeMeasurementToString(_ measurement: OBDDecodeResult?) -> String {
     switch measurement {
     case .stringResult(let value):
         return value
-    case .statusResult(let value):
-        return String(describing: value)
     case .measurementResult(let value):
         return "\(value.value) \(value.unit.symbol)"
     case .noResult:
+        return "No Result"
+    default:
         return "No Result"
     }
 }

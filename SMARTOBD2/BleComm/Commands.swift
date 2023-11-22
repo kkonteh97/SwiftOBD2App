@@ -7,23 +7,6 @@
 
 import Foundation
 
-struct Status {
-    var MIL: Bool = false
-    var dtcCount: UInt8 = 0
-    var ignitionType: String = ""
-
-    var misfireMonitoring: StatusTest
-    var fuelSystemMonitoring: StatusTest
-    var componentMonitoring: StatusTest
-
-    // Add other properties for SPARK_TESTS and COMPRESSION_TESTS here
-    init() {
-        misfireMonitoring = StatusTest()
-        fuelSystemMonitoring = StatusTest()
-        componentMonitoring = StatusTest()
-    }
-}
-
 struct StatusTest {
     var name: String = ""
     var supported: Bool = false
@@ -83,349 +66,530 @@ struct CommandProperties {
     }
 }
 
-enum OBDCommand: CaseIterable, Codable, Comparable {
-    case ATD
-    case ATZ
-    case ATRV
-    case ATL0
-    case ATE0
-    case ATH1
-    case ATH0
-    case ATAT1
-    case ATSTFF
-    case ATDPN
-    case AT0902
-
-    case pidsA
-    case status
-    case freezeDTC
-    case fuelStatus
-    case engineLoad
-    case coolantTemp
-    case shortFuelTrim1
-    case longFuelTrim1
-    case shortFuelTrim2
-    case longFuelTrim2
-    case fuelPressure
-    case intakePressure
-    case rpm
-    case speed
-    case timingAdvance
-    case intakeTemp
-    case maf
-    case throttlePos
-    case airStatus
-    case O2Sensor
-    case O2Bank1Sensor1
-    case O2Bank1Sensor2
-    case O2Bank1Sensor3
-    case O2Bank1Sensor4
-    case O2Bank2Sensor1
-    case O2Bank2Sensor2
-    case O2Bank2Sensor3
-    case O2Bank2Sensor4
-    case obdcompliance
-    case O2SensorsALT
-    case auxInputStatus
-    case runTime
-    case pidsB
-    case distanceWMIL
-    case fuelRailPressureVac
-    case fuelRailPressureDirect
-    case O2Sensor1WRVolatage
-    case O2Sensor2WRVolatage
-    case O2Sensor3WRVolatage
-    case O2Sensor4WRVolatage
-    case O2Sensor5WRVolatage
-    case O2Sensor6WRVolatage
-    case O2Sensor7WRVolatage
-    case O2Sensor8WRVolatage
-    case commandedEGR
-    case EGRError
-    case evaporativePurge
-    case fuelLevel
-    case warmUpsSinceDTCCleared
-    case distanceSinceDTCCleared
-    case evapVaporPressure
-    case barometricPressure
-    case O2Sensor1WRCurrent
-    case O2Sensor2WRCurrent
-    case O2Sensor3WRCurrent
-    case O2Sensor4WRCurrent
-    case O2Sensor5WRCurrent
-    case O2Sensor6WRCurrent
-    case O2Sensor7WRCurrent
-    case O2Sensor8WRCurrent
-    case catalystTempB1S1
-    case catalystTempB2S1
-    case catalystTempB1S2
-    case catalystTempB2S2
-    case pidsC
+enum OBDCommand: Codable, Hashable {
+    case general(General)
+    case mode1(Mode1)
+    case mode6(Mode6)
+    case mode9(Mode9)
 
     var properties: CommandProperties {
         switch self {
-        case .ATD:                    return CommandProperties("ATD", "Supported PIDs [01-20]", 5, .none)
-        case .ATZ:                    return CommandProperties("ATZ", "Supported PIDs [01-20]", 5, .none)
-        case .ATRV:                   return CommandProperties("ATRV", "Supported PIDs [01-20]", 5, .none)
-        case .ATL0:                   return CommandProperties("ATL0", "Supported PIDs [01-20]", 5, .none)
-        case .ATE0:                   return CommandProperties("ATE0", "Supported PIDs [01-20]", 5, .none)
-        case .ATH1:                   return CommandProperties("ATH1", "Headers On", 5, .none)
-        case .ATH0:                   return CommandProperties("ATH0", "Headers Off", 5, .none)
-        case .ATAT1:                  return CommandProperties("ATAT1", "Supported PIDs [01-20]", 5, .none)
-        case .ATSTFF:                 return CommandProperties("ATSTFF", "Supported PIDs [01-20]", 5, .none)
-        case .ATDPN:                  return CommandProperties("ATDPN", "Descripe Protocol Number", 5, .none)
-        case .AT0902:                 return CommandProperties("0902", "Supported PIDs [01-20]", 5, .none)
+        case .general(let command):
+            return command.properties
+        case .mode1(let command):
+            return command.properties
+        case .mode9(let command):
+            return command.properties
+        case .mode6(let command):
+            return command.properties
+        }
+    }
 
-        case .pidsA:                  return CommandProperties("00", "Supported PIDs [01-20]", 5, .pid)
-        case .status:                 return CommandProperties("01", "Status since DTCs cleared", 5, .status)
-        case .freezeDTC:              return CommandProperties("02", "DTC that triggered the freeze frame", 5, .singleDTC)
-        case .fuelStatus:             return CommandProperties("03", "Fuel System Status", 5, .fuelStatus)
-        case .engineLoad:             return CommandProperties("04", "Calculated Engine Load", 2, .percent)
-        case .coolantTemp:            return CommandProperties("05", "Coolant temperature", 2, .temp)
-        case .shortFuelTrim1:         return CommandProperties("06", "Short Term Fuel Trim - Bank 1", 2, .percentCentered)
-        case .longFuelTrim1:          return CommandProperties("07", "Long Term Fuel Trim - Bank 1", 2, .percentCentered)
-        case .shortFuelTrim2:         return CommandProperties("08", "Short Term Fuel Trim - Bank 2", 2, .percentCentered)
-        case .longFuelTrim2:          return CommandProperties("09", "Long Term Fuel Trim - Bank 2", 2, .percentCentered)
-        case .fuelPressure:           return CommandProperties("0A", "Fuel Pressure", 2, .fuelPressure)
-        case .intakePressure:         return CommandProperties("0B", "Intake Manifold Pressure", 3, .pressure)
-        case .rpm:                    return CommandProperties("0C", "RPM", 3, .uas0x07, maxValue: 8000, steperSplit: 1000)
-        case .speed:                  return CommandProperties("0D", "Vehicle Speed", 2, .uas0x09, maxValue: 280, steperSplit: 40)
-        case .timingAdvance:          return CommandProperties("0E", "Timing Advance", 2, .timingAdvance)
-        case .intakeTemp:             return CommandProperties("0F", "Intake Air Temp", 2, .temp)
-        case .maf:                    return CommandProperties("10", "Air Flow Rate (MAF)", 3, .uas0x27)
-        case .throttlePos:            return CommandProperties("11", "Throttle Position", 2, .percent)
-        case .airStatus:              return CommandProperties("12", "Secondary Air Status", 2, .airStatus)
-        case .O2Sensor:               return CommandProperties("13", "O2 Sensors Present", 2, .o2Sensors)
-        case .O2Bank1Sensor1:         return CommandProperties("14", "O2: Bank 1 - Sensor 1 Voltage", 3, .sensorVoltage)
-        case .O2Bank1Sensor2:         return CommandProperties("15", "O2: Bank 1 - Sensor 2 Voltage", 3, .sensorVoltage)
-        case .O2Bank1Sensor3:         return CommandProperties("16", "O2: Bank 1 - Sensor 3 Voltage", 3, .sensorVoltage)
-        case .O2Bank1Sensor4:         return CommandProperties("17", "O2: Bank 1 - Sensor 4 Voltage", 3, .sensorVoltage)
-        case .O2Bank2Sensor1:         return CommandProperties("18", "O2: Bank 2 - Sensor 1 Voltage", 3, .sensorVoltage)
-        case .O2Bank2Sensor2:         return CommandProperties("19", "O2: Bank 2 - Sensor 2 Voltage", 3, .sensorVoltage)
-        case .O2Bank2Sensor3:         return CommandProperties("1A", "O2: Bank 2 - Sensor 3 Voltage", 3, .sensorVoltage)
-        case .O2Bank2Sensor4:         return CommandProperties("1B", "O2: Bank 2 - Sensor 4 Voltage", 3, .sensorVoltage)
-        case .obdcompliance:          return CommandProperties("1C", "OBD Standards Compliance", 2, .obdCompliance)
-        case .O2SensorsALT:           return CommandProperties("1D", "O2 Sensors Present (alternate)", 2, .o2SensorsAlt)
-        case .auxInputStatus:         return CommandProperties("1E", "Auxiliary input status (power take off)", 2, .auxInputStatus)
-        case .runTime:                return CommandProperties("1F", "Engine Run Time", 3, .uas0x12)
-        case .pidsB:                  return CommandProperties("20", "Supported PIDs [21-40]", 5, .pid)
-        case .distanceWMIL:           return CommandProperties("21", "Distance Traveled with MIL on", 4, .uas0x25)
-        case .fuelRailPressureVac:    return CommandProperties("22", "Fuel Rail Pressure (relative to vacuum)", 4, .uas0x19)
-        case .fuelRailPressureDirect: return CommandProperties("23", "Fuel Rail Pressure (direct inject)", 4, .uas0x1B)
-        case .O2Sensor1WRVolatage:    return CommandProperties("24", "02 Sensor 1 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor2WRVolatage:    return CommandProperties("25", "02 Sensor 2 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor3WRVolatage:    return CommandProperties("26", "02 Sensor 3 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor4WRVolatage:    return CommandProperties("27", "02 Sensor 4 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor5WRVolatage:    return CommandProperties("28", "02 Sensor 5 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor6WRVolatage:    return CommandProperties("29", "02 Sensor 6 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor7WRVolatage:    return CommandProperties("2A", "02 Sensor 7 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .O2Sensor8WRVolatage:    return CommandProperties("2B", "02 Sensor 8 WR Lambda Voltage", 6, .sensorVoltageBig)
-        case .commandedEGR:           return CommandProperties("2C", "Commanded EGR", 4, .percent)
-        case .EGRError:               return CommandProperties("2D", "EGR Error", 4, .percentCentered)
-        case .evaporativePurge:       return CommandProperties("2E", "Commanded Evaporative Purge", 4, .percent)
-        case .fuelLevel:              return CommandProperties("2F", "Number of warm-ups since codes cleared", 4, .percent)
-        case .warmUpsSinceDTCCleared: return CommandProperties("30", "Distance traveled since codes cleared", 4, .uas0x01)
-        case .distanceSinceDTCCleared:return CommandProperties("31", "Distance traveled since codes cleared", 4, .uas0x25)
-        case .evapVaporPressure:      return CommandProperties("32", "Evaporative system vapor pressure", 4, .evapPressure)
-        case .barometricPressure:     return CommandProperties("33", "Barometric Pressure", 4, .pressure)
-        case .O2Sensor1WRCurrent:     return CommandProperties("34", "02 Sensor 1 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor2WRCurrent:     return CommandProperties("35", "02 Sensor 2 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor3WRCurrent:     return CommandProperties("36", "02 Sensor 3 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor4WRCurrent:     return CommandProperties("37", "02 Sensor 4 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor5WRCurrent:     return CommandProperties("38", "02 Sensor 5 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor6WRCurrent:     return CommandProperties("39", "02 Sensor 6 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor7WRCurrent:     return CommandProperties("3A", "02 Sensor 7 WR Lambda Current", 4, .currentCentered)
-        case .O2Sensor8WRCurrent:     return CommandProperties("3B", "02 Sensor 8 WR Lambda Current", 4, .currentCentered)
-        case .catalystTempB1S1:       return CommandProperties("3C", "Catalyst Temperature: Bank 1 - Sensor 1", 4, .uas0x16)
-        case .catalystTempB2S1:       return CommandProperties("3D", "Catalyst Temperature: Bank 2 - Sensor 1", 4, .uas0x16)
-        case .catalystTempB1S2:       return CommandProperties("3E", "Catalyst Temperature: Bank 1 - Sensor 2", 4, .uas0x16)
-        case .catalystTempB2S2:       return CommandProperties("3F", "Catalyst Temperature: Bank 1 - Sensor 2", 4, .uas0x16)
-        case .pidsC:                  return CommandProperties("40", "Supported PIDs [41-60]", 6, .pid)
+
+    enum General: CaseIterable, Codable, Comparable {
+        case ATD
+        case ATZ
+        case ATRV
+        case ATL0
+        case ATE0
+        case ATH1
+        case ATH0
+        case ATAT1
+        case ATSTFF
+        case ATDPN
+        case AT0902
+
+        var properties: CommandProperties {
+            switch self {
+                case .ATD:    return CommandProperties("ATD", "Supported PIDs [01-20]", 5, .none)
+                case .ATZ:    return CommandProperties("ATZ", "Supported PIDs [01-20]", 5, .none)
+                case .ATRV:   return CommandProperties("ATRV", "Supported PIDs [01-20]", 5, .none)
+                case .ATL0:   return CommandProperties("ATL0", "Supported PIDs [01-20]", 5, .none)
+                case .ATE0:   return CommandProperties("ATE0", "Supported PIDs [01-20]", 5, .none)
+                case .ATH1:   return CommandProperties("ATH1", "Headers On", 5, .none)
+                case .ATH0:   return CommandProperties("ATH0", "Headers Off", 5, .none)
+                case .ATAT1:  return CommandProperties("ATAT1", "Supported PIDs [01-20]", 5, .none)
+                case .ATSTFF: return CommandProperties("ATSTFF", "Supported PIDs [01-20]", 5, .none)
+                case .ATDPN:  return CommandProperties("ATDPN", "Descripe Protocol Number", 5, .none)
+                case .AT0902: return CommandProperties("0902", "Supported PIDs [01-20]", 5, .none)
+            }
+        }
+    }
+
+
+    enum Mode1: CaseIterable, Codable, Comparable {
+        case pidsA
+        case status
+        case freezeDTC
+        case fuelStatus
+        case engineLoad
+        case coolantTemp
+        case shortFuelTrim1
+        case longFuelTrim1
+        case shortFuelTrim2
+        case longFuelTrim2
+        case fuelPressure
+        case intakePressure
+        case rpm
+        case speed
+        case timingAdvance
+        case intakeTemp
+        case maf
+        case throttlePos
+        case airStatus
+        case O2Sensor
+        case O2Bank1Sensor1
+        case O2Bank1Sensor2
+        case O2Bank1Sensor3
+        case O2Bank1Sensor4
+        case O2Bank2Sensor1
+        case O2Bank2Sensor2
+        case O2Bank2Sensor3
+        case O2Bank2Sensor4
+        case obdcompliance
+        case O2SensorsALT
+        case auxInputStatus
+        case runTime
+        case pidsB
+        case distanceWMIL
+        case fuelRailPressureVac
+        case fuelRailPressureDirect
+        case O2Sensor1WRVolatage
+        case O2Sensor2WRVolatage
+        case O2Sensor3WRVolatage
+        case O2Sensor4WRVolatage
+        case O2Sensor5WRVolatage
+        case O2Sensor6WRVolatage
+        case O2Sensor7WRVolatage
+        case O2Sensor8WRVolatage
+        case commandedEGR
+        case EGRError
+        case evaporativePurge
+        case fuelLevel
+        case warmUpsSinceDTCCleared
+        case distanceSinceDTCCleared
+        case evapVaporPressure
+        case barometricPressure
+        case O2Sensor1WRCurrent
+        case O2Sensor2WRCurrent
+        case O2Sensor3WRCurrent
+        case O2Sensor4WRCurrent
+        case O2Sensor5WRCurrent
+        case O2Sensor6WRCurrent
+        case O2Sensor7WRCurrent
+        case O2Sensor8WRCurrent
+        case catalystTempB1S1
+        case catalystTempB2S1
+        case catalystTempB1S2
+        case catalystTempB2S2
+        case pidsC
+        case statusDriveCycle
+        case controlModuleVoltage
+        case absoluteLoad
+        case commandedEquivRatio
+        case relativeThrottlePos
+        case ambientAirTemp
+        case throttlePosB
+        case throttlePosC
+        case throttlePosD
+        case throttlePosE
+        case throttlePosF
+        case throttleActuator
+        case runTimeMIL
+        case timeSinceDTCCleared
+        case maxValues
+        case maxMAF
+        case fuelType
+        case ethanoPercent
+        case evapVaporPressureAbs
+        case evapVaporPressureAlt
+        case shortO2TrimB1
+        case longO2TrimB1
+        case shortO2TrimB2
+        case longO2TrimB2
+        case fuelRailPressureAbs
+        case relativeAccelPos
+        case hybridBatteryLife
+        case engineOilTemp
+        case fuelInjectionTiming
+        case fuelRate
+        case emissionsReq
+
+        var properties: CommandProperties {
+            switch self {
+            case .pidsA:                  return CommandProperties("0100", "Supported PIDs [01-20]",                                    5, .pid                 )
+            case .status:                 return CommandProperties("0101", "Status since DTCs cleared",                                 5, .status              )
+            case .freezeDTC:              return CommandProperties("0102", "DTC that triggered the freeze frame",                       5, .singleDTC           )
+            case .fuelStatus:             return CommandProperties("0103", "Fuel System Status",                                        5, .fuelStatus          )
+            case .engineLoad:             return CommandProperties("0104", "Calculated Engine Load",                                    2, .percent             )
+            case .coolantTemp:            return CommandProperties("0105", "Coolant temperature",                                       2, .temp                )
+            case .shortFuelTrim1:         return CommandProperties("0106", "Short Term Fuel Trim - Bank 1",                             2, .percentCentered     )
+            case .longFuelTrim1:          return CommandProperties("0107", "Long Term Fuel Trim - Bank 1",                              2, .percentCentered     )
+            case .shortFuelTrim2:         return CommandProperties("0108", "Short Term Fuel Trim - Bank 2",                             2, .percentCentered     )
+            case .longFuelTrim2:          return CommandProperties("0109", "Long Term Fuel Trim - Bank 2",                              2, .percentCentered     )
+            case .fuelPressure:           return CommandProperties("010A", "Fuel Pressure",                                             2, .fuelPressure        )
+            case .intakePressure:         return CommandProperties("010B", "Intake Manifold Pressure",                                  3, .pressure            )
+            case .rpm:                    return CommandProperties("010C", "RPM",                                                       3, .uas0x07, maxValue: 8000, steperSplit: 1000)
+            case .speed:                  return CommandProperties("010D", "Vehicle Speed",                                             2, .uas0x09, maxValue: 280, steperSplit: 40)
+            case .timingAdvance:          return CommandProperties("010E", "Timing Advance",                                            2, .timingAdvance       )
+            case .intakeTemp:             return CommandProperties("010F", "Intake Air Temp",                                           2, .temp                )
+            case .maf:                    return CommandProperties("0110", "Air Flow Rate (MAF)",                                       3, .uas0x27             )
+            case .throttlePos:            return CommandProperties("0111", "Throttle Position",                                         2, .percent             )
+            case .airStatus:              return CommandProperties("0112", "Secondary Air Status",                                      2, .airStatus           )
+            case .O2Sensor:               return CommandProperties("0113", "O2 Sensors Present",                                        2, .o2Sensors           )
+            case .O2Bank1Sensor1:         return CommandProperties("0114", "O2: Bank 1 - Sensor 1 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank1Sensor2:         return CommandProperties("0115", "O2: Bank 1 - Sensor 2 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank1Sensor3:         return CommandProperties("0116", "O2: Bank 1 - Sensor 3 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank1Sensor4:         return CommandProperties("0117", "O2: Bank 1 - Sensor 4 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank2Sensor1:         return CommandProperties("0118", "O2: Bank 2 - Sensor 1 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank2Sensor2:         return CommandProperties("0119", "O2: Bank 2 - Sensor 2 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank2Sensor3:         return CommandProperties("011A", "O2: Bank 2 - Sensor 3 Voltage",                             3, .sensorVoltage       )
+            case .O2Bank2Sensor4:         return CommandProperties("011B", "O2: Bank 2 - Sensor 4 Voltage",                             3, .sensorVoltage       )
+            case .obdcompliance:          return CommandProperties("011C", "OBD Standards Compliance",                                  2, .obdCompliance       )
+            case .O2SensorsALT:           return CommandProperties("011D", "O2 Sensors Present (alternate)",                            2, .o2SensorsAlt        )
+            case .auxInputStatus:         return CommandProperties("011E", "Auxiliary input status (power take off)",                   2, .auxInputStatus      )
+            case .runTime:                return CommandProperties("011F", "Engine Run Time",                                           3, .uas0x12             )
+            case .pidsB:                  return CommandProperties("0120", "Supported PIDs [21-40]",                                    5, .pid                 )
+            case .distanceWMIL:           return CommandProperties("0121", "Distance Traveled with MIL on",                             4, .uas0x25             )
+            case .fuelRailPressureVac:    return CommandProperties("0122", "Fuel Rail Pressure (relative to vacuum)",                   4, .uas0x19             )
+            case .fuelRailPressureDirect: return CommandProperties("0123", "Fuel Rail Pressure (direct inject)",                        4, .uas0x1B             )
+            case .O2Sensor1WRVolatage:    return CommandProperties("0124", "02 Sensor 1 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor2WRVolatage:    return CommandProperties("0125", "02 Sensor 2 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor3WRVolatage:    return CommandProperties("0126", "02 Sensor 3 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor4WRVolatage:    return CommandProperties("0127", "02 Sensor 4 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor5WRVolatage:    return CommandProperties("0128", "02 Sensor 5 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor6WRVolatage:    return CommandProperties("0129", "02 Sensor 6 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor7WRVolatage:    return CommandProperties("012A", "02 Sensor 7 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .O2Sensor8WRVolatage:    return CommandProperties("012B", "02 Sensor 8 WR Lambda Voltage",                             6, .sensorVoltageBig    )
+            case .commandedEGR:           return CommandProperties("012C", "Commanded EGR",                                             4, .percent             )
+            case .EGRError:               return CommandProperties("012D", "EGR Error",                                                 4, .percentCentered     )
+            case .evaporativePurge:       return CommandProperties("012E", "Commanded Evaporative Purge",                               4, .percent             )
+            case .fuelLevel:              return CommandProperties("012F", "Number of warm-ups since codes cleared",                    4, .percent             )
+            case .warmUpsSinceDTCCleared: return CommandProperties("0130", "Distance traveled since codes cleared",                     4, .uas0x01             )
+            case .distanceSinceDTCCleared:return CommandProperties("0131", "Distance traveled since codes cleared",                     4, .uas0x25             )
+            case .evapVaporPressure:      return CommandProperties("0132", "Evaporative system vapor pressure",                         4, .evapPressure        )
+            case .barometricPressure:     return CommandProperties("0133", "Barometric Pressure",                                       4, .pressure            )
+            case .O2Sensor1WRCurrent:     return CommandProperties("0134", "02 Sensor 1 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor2WRCurrent:     return CommandProperties("0135", "02 Sensor 2 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor3WRCurrent:     return CommandProperties("0136", "02 Sensor 3 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor4WRCurrent:     return CommandProperties("0137", "02 Sensor 4 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor5WRCurrent:     return CommandProperties("0138", "02 Sensor 5 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor6WRCurrent:     return CommandProperties("0139", "02 Sensor 6 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor7WRCurrent:     return CommandProperties("013A", "02 Sensor 7 WR Lambda Current",                             4, .currentCentered     )
+            case .O2Sensor8WRCurrent:     return CommandProperties("013B", "02 Sensor 8 WR Lambda Current",                             4, .currentCentered     )
+            case .catalystTempB1S1:       return CommandProperties("013C", "Catalyst Temperature: Bank 1 - Sensor 1",                   4, .uas0x16             )
+            case .catalystTempB2S1:       return CommandProperties("013D", "Catalyst Temperature: Bank 2 - Sensor 1",                   4, .uas0x16             )
+            case .catalystTempB1S2:       return CommandProperties("013E", "Catalyst Temperature: Bank 1 - Sensor 2",                   4, .uas0x16             )
+            case .catalystTempB2S2:       return CommandProperties("013F", "Catalyst Temperature: Bank 1 - Sensor 2",                   4, .uas0x16             )
+            case .pidsC:                  return CommandProperties("0140", "Supported PIDs [41-60]",                                    6, .pid                 )
+            case .statusDriveCycle:       return CommandProperties("0141", "Monitor status this drive cycle",                           6, .status              )
+            case .controlModuleVoltage:   return CommandProperties("0142", "Control module voltage",                                    4, .uas0x0B             )
+            case .absoluteLoad:           return CommandProperties("0143", "Absolute load value",                                       4, .percent             )
+            case .commandedEquivRatio:    return CommandProperties("0144", "Commanded equivalence ratio",                               4, .uas0x1E             )
+            case .relativeThrottlePos:    return CommandProperties("0145", "Relative throttle position",                                4, .percent             )
+            case .ambientAirTemp:         return CommandProperties("0146", "Ambient air temperature",                                   4, .temp                )
+            case .throttlePosB:           return CommandProperties("0147", "Absolute throttle position B",                              4, .percent             )
+            case .throttlePosC:           return CommandProperties("0148", "Absolute throttle position C",                              4, .percent             )
+            case .throttlePosD:           return CommandProperties("0149", "Absolute throttle position D",                              4, .percent             )
+            case .throttlePosE:           return CommandProperties("014A", "Absolute throttle position E",                              4, .percent             )
+            case .throttlePosF:           return CommandProperties("014B", "Absolute throttle position F",                              4, .percent             )
+            case .throttleActuator:       return CommandProperties("014C", "Commanded throttle actuator",                               4, .percent             )
+            case .runTimeMIL:             return CommandProperties("014D", "Time run with MIL on",                                      4, .uas0x34             )
+            case .timeSinceDTCCleared:    return CommandProperties("014E", "Time since trouble codes cleared",                          4, .uas0x34             )
+            case .maxValues:              return CommandProperties("014F", "Maximum value for various values",                          6, .none                )
+            case .maxMAF:                 return CommandProperties("0150", "Maximum value for air flow rate from mass air flow sensor", 4, .maxMaf              )
+            case .fuelType:               return CommandProperties("0151", "Fuel Type",                                                 2, .fuelType            )
+            case .ethanoPercent:          return CommandProperties("0152", "Ethanol fuel %",                                            2, .percent             )
+            case .evapVaporPressureAbs:   return CommandProperties("0153", "Absolute Evap system vapor pressure",                       4, .evapPressureAlt     )
+            case .evapVaporPressureAlt:   return CommandProperties("0154", "Evap system vapor pressure",                                4, .evapPressureAlt     )
+            case .shortO2TrimB1:          return CommandProperties("0155", "Short term secondary O2 trim - Bank 1",                     4, .percentCentered     )
+            case .longO2TrimB1:           return CommandProperties("0156", "Long term secondary O2 trim - Bank 1",                      4, .percentCentered     )
+            case .shortO2TrimB2:          return CommandProperties("0157", "Short term secondary O2 trim - Bank 2",                     4, .percentCentered     )
+            case .longO2TrimB2:           return CommandProperties("0158", "Long term secondary O2 trim - Bank 2",                      4, .percentCentered     )
+            case .fuelRailPressureAbs:    return CommandProperties("0159", "Fuel rail pressure (absolute)",                             4, .uas0x1B             )
+            case .relativeAccelPos:       return CommandProperties("015A", "Relative accelerator pedal position",                       3, .percent             )
+            case .hybridBatteryLife:      return CommandProperties("015B", "Hybrid battery pack remaining life",                        3, .percent             )
+            case .engineOilTemp:          return CommandProperties("015C", "Engine oil temperature",                                    3, .temp                )
+            case .fuelInjectionTiming:    return CommandProperties("015D", "Fuel injection timing",                                     4, .injectTiming        )
+            case .fuelRate:               return CommandProperties("015E", "Engine fuel rate",                                          4, .fuelRate            )
+            case .emissionsReq:           return CommandProperties("015F", "Designed emission requirements",                            3, .none                )
+            }
+        }
+    }
+
+    enum Mode3: CaseIterable, Codable, Comparable {
+        case GET_DTC
+        var properties: CommandProperties {
+            switch self {
+                case .GET_DTC: return CommandProperties("0103", "Get DTCs", 0, .dtc)
+            }
+        }
+    }
+
+    enum Mode4: CaseIterable, Codable, Comparable {
+        case CLEAR_DTC
+        var properties: CommandProperties {
+            switch self {
+                case .CLEAR_DTC: return CommandProperties("04", "Clear DTCs and freeze data", 0, .none)
+            }
+        }
+    }
+
+    enum Mode6: CaseIterable, Codable, Comparable {
+        case MIDS_A
+        case MONITOR_O2_B1S1
+        case MONITOR_O2_B1S2
+        case MONITOR_O2_B1S3
+        case MONITOR_O2_B1S4
+        case MONITOR_O2_B2S1
+        case MONITOR_O2_B2S2
+        case MONITOR_O2_B2S3
+        case MONITOR_O2_B2S4
+        case MONITOR_O2_B3S1
+        case MONITOR_O2_B3S2
+        case MONITOR_O2_B3S3
+        case MONITOR_O2_B3S4
+        case MONITOR_O2_B4S1
+        case MONITOR_O2_B4S2
+        case MONITOR_O2_B4S3
+        case MONITOR_O2_B4S4
+        case MIDS_B
+        case MONITOR_CATALYST_B1
+        case MONITOR_CATALYST_B2
+        case MONITOR_CATALYST_B3
+        case MONITOR_CATALYST_B4
+        case MONITOR_EGR_B1
+        case MONITOR_EGR_B2
+        case MONITOR_EGR_B3
+        case MONITOR_EGR_B4
+        case MONITOR_VVT_B1
+        case MONITOR_VVT_B2
+        case MONITOR_VVT_B3
+        case MONITOR_VVT_B4
+        case MONITOR_EVAP_150
+        case MONITOR_EVAP_090
+        case MONITOR_EVAP_040
+        case MONITOR_EVAP_020
+        case MONITOR_PURGE_FLOW
+        case MIDS_C
+        case MONITOR_O2_HEATER_B1S1
+        case MONITOR_O2_HEATER_B1S2
+        case MONITOR_O2_HEATER_B1S3
+        case MONITOR_O2_HEATER_B1S4
+        case MONITOR_O2_HEATER_B2S1
+        case MONITOR_O2_HEATER_B2S2
+        case MONITOR_O2_HEATER_B2S3
+        case MONITOR_O2_HEATER_B2S4
+        case MONITOR_O2_HEATER_B3S1
+        case MONITOR_O2_HEATER_B3S2
+        case MONITOR_O2_HEATER_B3S3
+        case MONITOR_O2_HEATER_B3S4
+        case MONITOR_O2_HEATER_B4S1
+        case MONITOR_O2_HEATER_B4S2
+        case MONITOR_O2_HEATER_B4S3
+        case MONITOR_O2_HEATER_B4S4
+        case MIDS_D
+        case MONITOR_HEATED_CATALYST_B1
+        case MONITOR_HEATED_CATALYST_B2
+        case MONITOR_HEATED_CATALYST_B3
+        case MONITOR_HEATED_CATALYST_B4
+        case MONITOR_SECONDARY_AIR_1
+        case MONITOR_SECONDARY_AIR_2
+        case MONITOR_SECONDARY_AIR_3
+        case MONITOR_SECONDARY_AIR_4
+        case MIDS_E
+        case MONITOR_FUEL_SYSTEM_B1
+        case MONITOR_FUEL_SYSTEM_B2
+        case MONITOR_FUEL_SYSTEM_B3
+        case MONITOR_FUEL_SYSTEM_B4
+        case MONITOR_BOOST_PRESSURE_B1
+        case MONITOR_BOOST_PRESSURE_B2
+        case MONITOR_NOX_ABSORBER_B1
+        case MONITOR_NOX_ABSORBER_B2
+        case MONITOR_NOX_CATALYST_B1
+        case MONITOR_NOX_CATALYST_B2
+        case MIDS_F
+        case MONITOR_MISFIRE_GENERAL
+        case MONITOR_MISFIRE_CYLINDER_1
+        case MONITOR_MISFIRE_CYLINDER_2
+        case MONITOR_MISFIRE_CYLINDER_3
+        case MONITOR_MISFIRE_CYLINDER_4
+        case MONITOR_MISFIRE_CYLINDER_5
+        case MONITOR_MISFIRE_CYLINDER_6
+        case MONITOR_MISFIRE_CYLINDER_7
+        case MONITOR_MISFIRE_CYLINDER_8
+        case MONITOR_MISFIRE_CYLINDER_9
+        case MONITOR_MISFIRE_CYLINDER_10
+        case MONITOR_MISFIRE_CYLINDER_11
+        case MONITOR_MISFIRE_CYLINDER_12
+        case MONITOR_PM_FILTER_B1
+        case MONITOR_PM_FILTER_B2
+
+        var properties: CommandProperties {
+            switch self {
+                case .MIDS_A                :     return CommandProperties("0600",  "Supported MIDs [01-20]"                     , 0, .pid)
+                case .MONITOR_O2_B1S1       :     return CommandProperties("0601",  "O2 Sensor Monitor Bank 1 - Sensor 1"        , 0, .monitor)
+                case .MONITOR_O2_B1S2       :     return CommandProperties("0602",  "O2 Sensor Monitor Bank 1 - Sensor 2"        , 0, .monitor)
+                case .MONITOR_O2_B1S3       :     return CommandProperties("0603",  "O2 Sensor Monitor Bank 1 - Sensor 3"        , 0, .monitor)
+                case .MONITOR_O2_B1S4       :     return CommandProperties("0604",  "O2 Sensor Monitor Bank 1 - Sensor 4"        , 0, .monitor)
+                case .MONITOR_O2_B2S1       :     return CommandProperties("0605",  "O2 Sensor Monitor Bank 2 - Sensor 1"        , 0, .monitor)
+                case .MONITOR_O2_B2S2       :     return CommandProperties("0606",  "O2 Sensor Monitor Bank 2 - Sensor 2"        , 0, .monitor)
+                case .MONITOR_O2_B2S3       :     return CommandProperties("0607",  "O2 Sensor Monitor Bank 2 - Sensor 3"        , 0, .monitor)
+                case .MONITOR_O2_B2S4       :     return CommandProperties("0608",  "O2 Sensor Monitor Bank 2 - Sensor 4"        , 0, .monitor)
+                case .MONITOR_O2_B3S1       :     return CommandProperties("0609",  "O2 Sensor Monitor Bank 3 - Sensor 1"        , 0, .monitor)
+                case .MONITOR_O2_B3S2       :     return CommandProperties("060A",  "O2 Sensor Monitor Bank 3 - Sensor 2"        , 0, .monitor)
+                case .MONITOR_O2_B3S3       :     return CommandProperties("060B",  "O2 Sensor Monitor Bank 3 - Sensor 3"        , 0, .monitor)
+                case .MONITOR_O2_B3S4       :     return CommandProperties("060C",  "O2 Sensor Monitor Bank 3 - Sensor 4"        , 0, .monitor)
+                case .MONITOR_O2_B4S1       :     return CommandProperties("060D",  "O2 Sensor Monitor Bank 4 - Sensor 1"        , 0, .monitor)
+                case .MONITOR_O2_B4S2       :     return CommandProperties("060E",  "O2 Sensor Monitor Bank 4 - Sensor 2"        , 0, .monitor)
+                case .MONITOR_O2_B4S3       :     return CommandProperties("060F",  "O2 Sensor Monitor Bank 4 - Sensor 3"        , 0, .monitor)
+                case .MONITOR_O2_B4S4       :     return CommandProperties("0610",  "O2 Sensor Monitor Bank 4 - Sensor 4"        , 0, .monitor)
+                case .MIDS_B                :     return CommandProperties("0620",  "Supported MIDs [21-40]"                     , 0, .pid   )
+                case .MONITOR_CATALYST_B1   :     return CommandProperties("0621",  "Catalyst Monitor Bank 1"                    , 0, .monitor)
+                case .MONITOR_CATALYST_B2   :     return CommandProperties("0622",  "Catalyst Monitor Bank 2"                    , 0, .monitor)
+                case .MONITOR_CATALYST_B3   :     return CommandProperties("0623",  "Catalyst Monitor Bank 3"                    , 0, .monitor)
+                case .MONITOR_CATALYST_B4   :     return CommandProperties("0624",  "Catalyst Monitor Bank 4"                    , 0, .monitor)
+                case .MONITOR_EGR_B1        :     return CommandProperties("0631",  "EGR Monitor Bank 1"                         , 0, .monitor)
+                case .MONITOR_EGR_B2        :     return CommandProperties("0632",  "EGR Monitor Bank 2"                         , 0, .monitor)
+                case .MONITOR_EGR_B3        :     return CommandProperties("0633",  "EGR Monitor Bank 3"                         , 0, .monitor)
+                case .MONITOR_EGR_B4        :     return CommandProperties("0634",  "EGR Monitor Bank 4"                         , 0, .monitor)
+                case .MONITOR_VVT_B1        :     return CommandProperties("0635",  "VVT Monitor Bank 1"                         , 0, .monitor)
+                case .MONITOR_VVT_B2        :     return CommandProperties("0636",  "VVT Monitor Bank 2"                         , 0, .monitor)
+                case .MONITOR_VVT_B3        :     return CommandProperties("0637",  "VVT Monitor Bank 3"                         , 0, .monitor)
+                case .MONITOR_VVT_B4        :     return CommandProperties("0638",  "VVT Monitor Bank 4"                         , 0, .monitor)
+                case .MONITOR_EVAP_150      :     return CommandProperties("0639",  "EVAP Monitor (Cap Off / 0.150\")"           , 0, .monitor)
+                case .MONITOR_EVAP_090      :     return CommandProperties("063A",  "EVAP Monitor (0.090\")"                     , 0, .monitor)
+                case .MONITOR_EVAP_040      :     return CommandProperties("063B",  "EVAP Monitor (0.040\")"                     , 0, .monitor)
+                case .MONITOR_EVAP_020      :     return CommandProperties("063C",  "EVAP Monitor (0.020\")"                     , 0, .monitor)
+                case .MONITOR_PURGE_FLOW    :     return CommandProperties("063D",  "Purge Flow Monitor"                         , 0, .monitor)
+                case .MIDS_C                :     return CommandProperties("0640",  "Supported MIDs [41-60]"                     , 0, .pid   )
+                case .MONITOR_O2_HEATER_B1S1:     return CommandProperties("0641",  "O2 Sensor Heater Monitor Bank 1 - Sensor 1" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B1S2:     return CommandProperties("0642",  "O2 Sensor Heater Monitor Bank 1 - Sensor 2" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B1S3:     return CommandProperties("0643",  "O2 Sensor Heater Monitor Bank 1 - Sensor 3" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B1S4:     return CommandProperties("0644",  "O2 Sensor Heater Monitor Bank 1 - Sensor 4" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B2S1:     return CommandProperties("0645",  "O2 Sensor Heater Monitor Bank 2 - Sensor 1" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B2S2:     return CommandProperties("0646",  "O2 Sensor Heater Monitor Bank 2 - Sensor 2" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B2S3:     return CommandProperties("0647",  "O2 Sensor Heater Monitor Bank 2 - Sensor 3" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B2S4:     return CommandProperties("0648",  "O2 Sensor Heater Monitor Bank 2 - Sensor 4" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B3S1:     return CommandProperties("0649",  "O2 Sensor Heater Monitor Bank 3 - Sensor 1" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B3S2:     return CommandProperties("064A",  "O2 Sensor Heater Monitor Bank 3 - Sensor 2" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B3S3:     return CommandProperties("064B",  "O2 Sensor Heater Monitor Bank 3 - Sensor 3" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B3S4:     return CommandProperties("064C",  "O2 Sensor Heater Monitor Bank 3 - Sensor 4" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B4S1:     return CommandProperties("064D",  "O2 Sensor Heater Monitor Bank 4 - Sensor 1" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B4S2:     return CommandProperties("064E",  "O2 Sensor Heater Monitor Bank 4 - Sensor 2" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B4S3:     return CommandProperties("064F",  "O2 Sensor Heater Monitor Bank 4 - Sensor 3" , 0, .monitor)
+                case .MONITOR_O2_HEATER_B4S4:     return CommandProperties("0650",  "O2 Sensor Heater Monitor Bank 4 - Sensor 4" , 0, .monitor)
+                case .MIDS_D                :     return CommandProperties("0660",  "Supported MIDs [61-80]"                     , 0, .pid   )
+                case .MONITOR_HEATED_CATALYST_B1: return CommandProperties("0661",  "Heated Catalyst Monitor Bank 1"             , 0, .monitor)
+                case .MONITOR_HEATED_CATALYST_B2: return CommandProperties("0662",  "Heated Catalyst Monitor Bank 2"             , 0, .monitor)
+                case .MONITOR_HEATED_CATALYST_B3: return CommandProperties("0663",  "Heated Catalyst Monitor Bank 3"             , 0, .monitor)
+                case .MONITOR_HEATED_CATALYST_B4: return CommandProperties("0664",  "Heated Catalyst Monitor Bank 4"             , 0, .monitor)
+                case .MONITOR_SECONDARY_AIR_1:    return CommandProperties("0671",  "Secondary Air Monitor 1"                    , 0, .monitor)
+                case .MONITOR_SECONDARY_AIR_2:    return CommandProperties("0672",  "Secondary Air Monitor 2"                    , 0, .monitor)
+                case .MONITOR_SECONDARY_AIR_3:    return CommandProperties("0673",  "Secondary Air Monitor 3"                    , 0, .monitor)
+                case .MONITOR_SECONDARY_AIR_4:    return CommandProperties("0674",  "Secondary Air Monitor 4"                    , 0, .monitor)
+                case .MIDS_E                :     return CommandProperties("0680",  "Supported MIDs [81-A0]"                     , 0, .pid   )
+                case .MONITOR_FUEL_SYSTEM_B1:     return CommandProperties("0681",  "Fuel System Monitor Bank 1"                 , 0, .monitor)
+                case .MONITOR_FUEL_SYSTEM_B2:     return CommandProperties("0682",  "Fuel System Monitor Bank 2"                 , 0, .monitor)
+                case .MONITOR_FUEL_SYSTEM_B3:     return CommandProperties("0683",  "Fuel System Monitor Bank 3"                 , 0, .monitor)
+                case .MONITOR_FUEL_SYSTEM_B4:     return CommandProperties("0684",  "Fuel System Monitor Bank 4"                 , 0, .monitor)
+                case .MONITOR_BOOST_PRESSURE_B1:  return CommandProperties("0685",  "Boost Pressure Control Monitor Bank 1"      , 0, .monitor)
+                case .MONITOR_BOOST_PRESSURE_B2:  return CommandProperties("0686",  "Boost Pressure Control Monitor Bank 1"      , 0, .monitor)
+                case .MONITOR_NOX_ABSORBER_B1:    return CommandProperties("0690",  "NOx Absorber Monitor Bank 1"                , 0, .monitor)
+                case .MONITOR_NOX_ABSORBER_B2:    return CommandProperties("0691",  "NOx Absorber Monitor Bank 2"                , 0, .monitor)
+                case .MONITOR_NOX_CATALYST_B1:    return CommandProperties("0698",  "NOx Catalyst Monitor Bank 1"                , 0, .monitor)
+                case .MONITOR_NOX_CATALYST_B2:    return CommandProperties("0699",  "NOx Catalyst Monitor Bank 2"                , 0, .monitor)
+                case .MIDS_F:                     return CommandProperties("06A0",  "Supported MIDs [A1-C0]"                     , 0, .pid    )
+                case .MONITOR_MISFIRE_GENERAL:    return CommandProperties("06A1",  "Misfire Monitor General Data"               , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_1: return CommandProperties("06A2",  "Misfire Cylinder 1 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_2: return CommandProperties("06A3",  "Misfire Cylinder 2 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_3: return CommandProperties("06A4",  "Misfire Cylinder 3 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_4: return CommandProperties("06A5",  "Misfire Cylinder 4 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_5: return CommandProperties("06A6",  "Misfire Cylinder 5 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_6: return CommandProperties("06A7",  "Misfire Cylinder 6 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_7: return CommandProperties("06A8",  "Misfire Cylinder 7 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_8: return CommandProperties("06A9",  "Misfire Cylinder 8 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_9: return CommandProperties("06AA",  "Misfire Cylinder 9 Data"                    , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_10:return CommandProperties("06AB",  "Misfire Cylinder 10 Data"                   , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_11:return CommandProperties("06AC",  "Misfire Cylinder 11 Data"                   , 0, .monitor)
+                case .MONITOR_MISFIRE_CYLINDER_12:return CommandProperties("06AD",  "Misfire Cylinder 12 Data"                   , 0, .monitor)
+                case .MONITOR_PM_FILTER_B1:       return CommandProperties("06B0",  "PM Filter Monitor Bank 1"                   , 0, .monitor)
+                case .MONITOR_PM_FILTER_B2:       return CommandProperties("06B1",  "PM Filter Monitor Bank 2"                   , 0, .monitor)
+            }
+        }
+    }
+
+    enum Mode9: CaseIterable, Codable, Comparable {
+        case PIDS_9A
+        case VIN_MESSAGE_COUNT
+        case VIN
+        case CALIBRATION_ID_MESSAGE_COUNT
+        case CALIBRATION_ID
+        case CVN_MESSAGE_COUNT
+        case CVN
+        var properties: CommandProperties {
+            switch self {
+            case .PIDS_9A:                      return CommandProperties("0900", "Supported PIDs [01-20]"                 ,   7, .pid               )
+            case .VIN_MESSAGE_COUNT:            return CommandProperties("0901", "VIN Message Count"                      ,   3, .count             )
+            case .VIN:                          return CommandProperties("0902", "Vehicle Identification Number"          ,  22, .encoded_string    )
+            case .CALIBRATION_ID_MESSAGE_COUNT: return CommandProperties("0903", "Calibration ID message count for PID 04",  3 , .count             )
+            case .CALIBRATION_ID:               return CommandProperties("0904", "Calibration ID"                         ,  18, .encoded_string    )
+            case .CVN_MESSAGE_COUNT:            return CommandProperties("0905", "CVN Message Count for PID 06"           ,   3, .count             )
+            case .CVN:                          return CommandProperties("0906", "Calibration Verification Numbers"       ,  10, .cvn               )
+            }
         }
     }
 
     static var pidGetters: [OBDCommand] = {
-        var getters: [OBDCommand] = []
-        for command in OBDCommand.allCases {
+          var getters: [OBDCommand] = []
+          for command in OBDCommand.Mode1.allCases {
+              if command.properties.decoder == .pid {
+                  getters.append(.mode1(command))
+              }
+          }
+
+        for command in OBDCommand.Mode6.allCases {
             if command.properties.decoder == .pid {
-                getters.append(command)
+                getters.append(.mode6(command))
+            }
+        }
+
+        for command in OBDCommand.Mode9.allCases {
+            if command.properties.decoder == .pid {
+                getters.append(.mode9(command))
             }
         }
         return getters
+      }()
+
+    // combine all the commands into one array
+    static var allCommands: [OBDCommand] = {
+        var commands: [OBDCommand] = []
+        for command in OBDCommand.Mode1.allCases {
+            commands.append(.mode1(command))
+        }
+//        for command in OBDCommand.Mode2.allCases {
+//            commands.append(.mode2(command))
+//        }
+//        for command in OBDCommand.Mode3.allCases {
+//            commands.append(.mode3(command))
+//        }
+//        for command in OBDCommand.Mode4.allCases {
+//            commands.append(.mode4(command))
+//        }
+//        for command in OBDCommand.Mode5.allCases {
+//            commands.append(.mode5(command))
+//        }
+        for command in OBDCommand.Mode6.allCases {
+            commands.append(.mode6(command))
+        }
+//        for command in OBDCommand.Mode7.allCases {
+//            commands.append(.mode7(command))
+//        }
+        for command in OBDCommand.Mode9.allCases {
+            commands.append(.mode9(command))
+        }
+        return commands
     }()
+    // live data commands
 }
-
-//
-// struct OBDCommand: Codable, Hashable {
-//    var name: String
-//    var description: String
-//    var cmd: String
-//    var bytes: Int
-//    var decoder: Decoder
-//    var ecu: ECU
-//    var fast: Bool
-//
-//    init(_ name: String, description: String, cmd: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) {
-//         self.name = name
-//         self.description = description
-//         self.cmd = cmd
-//         self.bytes = bytes
-//         self.decoder = decoder
-//         self.ecu = ecu
-//         self.fast = fast
-//     }
-//
-//    static func generateCommand(_ name: String, mode: String, cmd: String, description: String, bytes: Int, decoder: Decoder, ecu: ECU, fast: Bool = false) -> OBDCommand {
-//        return OBDCommand(name, description: description, cmd: "\(mode)\(cmd)", bytes: bytes, decoder: decoder, ecu: ecu, fast: fast)
-//    }
-//
-//    static var commands: [String: OBDCommand] {
-//            var commandDictionary = [String: OBDCommand]()
-//
-//            // Populate the dictionary with your commands
-//            for command in Self.mode1 {
-//                commandDictionary[command.name] = command
-//            }
-//
-//            return commandDictionary
-//    }
-// }
-//
-// extension OBDCommand {
-//    static var mode1: [OBDCommand] {
-//        return [
-//            generateCommand("PIDS_A", mode: "01", cmd: "00", description: "Supported PIDs [01-20]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE),
-//            generateCommand("status", mode: "01", cmd: "01", description: "Status since DTCs cleared", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("freezeDTC", mode: "01", cmd: "02", description: "DTC that triggered the freeze frame", bytes: 4, decoder: .singleDTC, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_STATUS", mode: "01", cmd: "03", description: "Fuel System Status", bytes: 4, decoder: .fuelStatus, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ENGINE_LOAD", mode: "01", cmd: "04", description: "Calculated Engine Load", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("COOLANT_TEMP", mode: "01", cmd: "05", description: "Engine Coolant Temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("SHORT_FUEL_TRIM_1", mode: "01", cmd: "06", description: "Short Term Fuel Trim - Bank 1", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("LONG_FUEL_TRIM_1", mode: "01", cmd: "07", description: "Long Term Fuel Trim - Bank 1", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("SHORT_FUEL_TRIM_2", mode: "01", cmd: "08", description: "Short Term Fuel Trim - Bank 2", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("LONG_FUEL_TRIM_2", mode: "01", cmd: "09", description: "Long Term Fuel Trim - Bank 2", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_PRESSURE", mode: "01", cmd: "0A", description: "Fuel Pressure", bytes: 3, decoder: .fuelPressure, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("INTAKE_PRESSURE", mode: "01", cmd: "0B", description: "Intake Manifold Pressure", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("rpm", mode: "01", cmd: "0C", description: "Engine RPM", bytes: 4, decoder: .uas0x07, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("speed", mode: "01", cmd: "0D", description: "Vehicle Speed", bytes: 3, decoder: .uas0x09, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("TIMING_ADVANCE", mode: "01", cmd: "0E", description: "Timing Advance", bytes: 3, decoder: .timingAdvance, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("INTAKE_TEMP", mode: "01", cmd: "0F", description: "Intake Air Temp", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("MAF", mode: "01", cmd: "10", description: "Air Flow Rate (MAF)", bytes: 4, decoder: .uas0x27, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("THROTTLE_POS", mode: "01", cmd: "11", description: "Throttle Position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("AIR_STATUS", mode: "01", cmd: "12", description: "Secondary Air Status", bytes: 3, decoder: .airStatus, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_SENSORS", mode: "01", cmd: "13", description: "O2 Sensors Present", bytes: 3, decoder: .o2Sensors, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B1S1", mode: "01", cmd: "14", description: "O2: Bank 1 - Sensor 1 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B1S2", mode: "01", cmd: "15", description: "O2: Bank 1 - Sensor 2 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B1S3", mode: "01", cmd: "16", description: "O2: Bank 1 - Sensor 3 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B1S4", mode: "01", cmd: "17", description: "O2: Bank 1 - Sensor 4 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B2S1", mode: "01", cmd: "18", description: "O2: Bank 2 - Sensor 1 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B2S2", mode: "01", cmd: "19", description: "O2: Bank 2 - Sensor 2 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B2S3", mode: "01", cmd: "1A", description: "O2: Bank 2 - Sensor 3 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_B2S4", mode: "01", cmd: "1B", description: "O2: Bank 2 - Sensor 4 Voltage", bytes: 4, decoder: .sensorVoltage, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("OBD_COMPLIANCE", mode: "01", cmd: "1C", description: "OBD Standards Compliance", bytes: 3, decoder: .obdCompliance, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_SENSORS_ALT", mode: "01", cmd: "1D", description: "O2 Sensors Present (alternate)", bytes: 3, decoder: .o2SensorsAlt, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("AUX_INPUT_STATUS", mode: "01", cmd: "1E", description: "Auxiliary input status (power take off)", bytes: 3, decoder: .auxInputStatus, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("RUN_TIME", mode: "01", cmd: "1F", description: "Engine Run Time", bytes: 4, decoder: .uas0x12, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("PIDS_B", mode: "01", cmd: "20", description: "Supported PIDs [21-40]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
-
-
-//            generateCommand("DISTANCE_W_MIL", mode: "01", cmd: "21", description: "Distance Traveled with MIL on", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_RAIL_PRESSURE_VAC", mode: "01", cmd: "22", description: "Fuel Rail Pressure (relative to vacuum)", bytes: 4, decoder: .uas0x19, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_RAIL_PRESSURE_DIRECT", mode: "01", cmd: "23", description: "Fuel Rail Pressure (direct inject)", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S1_WR_VOLTAGE", mode: "01", cmd: "24", description: "02 Sensor 1 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S2_WR_VOLTAGE", mode: "01", cmd: "25", description: "02 Sensor 2 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S3_WR_VOLTAGE", mode: "01", cmd: "26", description: "02 Sensor 3 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S4_WR_VOLTAGE", mode: "01", cmd: "27", description: "02 Sensor 4 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S5_WR_VOLTAGE", mode: "01", cmd: "28", description: "02 Sensor 5 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S6_WR_VOLTAGE", mode: "01", cmd: "29", description: "02 Sensor 6 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S7_WR_VOLTAGE", mode: "01", cmd: "2A", description: "02 Sensor 7 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S8_WR_VOLTAGE", mode: "01", cmd: "2B", description: "02 Sensor 8 WR Lambda Voltage", bytes: 6, decoder: .sensorVoltageBig, ecu: ECU.ENGINE, fast: true),
-
-
-
-
-
-
-
-//            generateCommand("COMMANDED_EGR", mode: "01", cmd: "2C", description: "Commanded EGR", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EGR_ERROR", mode: "01", cmd: "2D", description: "EGR Error", bytes: 3, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EVAPORATIVE_PURGE", mode: "01", cmd: "2E", description: "Commanded Evaporative Purge", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_LEVEL", mode: "01", cmd: "2F", description: "Fuel Level Input", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("WARMUPS_SINCE_DTC_CLEAR", mode: "01", cmd: "30", description: "Number of warm-ups since codes cleared", bytes: 3, decoder: .uas0x01, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("DISTANCE_SINCE_DTC_CLEAR", mode: "01", cmd: "31", description: "Distance traveled since codes cleared", bytes: 4, decoder: .uas0x25, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EVAP_VAPOR_PRESSURE", mode: "01", cmd: "32", description: "Evaporative system vapor pressure", bytes: 4, decoder: .evapPressure, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("BAROMETRIC_PRESSURE", mode: "01", cmd: "33", description: "Barometric Pressure", bytes: 3, decoder: .pressure, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S1_WR_CURRENT", mode: "01", cmd: "34", description: "02 Sensor 1 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S2_WR_CURRENT", mode: "01", cmd: "35", description: "02 Sensor 2 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S3_WR_CURRENT", mode: "01", cmd: "36", description: "02 Sensor 3 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S4_WR_CURRENT", mode: "01", cmd: "37", description: "02 Sensor 4 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S5_WR_CURRENT", mode: "01", cmd: "38", description: "02 Sensor 5 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S6_WR_CURRENT", mode: "01", cmd: "39", description: "02 Sensor 6 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S7_WR_CURRENT", mode: "01", cmd: "3A", description: "02 Sensor 7 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("O2_S8_WR_CURRENT", mode: "01", cmd: "3B", description: "02 Sensor 8 WR Lambda Current", bytes: 6, decoder: .currentCentered, ecu: ECU.ENGINE, fast: true),
-
-
-//            generateCommand("CATALYST_TEMP_B1S1", mode: "01", cmd: "3C", description: "Catalyst Temperature: Bank 1 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("CATALYST_TEMP_B2S1", mode: "01", cmd: "3D", description: "Catalyst Temperature: Bank 2 - Sensor 1", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("CATALYST_TEMP_B1S2", mode: "01", cmd: "3E", description: "Catalyst Temperature: Bank 1 - Sensor 2", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("CATALYST_TEMP_B2S2", mode: "01", cmd: "3F", description: "Catalyst Temperature: Bank 2 - Sensor 2", bytes: 4, decoder: .uas0x16, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("PIDS_C", mode: "01", cmd: "40", description: "Supported PIDs [41-60]", bytes: 6, decoder: .pid, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("STATUS_DRIVE_CYCLE", mode: "01", cmd: "41", description: "Monitor status this drive cycle", bytes: 6, decoder: .status, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("CONTROL_MODULE_VOLTAGE", mode: "01", cmd: "42", description: "Control module voltage", bytes: 4, decoder: .uas0x0B, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ABSOLUTE_LOAD", mode: "01", cmd: "43", description: "Absolute load value", bytes: 4, decoder: .absoluteLoad, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("COMMANDED_EQUIV_RATIO", mode: "01", cmd: "44", description: "Commanded equivalence ratio", bytes: 4, decoder: .uas0x1E, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("RELATIVE_THROTTLE_POS", mode: "01", cmd: "45", description: "Relative throttle position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("AMBIANT_AIR_TEMP", mode: "01", cmd: "46", description: "Ambient air temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("THROTTLE_POS_B", mode: "01", cmd: "47", description: "Absolute throttle position B", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("THROTTLE_POS_C", mode: "01", cmd: "48", description: "Absolute throttle position C", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ACCELERATOR_POS_D", mode: "01", cmd: "49", description: "Accelerator pedal position D", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ACCELERATOR_POS_E", mode: "01", cmd: "4A", description: "Accelerator pedal position E", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ACCELERATOR_POS_F", mode: "01", cmd: "4B", description: "Accelerator pedal position F", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("THROTTLE_ACTUATOR", mode: "01", cmd: "4C", description: "Commanded throttle actuator", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("RUN_TIME_MIL", mode: "01", cmd: "4D", description: "Time run with MIL on", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("TIME_SINCE_DTC_CLEARED", mode: "01", cmd: "4E", description: "Time since trouble codes cleared", bytes: 4, decoder: .uas0x34, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("MAX_VALUES", mode: "01", cmd: "4F", description: "Various Max values", bytes: 6, decoder: .drop, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("MAX_MAF", mode: "01", cmd: "50", description: "Maximum value for mass air flow sensor", bytes: 6, decoder: .maxMaf, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_TYPE", mode: "01", cmd: "51", description: "Fuel Type", bytes: 3, decoder: .fuelType, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("ETHANOL_PERCENT", mode: "01", cmd: "52", description: "Ethanol Fuel Percent", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EVAP_VAPOR_PRESSURE_ABS", mode: "01", cmd: "53", description: "Absolute Evap system Vapor Pressure", bytes: 4, decoder: .absEvapPressure, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EVAP_VAPOR_PRESSURE_ALT", mode: "01", cmd: "54", description: "Evap system vapor pressure", bytes: 4, decoder: .evapPressureAlt, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("SHORT_O2_TRIM_B1", mode: "01", cmd: "55", description: "Short term secondary O2 trim - Bank 1", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("LONG_O2_TRIM_B1", mode: "01", cmd: "56", description: "Long term secondary O2 trim - Bank 1", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("SHORT_O2_TRIM_B2", mode: "01", cmd: "57", description: "Short term secondary O2 trim - Bank 2", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("LONG_O2_TRIM_B2", mode: "01", cmd: "58", description: "Long term secondary O2 trim - Bank 2", bytes: 4, decoder: .percentCentered, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_RAIL_PRESSURE_ABS", mode: "01", cmd: "59", description: "Fuel rail pressure (absolute)", bytes: 4, decoder: .uas0x1B, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("RELATIVE_ACCEL_POS", mode: "01", cmd: "5A", description: "Relative accelerator pedal position", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("HYBRID_BATTERY_REMAINING", mode: "01", cmd: "5B", description: "Hybrid battery pack remaining life", bytes: 3, decoder: .percent, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("OIL_TEMP", mode: "01", cmd: "5C", description: "Engine oil temperature", bytes: 3, decoder: .temp, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_INJECT_TIMING", mode: "01", cmd: "5D", description: "Fuel injection timing", bytes: 4, decoder: .injectTiming, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("FUEL_RATE", mode: "01", cmd: "5E", description: "Engine fuel rate", bytes: 4, decoder: .fuelRate, ecu: ECU.ENGINE, fast: true),
-//            generateCommand("EMISSION_REQ", mode: "01", cmd: "5F", description: "Designed emission requirements", bytes: 3, decoder: .drop, ecu: ECU.ENGINE, fast: true)
-//        ]
-//    }
-//
-//    static var modes: [[OBDCommand]] {
-//            return [mode1]
-//    }
-//
-//    static var pidGetters: [OBDCommand] = {
-//        var getters: [OBDCommand] = []
-//        for mode in modes {
-//                for cmd in mode where cmd .decoder == .pid {
-//                        getters.append(cmd)
-//            }
-//        }
-//        return getters
-//    }()
-//
-//    // getCommand by name
-//
-//    static func getCommand(_ name: String) -> OBDCommand? {
-//        for mode in modes {
-//            for cmd in mode where cmd.name == name {
-//                return cmd
-//            }
-//        }
-//        return nil
-//    }
-// }

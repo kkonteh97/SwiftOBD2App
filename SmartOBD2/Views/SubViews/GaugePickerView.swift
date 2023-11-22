@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum GaugeType: String, CaseIterable, Identifiable {
+enum GaugeType: String, CaseIterable, Identifiable, Codable {
     case gaugeType1
     case gaugeType2
     case gaugeType3
@@ -48,7 +48,6 @@ struct GaugePickerView: View {
                             GaugeView(
                                 dataItem: dataItem,
                                 value: dataItem.value,
-                                geometry: geometry,
                                 selectedGauge: gaugeType
                             )
                             .frame(width: cardWidth, height: cardHeight)
@@ -95,7 +94,6 @@ struct GaugeView: View {
     @State var dataItem: DataItem
     var value: Double
 
-    let geometry: GeometryProxy
     var selectedGauge: GaugeType? = nil
 
     var body: some View {

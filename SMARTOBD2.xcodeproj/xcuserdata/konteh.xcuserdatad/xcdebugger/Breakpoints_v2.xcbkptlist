@@ -14,8 +14,8 @@
             filePath = "SMARTOBD2/BleComm/ELM327.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "86"
-            endingLineNumber = "86"
+            startingLineNumber = "120"
+            endingLineNumber = "120"
             landmarkName = "requestDTC()"
             landmarkType = "7">
          </BreakpointContent>

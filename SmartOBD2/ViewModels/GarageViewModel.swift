@@ -10,8 +10,8 @@ import Combine
 
 class GarageViewModel: ObservableObject {
     @Published var garage: Garage
-    @Published var currentVehicle: GarageVehicle?
-    @Published var garageVehicles: [GarageVehicle] = []
+    @Published var currentVehicle: Vehicle?
+    @Published var garageVehicles: [Vehicle] = []
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -29,7 +29,7 @@ class GarageViewModel: ObservableObject {
                 .store(in: &cancellables)
     }
 
-    func deleteVehicle(_ vehicle: GarageVehicle) {
+    func deleteVehicle(_ vehicle: Vehicle) {
         garage.deleteVehicle(vehicle)
     }
 }

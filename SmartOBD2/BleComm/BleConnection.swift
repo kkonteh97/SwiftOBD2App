@@ -51,6 +51,28 @@ struct DeviceInfo {
     let characteristicUUID: String
 }
 
+enum OBDDevices: CaseIterable {
+    case carlyOBD
+    case other
+
+    var properties: DeviceInfo {
+        switch self {
+        case .carlyOBD: 
+            return DeviceInfo(DeviceName: "Carly",
+                              serviceUUID: "FFE0",
+                              peripheralUUID: "5B6EE3F4-2FCA-CE45-6AE7-8D7390E64D6D",
+                              characteristicUUID: "FFE1"
+            )
+        case .other:
+            return DeviceInfo(DeviceName: "Other",
+                              serviceUUID: "Unknown",
+                              peripheralUUID: "Mystery",
+                              characteristicUUID: "Unknown"
+            )
+        }
+    }
+}
+
 class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCentralManagerProtocolDelegate {
     let logger = Logger.bleCom
 
@@ -68,13 +90,9 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
 
     static let RestoreIdentifierKey: String = "OBD2Adapter"
 
-    static let UserDevice: DeviceInfo = DeviceInfo(DeviceName: "Carly", 
-                                                   serviceUUID: "FFE0",
-                                                   peripheralUUID: "5B6EE3F4-2FCA-CE45-6AE7-8D7390E64D6D",
-                                                   characteristicUUID: "FFE1"
-    )
+    var UserDevice: OBDDevices = .carlyOBD
 
-    var debug = false
+    var debug = true
 
     var buffer = Data()
 
@@ -167,7 +185,7 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
         case .poweredOn:
             logger.debug("Bluetooth is On.")
             guard let device = connectedPeripheral else {
-                startScan(services: [CBUUID(string: BLEManager.UserDevice.serviceUUID)])
+                startScan(services: [CBUUID(string: UserDevice.properties.serviceUUID)])
                 return
             }
             connectionState = .connecting
@@ -227,7 +245,7 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
     }
 
     private func isDevicePeripheral(_ peripheral: CBPeripheral) -> Bool {
-        return BLEManager.UserDevice.peripheralUUID == peripheral.identifier.uuidString
+        return UserDevice.properties.peripheralUUID == peripheral.identifier.uuidString
     }
 
     func discoverPeripheralServices(_ peripheral: CBPeripheralProtocol) {
@@ -271,7 +289,7 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
 
         for characteristic in characteristics {
             switch characteristic.uuid.uuidString {
-            case BLEManager.UserDevice.characteristicUUID:
+            case UserDevice.properties.characteristicUUID:
                 logger.info("ecu \(characteristic)")
                 ecuCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
@@ -298,7 +316,7 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
         }
 
         switch characteristic.uuid.uuidString {
-        case BLEManager.UserDevice.characteristicUUID:
+        case UserDevice.properties.characteristicUUID:
             processReceivedData(characteristicValue, completion: sendMessageCompletion)
 
         default:
@@ -354,7 +372,6 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
     }
 
     func processReceivedData(_ data: Data, completion: (([String]?, Error?) -> Void)?) {
-
         buffer.append(data)
 
         guard var string = String(data: buffer, encoding: .utf8) else {
