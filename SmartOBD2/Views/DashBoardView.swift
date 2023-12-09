@@ -9,10 +9,9 @@ import SwiftUI
 
 struct DashBoardView: View {
     @ObservedObject var liveDataViewModel: LiveDataViewModel
-    @Binding var displayType: BottomSheetType
 
     var body: some View {
-        LiveDataView(viewModel: liveDataViewModel, displayType: $displayType)
+        LiveDataView(viewModel: liveDataViewModel)
     }
 }
 
@@ -23,7 +22,6 @@ struct LogsView: View {
 }
 
 #Preview {
-    DashBoardView(liveDataViewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()), 
-                                                       garage: Garage()),
-                                                       displayType: .constant(.quarterScreen))
+    DashBoardView(liveDataViewModel: LiveDataViewModel(obdService: OBDService(),
+                                                       garage: Garage()))
 }

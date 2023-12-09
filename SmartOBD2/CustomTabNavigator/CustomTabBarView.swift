@@ -26,16 +26,13 @@ enum BottomSheetType {
 
 struct CustomTabBarView<Content: View>: View {
     @ObservedObject var viewModel: CustomTabBarViewModel
+    @State var isLoading = false
 
-    @State private var isLoading = false
-    @State private var setupOrder: [OBDCommand.General] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
     @State var localSelection: TabBarItem
-    @State private var whiteStreakProgress: CGFloat = 0.0
-    @State private var showConnectedText = false
+    @State var whiteStreakProgress: CGFloat = 0.0
 
     @Binding var selection: TabBarItem
-    @Binding var displayType: BottomSheetType
-
+    @EnvironmentObject var globalSettings: GlobalSettings
     @GestureState var gestureOffset: CGFloat = 0
     @Namespace private var namespace
 
@@ -53,21 +50,19 @@ struct CustomTabBarView<Content: View>: View {
         tabs: [TabBarItem],
         viewModel: CustomTabBarViewModel,
         selection: Binding<TabBarItem>,
-        displayType: Binding<BottomSheetType>,
         maxHeight: CGFloat,
         @ViewBuilder         backgroundView: () -> Content
     ) {
         self.viewModel       = viewModel
         self.tabs            = tabs
         self._selection      = selection
-        self._displayType    = displayType
         self._localSelection = State(initialValue: selection.wrappedValue)
         self.maxHeight       = maxHeight
         self.backgroundView  = backgroundView()
     }
 
     private var offset: CGFloat {
-        switch displayType {
+        switch globalSettings.displayType {
         case .fullScreen:
             return maxHeight * 0.02
         case .halfScreen:
@@ -76,39 +71,6 @@ struct CustomTabBarView<Content: View>: View {
             return maxHeight * 0.90
         case .none:
             return maxHeight * 1.20
-        }
-    }
-
-    private func handleConnectButtonTapped() {
-        self.isLoading = true
-        Task {
-            do {
-                try await viewModel.setupAdapter(setupOrder: setupOrder)
-                DispatchQueue.main.async {
-                    self.showConnectedText = true
-                    withAnimation {
-                        self.isLoading = false
-                        self.displayType = .halfScreen
-                        viewModel.connectionState = .initialized
-                        self.animateWhiteStreak()
-                    }
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        self.showConnectedText = false
-                    }
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                    withAnimation(.interactiveSpring(response: 0.5, 
-                                                     dampingFraction: 0.8,
-                                                     blendDuration: 0)
-                    ) {
-                        self.displayType = .quarterScreen
-                    }
-                }
-            } catch {
-                print(error.localizedDescription)
-            }
         }
     }
 
@@ -123,13 +85,7 @@ struct CustomTabBarView<Content: View>: View {
                     }})
                     .frame(maxHeight: maxHeight * 0.1)
 
-                VStack {
-                    if viewModel.connectionState != .initialized {
-                            bluetoothDevicesView
-                        } else {
-                            carInfoView
-                        }
-                    }
+                carInfoView
                     .padding(.horizontal, 20)
                     .padding(.top, 40)
                     .frame(maxWidth: .infinity, maxHeight: maxHeight * 0.4 - maxHeight * 0.1)
@@ -149,33 +105,34 @@ struct CustomTabBarView<Content: View>: View {
             )
             .gesture(
                 DragGesture()
-                    .updating($gestureOffset, body: { value, out, _ in
-                        out = value.translation.height
-                    })
-                    .onEnded({ value in
-                        let snapDistanceFullScreen = self.maxHeight * 0.60
-                        let snapDistanceHalfScreen =  self.maxHeight * 0.85
-                        if value.location.y <= snapDistanceFullScreen {
-                            self.displayType = .fullScreen
-                        } else if value.location.y > snapDistanceFullScreen  &&
-                                    value.location.y <= snapDistanceHalfScreen {
-                            self.displayType = .halfScreen
-                        } else {
-                            self.displayType = .quarterScreen
+                .updating($gestureOffset, body: { value, out, _ in
+                    out = value.translation.height})
+                .onEnded({ value in
+                    let snapDistanceFullScreen = self.maxHeight * 0.60
+                    let snapDistanceHalfScreen =  self.maxHeight * 0.85
+                    if value.location.y <= snapDistanceFullScreen {
+                        globalSettings.displayType = .fullScreen
+                    } else if value.location.y > snapDistanceFullScreen  &&
+                                value.location.y <= snapDistanceHalfScreen {
+                        globalSettings.displayType = .halfScreen
+                        if viewModel.connectionState == .connectedToVehicle {
+                            animateWhiteStreak()
                         }
-                    }))
+                    } else {
+                        globalSettings.displayType = .quarterScreen
+            }}))
 
-            if viewModel.connectionState != .initialized  {
-                ConnectButton(color: Color(red: 39/255, green: 110/255, blue: 241/255),
-                              text: "START",
-                              isLoading: $isLoading
-                ) {
-                    handleConnectButtonTapped()
-                }
-                .offset(y: self.offset + self.gestureOffset - maxHeight * 0.5)
-                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
-                                              blendDuration: 0), value: gestureOffset)
-                .transition(.move(edge: .bottom))
+            if viewModel.connectionState != .connectedToVehicle  {
+                connectButton
+                    .offset(y: self.offset + self.gestureOffset - maxHeight * 0.5)
+                    .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
+                                                  blendDuration: 0), value: gestureOffset)
+                    .transition(.move(edge: .bottom))
+            }
+        }
+        .onAppear {
+            if viewModel.currentVehicle == nil {
+                globalSettings.statusMessage = "No Vehicle Selected"
             }
         }
     }
@@ -190,7 +147,116 @@ struct CustomTabBarView<Content: View>: View {
         let progress = 1 - (offset + gestureOffset) / (UIScreen.main.bounds.height * 0.50)
         return progress * 30
     }
+
+    @State private var shouldGrow = false
+
+    func animateWhiteStreak() {
+        withAnimation(.linear(duration: 2.0)) {
+            self.whiteStreakProgress = 1.0 // Animate to 100%
+        }
+    }
+
+    private var connectButton: some View {
+        ZStack {
+            Button(action: {
+                guard !isLoading else {
+                    return
+                }
+                self.isLoading = true
+                toggleDisplayType(to: .halfScreen)
+
+                Task {
+                    do {
+                        guard var vehicle = viewModel.currentVehicle else {
+                            throw OBDServiceError.noVehicleSelected
+                        }
+                        try await viewModel.setupAdapter(
+                            setupOrder: viewModel.setupOrder,
+                            vehicle: &vehicle
+                        )
+                        DispatchQueue.main.async {
+                            viewModel.garage.updateVehicle(vehicle)
+                            viewModel.garage.setCurrentVehicle(by: vehicle.id)
+                            globalSettings.statusMessage = "Connected to Vehicle"
+                            globalSettings.showAltText = true
+                            withAnimation {
+                                self.isLoading = false
+                                animateWhiteStreak()
+                            }
+                        }
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                globalSettings.showAltText  = false
+                            }
+                        }
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                            toggleDisplayType(to: .quarterScreen)
+                        }
+                    } catch OBDServiceError.noVehicleSelected {
+                        DispatchQueue.main.async {
+                            globalSettings.statusMessage = "Add A Vehicle In Garage"
+                            withAnimation {
+                                self.isLoading = false
+                            }
+                        }
+                    } catch {
+                        print(error.localizedDescription)
+                        DispatchQueue.main.async {
+                            globalSettings.statusMessage = "Error Connecting to Vehicle"
+                            withAnimation {
+                                self.isLoading = false
+                            }
+                        }
+                    }
+                }
+            }) {
+                if !isLoading {
+                    Text("START")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(35)
+            .background(Color(red: 39/255, green: 110/255, blue: 241/255))
+            .mask(
+                Circle()
+                    .frame(width: 80, height: 80)
+            )
+            .shadow(radius: 5)
+            if isLoading {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                } else {
+                    Ellipse()
+                        .foregroundColor(Color.clear)
+                        .frame(width: 50, height: 50)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                                .scaleEffect(shouldGrow ? 1.5 : 1.0)
+                                .opacity(shouldGrow ? 0.0 : 1.0)
+                        )
+                        .onAppear {
+                            withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                                self.shouldGrow = true
+                    }
+                }
+            }
+        }
+    }
+
+    private func toggleDisplayType(to displayType: BottomSheetType) {
+        withAnimation(.interactiveSpring(response: 0.5,
+                                         dampingFraction: 0.8,
+                                         blendDuration: 0)
+        ) {
+            globalSettings.displayType = displayType
+        }
+    }
 }
+
 
 extension CustomTabBarView {
     private func tabView(tab: TabBarItem) -> some View {
@@ -232,27 +298,14 @@ extension CustomTabBarView {
         selection = tab
     }
 
-    private func animateWhiteStreak() {
-        withAnimation(.linear(duration: 2.0)) {
-            self.whiteStreakProgress = 1.0 // Animate to 100%
-        }
-    }
-
     private var carInfoView: some View {
             HStack(spacing: 20) {
                 if let car =  viewModel.currentVehicle {
                         VStack(alignment: .leading, spacing: 10) {
                             VStack(alignment: .center, spacing: 10) {
-                            if !showConnectedText {
-                                Text(car.year + " " + car.make + " " + car.model)
+                                Text(globalSettings.showAltText ? globalSettings.statusMessage : car.year + " " + car.make + " " + car.model)
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
                                     .fontWeight(.bold)
-                            } else {
-                                Text("Connected to Vehicle")
-                                       .font(.system(size: 22, weight: .bold, design: .rounded))
-                                       .fontWeight(.bold)
-                                       .foregroundColor(.green)
-                                }
                             }
                             .padding(10)
                             .frame(maxWidth: .infinity)
@@ -274,65 +327,60 @@ extension CustomTabBarView {
                                     )
                             })
 
-                            Text("Protocol \n" + (car.obdinfo?.obdProtocol.description ?? "Unknown"))
+                            Text("Protocol: " + (car.obdinfo.obdProtocol?.description ?? "Unknown"))
                                 .font(.caption)
 
-                            Text("VIN \n" + car.vin)
+                            Text("VIN: \(car.obdinfo.vin ?? "")")
                                 .font(.caption)
 
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-    private var bluetoothDevicesView: some View {
-        VStack {
-            Text("Bluetooth Adapters")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .fontWeight(.bold)
-                .padding(.top, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Divider().background(Color.white)
-            ForEach(viewModel.peripherals) { peripheral in
-                HStack {
-                    Text(peripheral.name)
-                    Spacer()
-                    Button {
-                        Task {
-                            do {
-                                try await viewModel.obdService.connectToAdapter(peripheral: peripheral)
-                                viewModel.connectionState = .connectedToAdapter
-                            } catch {
-                                print(error)
-                            }
-                        }
-                    } label: {
-                        if viewModel.connectionState.isConnected {
-                            Text("Connected")
-                        } else {
-                            Text("Connect")
-                        }
-                    }
-                }
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(globalSettings.statusMessage)
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .fontWeight(.bold)
+                            .padding(10)
+                            .frame(maxWidth: .infinity)
+                            .background(content: {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.white, lineWidth: 1)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .trim(from: 0, to: whiteStreakProgress)
+                                            .stroke(
+                                                AngularGradient(
+                                                    gradient: .init(colors: [.green]),
+                                                    center: .center,
+                                                    startAngle: .zero,
+                                                    endAngle: .degrees(360)
+                                                ),
+                                                style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                                            )
+                                    )
+                            })
 
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+        }
     }
 }
 
 #Preview {
-    GeometryReader { proxy in
-        CustomTabBarView(tabs: [.dashBoard, .features],
-                         viewModel: CustomTabBarViewModel(obdService: OBDService(bleManager: BLEManager()),
-                                                         garage: Garage()),
-                         selection: .constant(.dashBoard),
-                         displayType: .constant(.fullScreen),
-                         maxHeight: proxy.size.height
-        ) {
-            Color.blue
+    ZStack {
+        GeometryReader { proxy in
+            CustomTabBarView(tabs: [.dashBoard, .features],
+                             viewModel: CustomTabBarViewModel(obdService: OBDService(),
+                                                              garage: Garage()),
+                             selection: .constant(.dashBoard),
+                             maxHeight: proxy.size.height
+            ) {
+                Color.blue
+            }
+            .environmentObject(GlobalSettings())
         }
     }
 }

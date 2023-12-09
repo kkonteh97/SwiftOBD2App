@@ -29,13 +29,13 @@ struct Needle: Shape {
 
 struct CustomGaugeView: View {
     let coveredRadius: Double
-    let maxValue: Int
-    let steperSplit: Int
+    let maxValue: Double
+    let steperSplit: Double
     let shrink: Bool
 
     @Binding var value: Double
 
-    init(coveredRadius: Double, maxValue: Int, steperSplit: Int, value: Binding<Double>) {
+    init(coveredRadius: Double, maxValue: Double, steperSplit: Double, value: Binding<Double>) {
         self.coveredRadius = coveredRadius
         self._value = value
 
@@ -50,7 +50,7 @@ struct CustomGaugeView: View {
         }
     }
 
-    private var tickCount: Int {
+    private var tickCount: Double {
         return maxValue/steperSplit
     }
 
@@ -60,14 +60,14 @@ struct CustomGaugeView: View {
         return Color(red: red, green: 1 - red, blue: 0)
     }
 
-    func tickText(at tick: Int, text: String) -> some View {
+    func tickText(at tick: Double, text: String) -> some View {
         let percent = (tick * 100) / tickCount
         let startAngle = coveredRadius/2 * -1 + 90
         let stepper = coveredRadius/Double(tickCount)
         let rotation = startAngle + stepper * Double(tick)
         return Text(text)
                     .font(.system(size: 16, design: .rounded))
-                    .foregroundColor(colorMix(percent: percent))
+                    .foregroundColor(colorMix(percent: Int(percent)))
                     .rotationEffect(.init(degrees: -1 * rotation), anchor: .center)
                     .offset(x: -60, y: 0)
                     .rotationEffect(Angle.degrees(rotation))
@@ -99,17 +99,17 @@ struct CustomGaugeView: View {
 //                .shadow(color: Color.darkStart, radius: 10)
 //                .blur(radius: 1.0)
 
-            Text("\(Int($value.wrappedValue))")
+            Text(String(format: "%.3f", $value.wrappedValue))
                 .font(.system(size: 40, design: .rounded))
                 .foregroundColor(.white)
 
-            ForEach(0..<tickCount*2 + 1, id: \.self) { tick in
-                self.tick(at: tick, totalTicks: self.tickCount*2)
+            ForEach(0..<Int(tickCount)*2 + 1, id: \.self) { tick in
+                self.tick(at: tick, totalTicks: Int(self.tickCount)*2)
             }
 
-            ForEach(0..<tickCount + 1, id: \.self) { tick in
-                self.tickText(at: tick, text: "\(self.steperSplit*tick)")
-            }
+//            ForEach(0..<Int(tickCount) + 1, id: \.self) { tick in
+//                self.tickText(at: Double(tick), text: "\(self.steperSplit*tick)")
+//            }
 
             Needle()
                 .fill(Color.red)

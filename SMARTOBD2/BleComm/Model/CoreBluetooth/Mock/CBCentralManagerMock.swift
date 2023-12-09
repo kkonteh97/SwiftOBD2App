@@ -12,8 +12,9 @@ public class CBCentralManagerMock : Mock, CBCentralManagerProtocol {
     public var delegate: CBCentralManagerDelegate?
     public var state: CBManagerState = .poweredOff
     public var isScanning: Bool = false
-    public var deviceLocalName: String = "OBD device Example"
-    
+    public var deviceLocalName: String = "MockOBD"
+
+
     required public init(delegate: CBCentralManagerDelegate?, queue: DispatchQueue?, options: [String : Any]? = nil) {
         log(#function)
         
@@ -32,12 +33,14 @@ public class CBCentralManagerMock : Mock, CBCentralManagerProtocol {
     public func scanForPeripherals(withServices serviceUUIDs: [CBUUID]?, options: [String : Any]? = nil) {
         log(#function)
         isScanning = true
-        
-        if let delegate = delegate as? BLEManager {
+    
+        guard let delegate = delegate as? BLEManager else {
+            return
+        }
+        DispatchQueue.main.async {
             let discoveredPeripheral = CBPeripheralMock(identifier: UUID(),
-                                                        name: deviceLocalName,
+                                                        name: self.deviceLocalName,
                                                         manager: self)
-            //dummy peripheral
             delegate.didDiscover(self,
                                  peripheral: discoveredPeripheral,
                                  advertisementData: [:],
@@ -52,7 +55,11 @@ public class CBCentralManagerMock : Mock, CBCentralManagerProtocol {
     
     public func connect(_ peripheral: CBPeripheralProtocol, options: [String : Any]? = nil) {
         log(#function)
-        if let delegate = delegate as? CBCentralManagerProtocolDelegate {
+        
+        guard  let delegate = delegate as? CBCentralManagerProtocolDelegate else {
+            return
+        }
+        DispatchQueue.main.async {
             delegate.didConnect(self,
                                 peripheral: peripheral)
         }

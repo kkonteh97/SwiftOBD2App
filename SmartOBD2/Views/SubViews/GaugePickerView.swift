@@ -120,18 +120,22 @@ struct GaugeType1: View {
     var value: Double
 
     var body: some View {
-        CustomGaugeView(
-            coveredRadius: 280,
-            maxValue:  dataItem.command.properties.maxValue,
-            steperSplit: dataItem.command.properties.steperSplit,
-            value: $dataItem.value
-        )
+        Gauge(value: dataItem.value,
+              in: 0...Double(dataItem.command.properties.maxValue)
+        ) {
+            Text( dataItem.command.properties.description)
+                .font(.caption)
+        } currentValueLabel: {
+            Text(String(format: "%5.2f", dataItem.value) + " " + (dataItem.unit ?? ""))
+        }
+        .gaugeStyle(CustomGaugeView2())
     }
 }
 
 struct GaugeType2: View {
     @State var dataItem: DataItem
     var value: Double
+    let gradient = Gradient(colors: [.blue, .green, .pink])
 
     var body: some View {
         Gauge(value: value,
@@ -142,7 +146,9 @@ struct GaugeType2: View {
         } currentValueLabel: {
             Text(String(dataItem.value) + " " + (dataItem.unit ?? ""))
         }
-        .gaugeStyle(.accessoryCircular)
+        .gaugeStyle(.accessoryLinear)
+        .tint(gradient)
+        .frame(width: 150)
     }
 }
 
@@ -158,7 +164,7 @@ struct GaugeType3: View {
             Text(String(dataItem.value) + " " + (dataItem.unit ?? ""))
         }
         .gaugeStyle(.linearCapacity)
-        .frame(width: 200)
+        .frame(width: 150)
     }
 }
 
@@ -167,16 +173,61 @@ struct GaugeType4: View {
     var value: Double
 
     var body: some View {
-        Gauge(value: value , in: 0...Double( dataItem.command.properties.maxValue)) {
-            Image(systemName: "gauge.medium")
-                .font(.system(size: 50.0))
+        Gauge(value: value , in: 0...Double(dataItem.command.properties.maxValue)) {
+            Text( dataItem.command.properties.description)
+                .font(.caption)
         } currentValueLabel: {
             Text(String(dataItem.value) + " " + (dataItem.unit ?? ""))
         }
         .gaugeStyle(SpeedometerGaugeStyle())
     }
 }
+struct CustomGaugeView2: GaugeStyle {
+    private var purpleGradient = LinearGradient(gradient: Gradient(colors: [ Color(red: 207/255, green: 150/255, blue: 207/255), Color(red: 107/255, green: 116/255, blue: 179/255) ]), startPoint: .trailing, endPoint: .leading)
 
+    func makeBody(configuration: Configuration) -> some View {
+        ZStack {
+            Circle()
+                .trim(from: 0.74 * configuration.value, to: 0.75 * configuration.value)
+                .stroke(purpleGradient,
+                        style: StrokeStyle(lineWidth: 20,
+                                           lineCap: .round,
+                                           lineJoin: .round,
+                                           dash: [20, 12],
+                                           dashPhase: 2.0
+                        )
+                )
+                .rotationEffect(.degrees(135))
+
+            Circle()
+                .trim(from: 0, to: 0.75)
+                .stroke(Color.white, 
+                        style: StrokeStyle(lineWidth: 20,
+                                           lineCap: .butt,
+                                           lineJoin: .bevel,
+                                           dash: [4, 32],
+                                           dashPhase: 2.0))
+                .rotationEffect(.degrees(135))
+
+            VStack {
+                configuration.currentValueLabel
+                    .font(.system(size: 20, design: .rounded))
+                    .foregroundColor(.white)
+
+                configuration.label
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.gray)
+            }
+//            var tickCount: Double {
+//                return configuration.maximumValueLabel
+//            }
+//            ForEach(0..<Int(tickCount)*2 + 1, id: \.self) { tick in
+//                self.tick(at: tick, totalTicks: Int(self.tickCount)*2)
+//            }
+        }
+        .frame(width: 160, height: 160)
+    }
+}
 struct SpeedometerGaugeStyle: GaugeStyle {
     private var purpleGradient = LinearGradient(gradient: Gradient(colors: [ Color(red: 207/255, green: 150/255, blue: 207/255), Color(red: 107/255, green: 116/255, blue: 179/255) ]), startPoint: .trailing, endPoint: .leading)
 
@@ -184,7 +235,7 @@ struct SpeedometerGaugeStyle: GaugeStyle {
         ZStack {
 
             Circle()
-                .foregroundColor(Color(.systemGray6))
+                .foregroundColor(Color(.systemGray2))
 
             Circle()
                 .trim(from: 0, to: 0.75 * configuration.value)
@@ -193,30 +244,33 @@ struct SpeedometerGaugeStyle: GaugeStyle {
 
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(Color.black, style: StrokeStyle(lineWidth: 10, lineCap: .butt, lineJoin: .round, dash: [1, 34], dashPhase: 0.0))
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 10, lineCap: .butt, lineJoin: .round, dash: [1, 34], dashPhase: 0.0))
                 .rotationEffect(.degrees(135))
 
             VStack {
                 configuration.currentValueLabel
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundColor(.gray)
-                Text("KM/H")
-                    .font(.system(.body, design: .rounded))
-                    .bold()
-                    .foregroundColor(.gray)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
+                configuration.label
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
             }
-
         }
-        .frame(width: 175, height: 175)
-
+        .frame(width: 165, height: 165)
     }
 }
 
 #Preview {
-    GaugePickerView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()),
-                                                 garage: Garage()),
-                    enLarge: .constant(false),
-                    selectedPID: .constant(nil),
-                    namespace: nil
-    )
+//    GaugePickerView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()),
+//                                                 garage: Garage()),
+//                    enLarge: .constant(false),
+//                    selectedPID: .constant(nil),
+//                    namespace: nil
+//    )
+    GaugeType2(dataItem: DataItem(command: OBDCommand.mode1(.speed),
+                                  value: 10,
+                                  selectedGauge: .gaugeType4,
+                                  measurements: []), value: 10)
 }

@@ -7,56 +7,45 @@
 
 import SwiftUI
 import Combine
-import CoreBluetooth
 
 class SettingsViewModel: ObservableObject {
-    @Published var peripherals: [Peripheral] = []
+    @Published var userDevice: OBDDevice = .carlyOBD {
+        didSet {
+            obdService.userDevice = userDevice
+        }
+    }
 
-    let bleManager: BLEManager
     private var cancellables = Set<AnyCancellable>()
+    var obdService: OBDService
 
-
-    init(bleManager: BLEManager) {
-        self.bleManager = bleManager
-        bleManager.$foundPeripherals
-            .sink { peripherals in
-                self.peripherals = peripherals
-            }
-            .store(in: &cancellables)
+    init(obdService: OBDService) {
+        self.obdService = obdService
     }
 }
 
 struct SettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
+    @EnvironmentObject var globalSettings: GlobalSettings
+
     var body: some View {
         VStack {
-            HStack {
-                VStack {
-                    ForEach(OBDDevices.allCases, id: \.self) { OBDDevice in
-                        Text(OBDDevice.properties.DeviceName)
-                    }
+            Picker("OBD2 Adapter", selection: $viewModel.userDevice) {
+                ForEach(OBDDevice.allCases.filter { $0 != .mockOBD }, id: \.self) { device in
+                        Text(device.properties.DeviceName)
+                            .tag(device)
                 }
             }
-            List {
-              // list of peripherals
-              ForEach(viewModel.peripherals) { peripheral in
-                  PeripheralRow(peripheral: peripheral)
-              }
-            }
+            .pickerStyle(.navigationLink)
+
+            Toggle("Demo Mode", isOn: $viewModel.obdService.isDemoMode)
+                .toggleStyle(SwitchToggleStyle(tint: .red))
+
+            Spacer()
         }
+        .padding()
     }
 }
 
-struct PeripheralRow: View {
-    let peripheral: Peripheral
-    var body: some View {
-        HStack {
-            Text(peripheral.name)
-            Spacer()
-            Text("\(peripheral.rssi)")
-        }
-    }
-}
 
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
@@ -64,15 +53,15 @@ struct ProtocolPicker: View {
     var body: some View {
         HStack {
             Text("OBD Protocol: ")
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
 
             Picker("Select Protocol", selection: $selectedProtocol) {
                 ForEach(PROTOCOL.asArray, id: \.self) { protocolItem in
                     Text(protocolItem.description).tag(protocolItem)
                 }
             }
-        }
+        }                
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -90,5 +79,6 @@ struct RoundedRectangleStyle: ViewModifier {
 }
 
 #Preview {
-    SettingsView(viewModel: SettingsViewModel(bleManager: BLEManager()))
+    SettingsView(viewModel: SettingsViewModel(obdService: OBDService()))
+        .environmentObject(GlobalSettings())
 }

@@ -52,7 +52,7 @@ struct VehiclePickerView: View {
         return (0 ..< viewModel.carData.count).contains(selectedManufacturer) ? viewModel.carData[selectedManufacturer].models : []
     }
 
-    var years: [Int] {
+    var years: [String] {
         return (0 ..< models.count).contains(selectedModel) ? models[selectedModel].years : []
     }
 

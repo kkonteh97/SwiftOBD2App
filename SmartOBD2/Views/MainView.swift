@@ -8,84 +8,68 @@
 import SwiftUI
 import CoreBluetooth
 
-struct CarlyObd {
-    static let elmServiceUUID = "FFE0"
-    static let elmCharactericUUID = "FFE1"
-}
-
 struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
     @State var SplashScreenIsActive: Bool = true
-    @State var displayType: BottomSheetType = .halfScreen
-    @State private var tabSelection: TabBarItem = .features
-
+    @State private var tabSelection: TabBarItem = .dashBoard
 
     let homeViewModel: HomeViewModel
-    let liveDataViewModel: LiveDataViewModel
-    let bottomSheetViewModel: CustomTabBarViewModel
     let garageViewModel: GarageViewModel
+    let liveDataViewModel: LiveDataViewModel
     let settingsViewModel: SettingsViewModel
-    let carScreenViewModel: CarScreenViewModel
+    let bottomSheetViewModel: CustomTabBarViewModel
+    let testingScreenViewModel: TestingScreenViewModel
     let diagnosticsViewModel: VehicleDiagnosticsViewModel
 
-    init(garage: Garage) {
-        let bleManager = BLEManager()
-        let obdService = OBDService(bleManager: bleManager)
-        self.homeViewModel = HomeViewModel(obdService: obdService, garage: garage)
-        self.liveDataViewModel = LiveDataViewModel(obdService: obdService, garage: garage)
-        self.bottomSheetViewModel = CustomTabBarViewModel(obdService: obdService, garage: garage)
-        self.carScreenViewModel = CarScreenViewModel(obdService: obdService)
-        self.settingsViewModel = SettingsViewModel(bleManager: bleManager)
-        self.garageViewModel = GarageViewModel(garage: garage)
-        self.diagnosticsViewModel = VehicleDiagnosticsViewModel(obdService: obdService, garage: garage)
+    init(garage: Garage, obdService: OBDService = OBDService()) {
+        self.garageViewModel        =   GarageViewModel(garage: garage, obdService: obdService)
+        self.settingsViewModel      =   SettingsViewModel(obdService: obdService)
+        self.homeViewModel          =   HomeViewModel(obdService: obdService, garage: garage)
+        self.liveDataViewModel      =   LiveDataViewModel(obdService: obdService, garage: garage)
+        self.bottomSheetViewModel   =   CustomTabBarViewModel(obdService: obdService, garage: garage)
+        self.testingScreenViewModel =   TestingScreenViewModel(obdService: obdService, garage: garage)
+        self.diagnosticsViewModel   =   VehicleDiagnosticsViewModel(obdService: obdService, garage: garage)
     }
 
     var body: some View {
-            GeometryReader { proxy in
-                if SplashScreenIsActive {
-                    SplashScreenView(isActive: $SplashScreenIsActive)
-                } else {
-                    CustomTabBarContainerView(selection: $tabSelection,
-                                              displayType: $displayType,
-                                              maxHeight: proxy.size.height,
-                                              viewModel: bottomSheetViewModel
-                    ) {
-                        NavigationView {
-                            HomeView(viewModel: homeViewModel,
-                                     diagnosticsViewModel: diagnosticsViewModel,
-                                     garageViewModel: garageViewModel,
-                                     settingsViewModel: settingsViewModel, 
-                                     carScreenViewModel: carScreenViewModel,
-                                     displayType: $displayType)
-                            .background(LinearGradient(.darkStart, .darkEnd))
-                        }
-                        .navigationViewStyle(StackNavigationViewStyle())
-                        .tabBarItem(tab: .dashBoard, selection: $tabSelection)
-
-                        NavigationView {
-                            DashBoardView(
-                                liveDataViewModel: liveDataViewModel,
-                                displayType: $displayType
-                            )
-                            .background(LinearGradient(.slategray, .raisinblack))
-                        }
-                        .navigationViewStyle(StackNavigationViewStyle())
-                        .tabBarItem(tab: .features, selection: $tabSelection)
+        GeometryReader { proxy in
+            if SplashScreenIsActive {
+                SplashScreenView(isActive: $SplashScreenIsActive)
+            } else {
+                CustomTabBarContainerView(
+                      selection: $tabSelection,
+                      maxHeight: proxy.size.height,
+                      viewModel: bottomSheetViewModel
+                ) {
+                    NavigationView {
+                        HomeView(
+                             viewModel: homeViewModel,
+                             diagnosticsViewModel: diagnosticsViewModel,
+                             garageViewModel: garageViewModel,
+                             settingsViewModel: settingsViewModel,
+                             testingScreenViewModel: testingScreenViewModel
+                        )
+                        .background(LinearGradient(.darkStart, .darkEnd))
                     }
+                    .navigationViewStyle(StackNavigationViewStyle())
+                    .tabBarItem(tab: .dashBoard, selection: $tabSelection)
+
+                    NavigationView {
+                        DashBoardView(
+                            liveDataViewModel: liveDataViewModel
+                        )
+                        .background(LinearGradient(.slategray, .raisinblack))
+                    }
+                    .navigationViewStyle(StackNavigationViewStyle())
+                    .tabBarItem(tab: .features, selection: $tabSelection)
                 }
+            }
         }
     }
 }
 
 #Preview {
     MainView(garage: Garage())
+        .environmentObject(GlobalSettings())
 }
 
-//                    NavigationView {
-//                        CarScreen(
-//                            viewModel: carScreenViewModel
-//                        )
-//                        .background(LinearGradient(.slategray, .raisinblack))
-//                    }
-//                    .navigationViewStyle(StackNavigationViewStyle())
-//                    .tabBarItem(tab: .features, selection: $tabSelection)

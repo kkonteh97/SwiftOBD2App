@@ -220,7 +220,7 @@ enum Decoder: Codable {
             guard let percentCentered = percent(data) else { return .noResult }
             return .measurementResult(percentCentered)
         case .fuelPressure:
-            guard let fuelPressure = percent(data) else { return .noResult }
+            guard let fuelPressure = fuelPressure(data) else { return .noResult }
             return .measurementResult(fuelPressure)
         case .pressure:
             guard let pressure = pressure(data) else { return .noResult }
@@ -342,23 +342,22 @@ enum Decoder: Codable {
         return codes
     }
 
-    
     func monitor(_ data: Data) -> Monitor? {
-        var databytes = data
+        let databytes = data
 
         let mon = Monitor()
 
-        let extra_bytes = data.count % 9
+//        let extra_bytes = data.count % 9
 
-        if extra_bytes != 0 {
-            print("Encountered monitor message with non-multiple of 9 bytes. Truncating...")
-            databytes = data[..<(data.count - extra_bytes)]
-        }
+//        if extra_bytes != 0 {
+//            print("Encountered monitor message with non-multiple of 9 bytes. Truncating...")
+//            databytes = data[..<(data.count - extra_bytes)]
+//        }
 
-        for n in stride(from: 0, to: databytes.count, by: 9) {
-            let test = parse_monitor_test(databytes[n...(n + 9)], mon)
-
-            if let test = test, 
+        for n in stride(from: 0, to: databytes.count - 1, by: 2) {
+            let test = parse_monitor_test(databytes[n...(n + 1)], mon)
+            print(test?.description ?? "No test")
+            if let test = test,
                let tid = test.tid {
                 mon.tests[tid] = test
             }
@@ -369,27 +368,28 @@ enum Decoder: Codable {
 
     func parse_monitor_test(_ data: Data, _ mon: Monitor) -> MonitorTest? {
         var test = MonitorTest()
-
-        let tid = data[1]
-
+        let bits = BitArray(data: data).binaryArray
+        let tid = data[0]
+        print(tid)
         if let testInfo = TestIds(rawValue: tid) {
             test.name = testInfo.name
             test.desc = testInfo.desc
+
         } else {
             print("Encountered unknown Test ID")
             test.name = "Unknown"
             test.desc = "Unknown"
         }
 
-        let uasId = Int(data[2])
+        let uasId = Int(data[1])
         guard let uas = uasIDS.first(where: { $0.key == uasId }) else {
             print("Encountered Unknown Units and Scaling ID")
             return nil
         }
 
-        let valueRange = data[3..<5]
-        let minRange = data[5..<7]
-        let maxRange = data[7..<9] // Assuming data length is at least 9
+        let valueRange = Array(bits[3..<5])
+        let minRange =   Array(bits[5..<7])
+        let maxRange =   Array(bits[7..<9]) // Assuming data length is at least 9
 
         let multiplier = uas.value.scale
 
@@ -401,8 +401,12 @@ enum Decoder: Codable {
         return test
     }
 
-    func bytesToDouble(_ data: Data) -> Double {
-        return Double(bytesToInt(data))
+    func bytesToDouble(_ data: [Int]) -> Double {
+        var value = 0.0
+        for (index, bit) in data.enumerated() {
+            value += Double(bit) * pow(2.0, Double(index))
+        }
+        return value
     }
 
     func fuelRate(_ data: Data) -> Measurement<Unit>? {
@@ -497,7 +501,7 @@ enum Decoder: Codable {
     }
 
     func obdCompliance(_ data: Data) -> String? {
-        let i = data[0]
+        let i = data[1]
 
         if i < OBD_COMPLIANCE.count {
             return OBD_COMPLIANCE[Int(i)]
@@ -514,6 +518,7 @@ enum Decoder: Codable {
 
         let highBits = Array(bits.binaryArray[0..<8])
         let lowBits = Array(bits.binaryArray[8..<16])
+        print(highBits)
 
         if highBits.filter({ $0 == 1 }).count == 1, let index = highBits.firstIndex(of: 1) {
             if 7 - index < FUEL_STATUS.count {
@@ -545,6 +550,7 @@ enum Decoder: Codable {
        }
     }
 
+    // 0 to 1.275 volts
     func voltage(_ data: Data) -> Measurement<Unit>? {
         guard data.count == 2 else { return nil }
         let voltage = Double(data.first ?? 0) / 200
@@ -591,7 +597,8 @@ enum Decoder: Codable {
 
     // 0 to 765 kPa
     func fuelPressure(_ data: Data) -> Measurement<Unit>? {
-        var value = data[0]
+        print(data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
+        var value = data.first ?? 0
         value *= 3
         return  Measurement(value: Double(value), unit: UnitPressure.kilopascals)
     }
@@ -615,7 +622,7 @@ enum Decoder: Codable {
     }
 
     func currentCentered(_ data: Data) -> Measurement<Unit>? {
-         let value = (Double(bytesToInt(data[2..<4])) / 256.0) - 128.0
+         let value = Double(data.first ?? 0) - 128
          return Measurement(value: value, unit: UnitElectricCurrent.amperes)
      }
 

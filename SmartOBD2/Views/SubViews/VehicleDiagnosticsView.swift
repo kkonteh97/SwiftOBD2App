@@ -10,7 +10,7 @@ import Combine
 
 class VehicleDiagnosticsViewModel: ObservableObject {
     @Published var garage: Garage
-    @Published var currentVehicle: Vehicle?
+//    @Published var currentVehicle: Vehicle?
     @Published var garageVehicles: [Vehicle] = []
     @Published var troubleCodes: [TroubleCode] = []
 
@@ -27,11 +27,11 @@ class VehicleDiagnosticsViewModel: ObservableObject {
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
 
-        garage.$currentVehicleId
-                .sink { currentVehicleId in
-                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
-                }
-                .store(in: &cancellables)
+//        garage.$currentVehicleId
+//                .sink { currentVehicleId in
+//                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
+//                }
+//                .store(in: &cancellables)
     }
 
     func scanForTroubleCodes() {
@@ -89,11 +89,11 @@ struct VehicleDiagnosticsView: View {
                     VStack {
                         HStack {
                             Text(troubleCode.rawValue)
-                                .font(.system(size: 16))
+                                .font(.system(size: 14))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Text(troubleCode.description)
-                                .font(.system(size: 16))
+                                .font(.system(size: 14))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -112,7 +112,7 @@ struct VehicleDiagnosticsView: View {
     }
 
     var navTitle: String {
-           if let currentVehicle = viewModel.currentVehicle {
+        if let currentVehicle = viewModel.garage.currentVehicle {
                return "\(currentVehicle.year) \(currentVehicle.make) \(currentVehicle.model)"
            } else {
                return "Garage Empty"
@@ -122,7 +122,7 @@ struct VehicleDiagnosticsView: View {
 
 #Preview {
     ZStack {
-        VehicleDiagnosticsView(viewModel: VehicleDiagnosticsViewModel(obdService: OBDService(bleManager: BLEManager()),
+        VehicleDiagnosticsView(viewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
                                                         garage: Garage()))
     }
 }

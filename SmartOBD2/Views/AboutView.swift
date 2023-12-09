@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct AboutView: View {
+    @EnvironmentObject var globalSettings: GlobalSettings
+    @Environment(\.dismiss) var dismiss
+
     var body: some View {
         VStack(spacing: 100) {
             Text("SMARTOBD2 Version 1.0")
@@ -46,6 +49,23 @@ struct AboutView: View {
             }
         }
         .padding()
+        .navigationBarBackButtonHidden(true)
+        .navigationTitle("Select a Make")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    globalSettings.displayType = .quarterScreen
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "chevron.backward")
+                        Text("Back")
+                    }
+                }
+
+            }
+
+        }
     }
 }
 

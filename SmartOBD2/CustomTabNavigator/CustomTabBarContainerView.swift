@@ -14,17 +14,14 @@ struct CustomTabBarContainerView<Content: View>: View {
     let maxHeight: Double
     let content: Content
     @State private var tabs: [TabBarItem] = []
-    @Binding private var displayType: BottomSheetType
 
     init(
          selection: Binding<TabBarItem>,
-         displayType: Binding<BottomSheetType>,
          maxHeight: Double,
          viewModel: CustomTabBarViewModel,
          @ViewBuilder content: () -> Content
     ) {
         self._selection = selection
-        self._displayType = displayType
         self.maxHeight = maxHeight
         self.viewModel = viewModel
         self.content = content()
@@ -36,7 +33,6 @@ struct CustomTabBarContainerView<Content: View>: View {
                         tabs: tabs,
                         viewModel: viewModel,
                         selection: $selection,
-                        displayType: $displayType,
                         maxHeight: proxy.size.height
                 ) {
                     content
@@ -50,18 +46,12 @@ struct CustomTabBarContainerView<Content: View>: View {
 }
 
 struct CustomTabBarContainerView_Previews: PreviewProvider {
-    static let tabs: [TabBarItem] = [
-        .dashBoard,
-        .features
-    ]
-
+    static let tabs: [TabBarItem] = [.dashBoard, .features]
     static var previews: some View {
         GeometryReader { proxy in
-
             CustomTabBarContainerView(selection: .constant(tabs.first!),
-                                      displayType: .constant(.quarterScreen),
                                       maxHeight: proxy.size.height,
-                                      viewModel: CustomTabBarViewModel(obdService: OBDService(bleManager: BLEManager()),
+                                      viewModel: CustomTabBarViewModel(obdService: OBDService(),
                                                                       garage: Garage())
             ) {
                 Color.red

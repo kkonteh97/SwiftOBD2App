@@ -54,8 +54,9 @@ class LiveDataViewModel: ObservableObject {
     @Published var isRequestingPids = false
 
     @Published var data: [OBDCommand : DataItem] = [:]
-
     @Published var order: [OBDCommand] = []
+    @Published var connectionState: ConnectionState = .notConnected
+
 
     private var timer: Timer?
     private var appendMeasurementsTimer: DispatchSourceTimer?
@@ -64,9 +65,16 @@ class LiveDataViewModel: ObservableObject {
     init(obdService: OBDService, garage: Garage) {
         self.obdService = obdService
         self.garage = garage
-        garage.$currentVehicleId
-            .sink { currentVehicleId in
-                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
+
+        obdService.$connectionState
+            .sink { [weak self] state in
+                self?.connectionState = state
+            }
+            .store(in: &cancellables)
+
+        garage.$currentVehicle
+            .sink { currentVehicle in
+                self.currentVehicle = currentVehicle
             }
             .store(in: &cancellables)
 
@@ -76,6 +84,12 @@ class LiveDataViewModel: ObservableObject {
                 self.data[item.command] = item
                 self.order.append(item.command)
             }
+        } else {
+            // default pids SPEED and RPM
+            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), selectedGauge: .gaugeType1)
+            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), selectedGauge: .gaugeType2)
+            order.append(.mode1(.rpm))
+            order.append(.mode1(.speed))
         }
     }
 
@@ -139,7 +153,6 @@ class LiveDataViewModel: ObservableObject {
         DispatchQueue.main.async {
               for (_, item) in self.data {
                   item.measurements.append(PIDMeasurement(time: Date(), value: item.value))
-                  // Remove old measurements
                   item.measurements = item.measurements.filter { $0.id.timeIntervalSinceNow > -self.measurementTimeLimit }
             }
         }
@@ -151,8 +164,12 @@ class LiveDataViewModel: ObservableObject {
         }
         isRequestingPids = true
         Task {
-            let messages = await obdService.elm327.requestPIDs(order)
-            updateDataItems(messages: messages, keys: order)
+            do {
+                let messages = try await obdService.elm327.requestPIDs(order)
+                updateDataItems(messages: messages, keys: order)
+            } catch {
+                print(error)
+            }
         }
     }
 
@@ -166,12 +183,14 @@ class LiveDataViewModel: ObservableObject {
         DispatchQueue.main.async {
             var res = BatchedResponse(response: data)
             keys.forEach { cmd in
-                if let value = res.getValueForCommand(cmd) {
+                guard let value = res.getValueForCommand(cmd) else {
+                    return
+                }
                     // Update the data directly
-                    if let existingItem = self.data[cmd] {
-                        let newValue = decodeMeasurementToDouble(value)
-                        existingItem.value = newValue
-                    }
+                if let existingItem = self.data[cmd],
+                   let newValue = decodeToMeasurement(value) {
+                    existingItem.value = newValue.value
+                    existingItem.unit = newValue.unit.symbol
                 }
             }
             self.isRequestingPids = false
@@ -195,7 +214,7 @@ func decodeMeasurementToBindingDouble(_ measurement: OBDDecodeResult?) -> Bindin
     }
 }
 
-func decodeToMeasurement(_ result: OBDDecodeResult) -> Measurement<Unit> {
+func decodeToMeasurement(_ result: OBDDecodeResult) -> Measurement<Unit>? {
     switch result {
     case .measurementResult(let value):
         return value

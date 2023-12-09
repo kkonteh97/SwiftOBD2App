@@ -18,7 +18,7 @@ class HomeViewModel: ObservableObject {
 
     @Published var garageVehicles: [Vehicle] = []
 
-    @Published var currentVehicle: Vehicle?
+//    @Published var currentVehicle: Vehicle?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -32,11 +32,11 @@ class HomeViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
-
-        garage.$currentVehicleId
-                .sink { currentVehicleId in
-                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
-                }
-                .store(in: &cancellables)
+//
+//        garage.$currentVehicleId
+//                .sink { currentVehicleId in
+//                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
+//                }
+//                .store(in: &cancellables)
     }
 }

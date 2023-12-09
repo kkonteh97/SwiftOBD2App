@@ -19,11 +19,20 @@ extension Logger {
     static let bleCom = Logger(subsystem: subsystem, category: "BLEComms")
 }
 
+class GlobalSettings: ObservableObject {
+    @Published var displayType: BottomSheetType = .quarterScreen
+    @Published var statusMessage = ""
+    @Published var showAltText = false
+}
+
 @main
 struct SmartOBD2App: App {
+    var globalSettings = GlobalSettings()
+
     var body: some Scene {
         WindowGroup {
             MainView(garage: Garage())
+                .environmentObject(globalSettings)
         }
     }
 }

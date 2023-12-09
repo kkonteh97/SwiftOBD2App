@@ -12,15 +12,15 @@ class AddPIDViewModel: ObservableObject {
     let garage: Garage
     var cancellables = Set<AnyCancellable>()
 
-    @Published var currentVehicle: Vehicle?
+//    @Published var currentVehicle: Vehicle?
 
     init(garage: Garage) {
         self.garage = garage
-        garage.$currentVehicleId
-            .sink { currentVehicleId in
-                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
-            }
-            .store(in: &cancellables)
+//        garage.$currentVehicleId
+//            .sink { currentVehicleId in
+//                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
+//            }
+//            .store(in: &cancellables)
     }
 }
 
@@ -33,8 +33,10 @@ struct AddPIDView: View {
                 Divider().background(Color.white)
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    if let supportedPIDs = car.obdinfo?.supportedPIDs {
-                        ForEach(supportedPIDs, id: \.self) { pid in
+                    if let supportedPIDs = car.obdinfo.supportedPIDs  {
+                        // filter out live PIDs
+                        let livePIDs = supportedPIDs.filter { $0.properties.live }
+                        ForEach(livePIDs, id: \.self) { pid in
                             HStack {
                                 Text(pid.properties.description)
                                     .font(.caption)
@@ -67,6 +69,6 @@ struct AddPIDView: View {
 }
 
 #Preview {
-    AddPIDView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()),
+    AddPIDView(viewModel: LiveDataViewModel(obdService: OBDService(),
                                             garage: Garage()))
 }

@@ -12,23 +12,32 @@ class GarageViewModel: ObservableObject {
     @Published var garage: Garage
     @Published var currentVehicle: Vehicle?
     @Published var garageVehicles: [Vehicle] = []
+    let obdService: OBDService
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(garage: Garage) {
+    init(garage: Garage,
+         obdService: OBDService
+    ) {
         self.garage = garage
+        self.obdService = obdService
+
         garage.$garageVehicles
             .receive(on: DispatchQueue.main)
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
-        
-        garage.$currentVehicleId
-                .sink { currentVehicleId in
-                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
-                }
-                .store(in: &cancellables)
+
+        garage.$currentVehicle
+            .sink { currentVehicle in
+                self.currentVehicle = currentVehicle
+            }
+            .store(in: &cancellables)
     }
 
+    func setCurrentVehicle(by id: Int) {
+        garage.setCurrentVehicle(by: id)
+    }
+    
     func deleteVehicle(_ vehicle: Vehicle) {
         garage.deleteVehicle(vehicle)
     }

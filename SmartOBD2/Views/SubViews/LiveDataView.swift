@@ -23,16 +23,13 @@ struct LiveDataView: View {
 
     @State private var selectedPID: DataItem?
 
-    @Binding var displayType: BottomSheetType
     @Namespace var namespace
-
+    @EnvironmentObject var globalSettings: GlobalSettings
     var columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
 
-    init(viewModel: LiveDataViewModel, 
-         displayType: Binding<BottomSheetType>
+    init(viewModel: LiveDataViewModel
     ) {
         self.viewModel = viewModel
-        self._displayType = displayType
     }
 
     var body: some View {
@@ -110,31 +107,61 @@ struct LiveDataView: View {
     }
 
     private var headerButtons: some View {
-            HStack(alignment: .top) {
-                Button(action: toggleRequestingPIDs) {
-                    Text(isRequesting ? "Stop" : "Start").font(.title)
-                }
-                Spacer()
-                Button(action: { showingSheet.toggle() }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundColor(.white)
-                }
+        HStack(alignment: .top) {
+            Button(action: toggleRequestingPIDs) {
+                Text(isRequesting ? "Stop" : "Start").font(.title)
             }
-            .padding(.horizontal)
+            Spacer()
+            Button(action: { showingSheet.toggle() }) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal)
     }
 
     private func toggleRequestingPIDs() {
-            if viewModel.isRequestingPids {
-                viewModel.controlRequestingPIDs(status: false)
-                self.displayType = .quarterScreen
-                self.isRequesting = false
-            } else {
-                viewModel.controlRequestingPIDs(status: true)
-                self.displayType = .none
-                isRequesting = true
+        guard viewModel.connectionState == .connectedToVehicle else {
+            globalSettings.showAltText = true
+            globalSettings.statusMessage = "Not Connected"
+            toggleDisplayType(to: .halfScreen)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation {
+                    globalSettings.showAltText = false
+                }
             }
+            return
         }
+        if viewModel.isRequestingPids {
+            viewModel.controlRequestingPIDs(status: false)
+            toggleDisplayType(to: .quarterScreen)
+            self.isRequesting = false
+        } else {
+            viewModel.controlRequestingPIDs(status: true)
+            toggleDisplayType(to: .none)
+            isRequesting = true
+        }
+    }
+
+    private func toggleDisplayType(to displayType: BottomSheetType) {
+        withAnimation(.interactiveSpring(response: 0.5,
+                                         dampingFraction: 0.8,
+                                         blendDuration: 0)
+        ) {
+            globalSettings.displayType = displayType
+        }
+    }
+}
+
+
+
+#Preview {
+    ZStack {
+        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(),
+                                                  garage: Garage())
+        )
+    }
 }
 
 //                .chartYAxis {
@@ -162,12 +189,3 @@ struct LiveDataView: View {
 //            .chartYScale(domain: 0 ... dataItem.command.properties.maxValue)
 //        }
 //    }
-
-#Preview {
-    ZStack {
-        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(bleManager: BLEManager()),
-                                                  garage: Garage()), 
-                     displayType: .constant(.quarterScreen)
-        )
-    }
-}

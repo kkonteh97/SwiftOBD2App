@@ -10,18 +10,12 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject var diagnosticsViewModel: VehicleDiagnosticsViewModel
-
     @ObservedObject var garageViewModel: GarageViewModel
     @ObservedObject var settingsViewModel: SettingsViewModel
-    @ObservedObject var carScreenViewModel: CarScreenViewModel
+    @ObservedObject var testingScreenViewModel: TestingScreenViewModel
 
-    @Binding var displayType: BottomSheetType
-
+    @EnvironmentObject var globalSettings: GlobalSettings
     @Environment(\.colorScheme) var colorScheme
-
-    var garageVehicles: [Vehicle] {
-        viewModel.garageVehicles
-    }
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -45,42 +39,43 @@ struct HomeView: View {
                 Divider().background(Color.white).padding(.horizontal, 20)
                 NavigationLink {
                     SettingsView(viewModel: settingsViewModel)
+                        .background(LinearGradient(.darkStart, .darkEnd))
                 } label: {
                     SettingsAboutSectionView(title: "Settings", iconName: "gear", iconColor: .green.opacity(0.6))
                 }
 
                 Divider().background(Color.white).padding(.horizontal, 20)
-                NavigationLink {
-                    GarageView(viewModel: garageViewModel)
-                        .background(LinearGradient(.darkStart, .darkEnd))
-                } label: {
+                
+                NavigationLink(destination: GarageView(viewModel: garageViewModel)) {
                     SettingsAboutSectionView(title: "Garage", iconName: "car.circle", iconColor: .blue.opacity(0.6))
-                }
+                }.simultaneousGesture(TapGesture().onEnded{
+                    globalSettings.displayType = .none
+                })
+                Divider().background(Color.white).padding(.horizontal, 20)
+                NavigationLink(destination: AboutView()) {
+                    SettingsAboutSectionView(title: "About", iconName: "info.circle", iconColor: .secondary)
+                }.simultaneousGesture(TapGesture().onEnded{
+                    globalSettings.displayType = .none
+                })
 
                 Divider().background(Color.white).padding(.horizontal, 20)
                 NavigationLink {
-                    AboutView()
+                    TestingScreen(viewModel: testingScreenViewModel)
+                        .background(LinearGradient(.darkStart, .darkEnd))
                         .onAppear {
                             withAnimation {
-                                self.displayType = .none
+                                globalSettings.displayType = .none
                             }
                         }
                         .onDisappear {
                             withAnimation {
-                                self.displayType = .quarterScreen
+                                globalSettings.displayType = .quarterScreen
                             }
                         }
                         .transition(.move(edge: .bottom))
 
                 } label: {
-                    SettingsAboutSectionView(title: "About", iconName: "info.circle", iconColor: .secondary)
-                }
-                Divider().background(Color.white).padding(.horizontal, 20)
-                NavigationLink {
-                    CarScreen(viewModel: carScreenViewModel)
-                        .background(LinearGradient(.darkStart, .darkEnd))
-                } label: {
-                    SettingsAboutSectionView(title: "Message", iconName: "car.circle", iconColor: .blue.opacity(0.6))
+                    SettingsAboutSectionView(title: "Testing Hub", iconName: "car.circle", iconColor: .blue.opacity(0.6))
                 }
 
                 Divider().background(Color.white).padding(.horizontal, 20)
@@ -122,13 +117,12 @@ struct SettingsAboutSectionView: View {
         LinearGradient(.darkStart, .darkEnd)
             .ignoresSafeArea()
         HomeView(
-            viewModel: HomeViewModel(obdService: OBDService(bleManager: BLEManager()),
+            viewModel: HomeViewModel(obdService: OBDService(),
                                      garage: Garage()),
-            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(bleManager: BLEManager()),
+            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
                            garage: Garage()),
-            garageViewModel: GarageViewModel(garage: Garage()),
-            settingsViewModel: SettingsViewModel(bleManager: BLEManager()), 
-            carScreenViewModel: CarScreenViewModel(obdService: OBDService(bleManager: BLEManager())),
-            displayType: .constant(.quarterScreen))
+            garageViewModel: GarageViewModel(garage: Garage(), obdService: OBDService()),
+            settingsViewModel: SettingsViewModel(obdService: OBDService()),
+            testingScreenViewModel: TestingScreenViewModel(obdService: OBDService(), garage: Garage()))
     }
 }
