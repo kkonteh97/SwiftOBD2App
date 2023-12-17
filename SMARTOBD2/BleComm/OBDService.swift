@@ -62,20 +62,13 @@ enum OBDDevice: CaseIterable {
 class OBDService {
     @Published var elmAdapter: CBPeripheralProtocol?
     @Published var connectionState: ConnectionState = .notConnected
-    @Published var userDevice: OBDDevice = .carlyOBD
 
     var elm327: ELM327
 
     private var cancellables = Set<AnyCancellable>()
     private let bleManager: BLEManager
-    @Published var isDemoMode: Bool = false {
-        didSet {
-            switchToDemoMode(isDemoMode)
-        }
-    }
 
     @Published var previousDevice: OBDDevice? = nil
-
 
     init(bleManager: BLEManager = BLEManager()) {
         self.bleManager = bleManager
@@ -88,23 +81,11 @@ class OBDService {
     }
 
     func switchToDemoMode(_ isDemoMode: Bool) {
-        switch isDemoMode {
-        case true:
-            previousDevice = userDevice
-            bleManager.isDemoMode = true
-            userDevice = .mockOBD
-        case false:
-            if let previousDevice = previousDevice {
-                userDevice = previousDevice
-            }
-            bleManager.isDemoMode = false
-            previousDevice = nil
-        }
-
+        bleManager.demoModeSwitch(isDemoMode)
     }
 
-    func startConnection(setupOrder: [OBDCommand.General], obdinfo: OBDInfo) async throws -> OBDInfo {
-        try await initAdapter(setupOrder: setupOrder, device: userDevice)
+    func startConnection(setupOrder: [OBDCommand.General], device: OBDDevice, obdinfo: OBDInfo) async throws -> OBDInfo {
+        try await initAdapter(setupOrder: setupOrder, device: device)
         var vehicleInfo = try await initVehicle(obdinfo: obdinfo)
         vehicleInfo.supportedPIDs = await elm327.getSupportedPIDs()
         vehicleInfo.vin = await requestVin()
@@ -114,8 +95,10 @@ class OBDService {
     func initAdapter(setupOrder: [OBDCommand.General], device: OBDDevice) async throws {
         if bleManager.connectionState != .connectedToAdapter {
             let foundPeripheral = try await scanForPeripheral(device: device.properties)
-            print("\n")
-            self.elmAdapter = try await connect(to: foundPeripheral)
+            let connectPeripheral = try await connect(to: foundPeripheral)
+            DispatchQueue.main.async {
+                self.elmAdapter = connectPeripheral
+            }
         }
         try await elm327.adapterInitialization(setupOrder: setupOrder)
         DispatchQueue.main.async {

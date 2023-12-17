@@ -546,17 +546,17 @@ enum OBDCommand: Codable, Hashable {
               }
           }
 
-        for command in OBDCommand.Mode6.allCases {
-            if command.properties.decoder == .pid {
-                getters.append(.mode6(command))
-            }
-        }
-
-        for command in OBDCommand.Mode9.allCases {
-            if command.properties.decoder == .pid {
-                getters.append(.mode9(command))
-            }
-        }
+//        for command in OBDCommand.Mode6.allCases {
+//            if command.properties.decoder == .pid {
+//                getters.append(.mode6(command))
+//            }
+//        }
+//
+//        for command in OBDCommand.Mode9.allCases {
+//            if command.properties.decoder == .pid {
+//                getters.append(.mode9(command))
+//            }
+//        }
         return getters
       }()
 

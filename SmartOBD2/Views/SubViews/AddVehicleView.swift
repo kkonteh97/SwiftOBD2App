@@ -45,8 +45,8 @@ class AddVehicleViewModel: ObservableObject {
         garage.addVehicle(make: make, model: model, year: year)
     }
 
-    func detectVehicle() async throws -> VINInfo? {
-        let obdInfo = try await obdService.startConnection(setupOrder: self.setupOrder,
+    func detectVehicle(device: OBDDevice) async throws -> VINInfo? {
+        let obdInfo = try await obdService.startConnection(setupOrder: self.setupOrder, device: device,
                                                         obdinfo: OBDInfo()
         )
         print(obdInfo)
@@ -141,7 +141,7 @@ struct AutoAddVehicleView: View {
                 isLoading = true
                 Task {
                     do {
-                        guard let vinInfo = try await viewModel.detectVehicle() else {
+                        guard let vinInfo = try await viewModel.detectVehicle(device: globalSettings.userDevice) else {
                             DispatchQueue.main.async {
                                 statusMessage = "Vehicle Not Detected"
                                 isLoading = false
@@ -283,14 +283,14 @@ struct ConfirmView: View {
     }
 }
 
-#Preview {
-    AutoAddVehicleView(viewModel: AddVehicleViewModel(garage: Garage(),
-                                                      obdService: OBDService()
-                                                     ),
-                       isPresented: .constant(true)
-    )
-    .environmentObject(GlobalSettings())
-}
+//#Preview {
+//    AutoAddVehicleView(viewModel: AddVehicleViewModel(garage: Garage(),
+//                                                      obdService: OBDService()
+//                                                     ),
+//                       isPresented: .constant(true)
+//    )
+//    .environmentObject(GlobalSettings())
+//}
 //        ScrollView(.vertical, showsIndicators: false) {
 //            ForEach(0 ..< viewModel.carData.count, id: \.self) { carIndex in
 //                VStack(alignment: .center, spacing: 20) {

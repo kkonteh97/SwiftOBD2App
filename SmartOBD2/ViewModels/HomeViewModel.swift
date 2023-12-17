@@ -24,7 +24,7 @@ class HomeViewModel: ObservableObject {
 
     let obdService: OBDService
 
-    init(obdService: OBDService, garage: Garage) {
+    init(_ obdService: OBDService, _ garage: Garage) {
         self.obdService = obdService
         self.garage = garage
 

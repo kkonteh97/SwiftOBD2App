@@ -156,13 +156,13 @@ struct LiveDataView: View {
 
 
 
-#Preview {
-    ZStack {
-        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(),
-                                                  garage: Garage())
-        )
-    }
-}
+//#Preview {
+//    ZStack {
+//        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(),
+//                                                  garage: Garage())
+//        )
+//    }
+//}
 
 //                .chartYAxis {
 //                    AxisMarks(position: .leading)

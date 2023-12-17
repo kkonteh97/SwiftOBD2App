@@ -307,10 +307,10 @@ struct MessageView: View {
     }
 }
 
-struct CarScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        TestingScreen(viewModel: TestingScreenViewModel(obdService: OBDService(), 
-                                                        garage: Garage())
-        )
-    }
-}
+//struct CarScreen_Previews: PreviewProvider {
+//    static var previews: some View {
+//        TestingScreen(viewModel: TestingScreenViewModel(obdService: OBDService(), 
+//                                                        garage: Garage())
+//        )
+//    }
+//}

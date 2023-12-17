@@ -84,7 +84,7 @@ class CBPeripheralMock: Mock, CBPeripheralProtocol {
             let delegate = delegate as? CBPeripheralProtocolDelegate
             else { return }
         
-        serviceCharacteristic.writeValue(uuid: mutableCharacteristic.uuid, writeValue: data, ecuSettings: &ecuSetting)
+        serviceCharacteristic.writeValue(uuid: mutableCharacteristic.uuid, writeValue: data, delegate: delegate, ecuSettings: &ecuSetting)
         let value = serviceCharacteristic.value(uuid: mutableCharacteristic.uuid)
 
         mutableCharacteristic.value = value

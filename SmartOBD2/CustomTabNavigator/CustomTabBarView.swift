@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 enum Constants {
     static let radius: CGFloat = 16
@@ -30,13 +29,12 @@ struct CustomTabBarView<Content: View>: View {
 
     @State var localSelection: TabBarItem
     @State var whiteStreakProgress: CGFloat = 0.0
+    @State private var shouldGrow = false
 
     @Binding var selection: TabBarItem
     @EnvironmentObject var globalSettings: GlobalSettings
     @GestureState var gestureOffset: CGFloat = 0
     @Namespace private var namespace
-
-    private var cancellables = Set<AnyCancellable>()
 
     let maxHeight: CGFloat
     let backgroundView: Content
@@ -77,57 +75,56 @@ struct CustomTabBarView<Content: View>: View {
     var body: some View {
         ZStack {
             backgroundView
-            VStack(spacing: 0) {
+            VStack(spacing: 40) {
                 tabBar
+                    .frame(maxHeight: maxHeight * 0.1)
                     .onChange(of: selection, perform: { value in
                         withAnimation(.easeInOut) {
                             localSelection = value
                     }})
-                    .frame(maxHeight: maxHeight * 0.1)
 
                 carInfoView
-                    .padding(.horizontal, 20)
-                    .padding(.top, 40)
+                    .padding(.horizontal)
                     .frame(maxWidth: .infinity, maxHeight: maxHeight * 0.4 - maxHeight * 0.1)
-                    .transition(.move(edge: .top))
+
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background {
-                Color.raisinblack
-            }
+            .background { Color.raisinblack }
             .cornerRadius(10)
             .offset(y: max(self.offset + self.gestureOffset, 0))
             .animation(.interactiveSpring(
                 response: 0.5,
                 dampingFraction: 0.8,
                 blendDuration: 0),
-                       value: gestureOffset
+                value: gestureOffset
             )
             .gesture(
-                DragGesture()
-                .updating($gestureOffset, body: { value, out, _ in
-                    out = value.translation.height})
-                .onEnded({ value in
-                    let snapDistanceFullScreen = self.maxHeight * 0.60
-                    let snapDistanceHalfScreen =  self.maxHeight * 0.85
-                    if value.location.y <= snapDistanceFullScreen {
-                        globalSettings.displayType = .fullScreen
-                    } else if value.location.y > snapDistanceFullScreen  &&
-                                value.location.y <= snapDistanceHalfScreen {
-                        globalSettings.displayType = .halfScreen
-                        if viewModel.connectionState == .connectedToVehicle {
-                            animateWhiteStreak()
-                        }
-                    } else {
-                        globalSettings.displayType = .quarterScreen
+            DragGesture()
+            .updating($gestureOffset, body: { value, out, _ in
+                out = value.translation.height})
+            .onEnded({ value in
+                let snapDistanceFullScreen = self.maxHeight * 0.60
+                let snapDistanceHalfScreen =  self.maxHeight * 0.85
+                if value.location.y <= snapDistanceFullScreen {
+                    globalSettings.displayType = .fullScreen
+                } else if value.location.y > snapDistanceFullScreen  &&
+                            value.location.y <= snapDistanceHalfScreen {
+                    globalSettings.displayType = .halfScreen
+                    if viewModel.connectionState == .connectedToVehicle {
+                        animateWhiteStreak()
+                    }
+                } else {
+                    globalSettings.displayType = .quarterScreen
             }}))
 
             if viewModel.connectionState != .connectedToVehicle  {
                 connectButton
                     .offset(y: self.offset + self.gestureOffset - maxHeight * 0.5)
-                    .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.8,
-                                                  blendDuration: 0), value: gestureOffset)
-                    .transition(.move(edge: .bottom))
+                    .animation(.interactiveSpring(response: 0.5, 
+                                                  dampingFraction: 0.8,
+                                                  blendDuration: 0), 
+                               value: gestureOffset
+                )
             }
         }
         .onAppear {
@@ -147,70 +144,13 @@ struct CustomTabBarView<Content: View>: View {
         let progress = 1 - (offset + gestureOffset) / (UIScreen.main.bounds.height * 0.50)
         return progress * 30
     }
+}
 
-    @State private var shouldGrow = false
-
-    func animateWhiteStreak() {
-        withAnimation(.linear(duration: 2.0)) {
-            self.whiteStreakProgress = 1.0 // Animate to 100%
-        }
-    }
-
+extension CustomTabBarView {
     private var connectButton: some View {
         ZStack {
             Button(action: {
-                guard !isLoading else {
-                    return
-                }
-                self.isLoading = true
-                toggleDisplayType(to: .halfScreen)
-
-                Task {
-                    do {
-                        guard var vehicle = viewModel.currentVehicle else {
-                            throw OBDServiceError.noVehicleSelected
-                        }
-                        try await viewModel.setupAdapter(
-                            setupOrder: viewModel.setupOrder,
-                            vehicle: &vehicle
-                        )
-                        DispatchQueue.main.async {
-                            viewModel.garage.updateVehicle(vehicle)
-                            viewModel.garage.setCurrentVehicle(by: vehicle.id)
-                            globalSettings.statusMessage = "Connected to Vehicle"
-                            globalSettings.showAltText = true
-                            withAnimation {
-                                self.isLoading = false
-                                animateWhiteStreak()
-                            }
-                        }
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                globalSettings.showAltText  = false
-                            }
-                        }
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
-                            toggleDisplayType(to: .quarterScreen)
-                        }
-                    } catch OBDServiceError.noVehicleSelected {
-                        DispatchQueue.main.async {
-                            globalSettings.statusMessage = "Add A Vehicle In Garage"
-                            withAnimation {
-                                self.isLoading = false
-                            }
-                        }
-                    } catch {
-                        print(error.localizedDescription)
-                        DispatchQueue.main.async {
-                            globalSettings.statusMessage = "Error Connecting to Vehicle"
-                            withAnimation {
-                                self.isLoading = false
-                            }
-                        }
-                    }
-                }
+                connectButtonAction()
             }) {
                 if !isLoading {
                     Text("START")
@@ -225,22 +165,69 @@ struct CustomTabBarView<Content: View>: View {
                     .frame(width: 80, height: 80)
             )
             .shadow(radius: 5)
+
             if isLoading {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                } else {
-                    Ellipse()
-                        .foregroundColor(Color.clear)
-                        .frame(width: 50, height: 50)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white, lineWidth: 2)
-                                .scaleEffect(shouldGrow ? 1.5 : 1.0)
-                                .opacity(shouldGrow ? 0.0 : 1.0)
-                        )
-                        .onAppear {
-                            withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                                self.shouldGrow = true
+                ProgressView()
+                    .scaleEffect(1.5)
+            } else {
+                Ellipse()
+                    .foregroundColor(Color.clear)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 2)
+                            .scaleEffect(shouldGrow ? 1.5 : 1.0)
+                            .opacity(shouldGrow ? 0.0 : 1.0)
+                    )
+                    .onAppear {
+                        withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                            self.shouldGrow = true
+                    }
+                }
+            }
+        }
+    }
+
+    private func connectButtonAction() {
+        guard !isLoading else {
+            return
+        }
+        self.isLoading = true
+        toggleDisplayType(to: .halfScreen)
+        Task {
+            do {
+                try await viewModel.setupAdapter(setupOrder: viewModel.setupOrder, device: globalSettings.userDevice)
+                DispatchQueue.main.async {
+                    globalSettings.statusMessage = "Connected to Vehicle"
+                    globalSettings.showAltText = true
+                    withAnimation {
+                        self.isLoading = false
+                        animateWhiteStreak()
+                    }
+                }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        globalSettings.showAltText  = false
+                    }
+                }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+                    toggleDisplayType(to: .quarterScreen)
+                }
+            } catch OBDServiceError.noVehicleSelected {
+                DispatchQueue.main.async {
+                    globalSettings.statusMessage = "Add A Vehicle In Garage"
+                    withAnimation {
+                        self.isLoading = false
+                    }
+                }
+            } catch {
+                print(error.localizedDescription)
+                DispatchQueue.main.async {
+                    globalSettings.statusMessage = "Error Connecting to Vehicle"
+                    withAnimation {
+                        self.isLoading = false
                     }
                 }
             }
@@ -255,8 +242,13 @@ struct CustomTabBarView<Content: View>: View {
             globalSettings.displayType = displayType
         }
     }
-}
 
+    func animateWhiteStreak() {
+        withAnimation(.linear(duration: 2.0)) {
+            self.whiteStreakProgress = 1.0 // Animate to 100%
+        }
+    }
+}
 
 extension CustomTabBarView {
     private func tabView(tab: TabBarItem) -> some View {
@@ -299,72 +291,72 @@ extension CustomTabBarView {
     }
 
     private var carInfoView: some View {
-            HStack(spacing: 20) {
-                if let car =  viewModel.currentVehicle {
-                        VStack(alignment: .leading, spacing: 10) {
-                            VStack(alignment: .center, spacing: 10) {
-                                Text(globalSettings.showAltText ? globalSettings.statusMessage : car.year + " " + car.make + " " + car.model)
-                                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .fontWeight(.bold)
-                            }
-                            .padding(10)
-                            .frame(maxWidth: .infinity)
-                            .background(content: {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.white, lineWidth: 1)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .trim(from: 0, to: whiteStreakProgress)
-                                            .stroke(
-                                                AngularGradient(
-                                                    gradient: .init(colors: [.green]),
-                                                    center: .center,
-                                                    startAngle: .zero,
-                                                    endAngle: .degrees(360)
-                                                ),
-                                                style: StrokeStyle(lineWidth: 1, lineCap: .round)
-                                            )
-                                    )
-                            })
-
-                            Text("Protocol: " + (car.obdinfo.obdProtocol?.description ?? "Unknown"))
-                                .font(.caption)
-
-                            Text("VIN: \(car.obdinfo.vin ?? "")")
-                                .font(.caption)
-
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(globalSettings.statusMessage)
+        HStack(spacing: 20) {
+            if let car =  viewModel.currentVehicle {
+                VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .center, spacing: 10) {
+                        Text(globalSettings.showAltText ? globalSettings.statusMessage : car.year + " " + car.make + " " + car.model)
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .fontWeight(.bold)
-                            .padding(10)
-                            .frame(maxWidth: .infinity)
-                            .background(content: {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.white, lineWidth: 1)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .trim(from: 0, to: whiteStreakProgress)
-                                            .stroke(
-                                                AngularGradient(
-                                                    gradient: .init(colors: [.green]),
-                                                    center: .center,
-                                                    startAngle: .zero,
-                                                    endAngle: .degrees(360)
-                                                ),
-                                                style: StrokeStyle(lineWidth: 1, lineCap: .round)
-                                            )
-                                    )
-                            })
-
-                        Spacer()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(content: {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white, lineWidth: 1)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .trim(from: 0, to: whiteStreakProgress)
+                                    .stroke(
+                                        AngularGradient(
+                                            gradient: .init(colors: [.green]),
+                                            center: .center,
+                                            startAngle: .zero,
+                                            endAngle: .degrees(360)
+                                        ),
+                                        style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                            )
+                        )
+                    })
+
+                    Text("VIN: " + (car.obdinfo.vin ?? "No Vin"))
+                            .font(.caption)
+
+                    Text("Protocol: " + (car.obdinfo.obdProtocol?.description ?? "Unknown"))
+                            .font(.caption)
+
+                    Spacer(minLength: 0)
                 }
+                .frame(maxWidth: .infinity)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(globalSettings.statusMessage)
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .fontWeight(.bold)
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
+                        .background(content: {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.white, lineWidth: 1)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .trim(from: 0, to: whiteStreakProgress)
+                                        .stroke(
+                                            AngularGradient(
+                                                gradient: .init(colors: [.green]),
+                                                center: .center,
+                                                startAngle: .zero,
+                                                endAngle: .degrees(360)
+                                            ),
+                                            style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                                        )
+                                )
+                        })
+
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 }
@@ -373,8 +365,7 @@ extension CustomTabBarView {
     ZStack {
         GeometryReader { proxy in
             CustomTabBarView(tabs: [.dashBoard, .features],
-                             viewModel: CustomTabBarViewModel(obdService: OBDService(),
-                                                              garage: Garage()),
+                             viewModel: CustomTabBarViewModel(OBDService(), Garage()),
                              selection: .constant(.dashBoard),
                              maxHeight: proxy.size.height
             ) {

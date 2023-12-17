@@ -62,7 +62,7 @@ class LiveDataViewModel: ObservableObject {
     private var appendMeasurementsTimer: DispatchSourceTimer?
     private let measurementTimeLimit: TimeInterval = 120
 
-    init(obdService: OBDService, garage: Garage) {
+    init(_ obdService: OBDService, _ garage: Garage) {
         self.obdService = obdService
         self.garage = garage
 

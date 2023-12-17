@@ -45,17 +45,17 @@ struct CustomTabBarContainerView<Content: View>: View {
     }
 }
 
-struct CustomTabBarContainerView_Previews: PreviewProvider {
-    static let tabs: [TabBarItem] = [.dashBoard, .features]
-    static var previews: some View {
-        GeometryReader { proxy in
-            CustomTabBarContainerView(selection: .constant(tabs.first!),
-                                      maxHeight: proxy.size.height,
-                                      viewModel: CustomTabBarViewModel(obdService: OBDService(),
-                                                                      garage: Garage())
-            ) {
-                Color.red
-            }
-        }
-    }
-}
+//struct CustomTabBarContainerView_Previews: PreviewProvider {
+//    static let tabs: [TabBarItem] = [.dashBoard, .features]
+//    static var previews: some View {
+//        GeometryReader { proxy in
+//            CustomTabBarContainerView(selection: .constant(tabs.first!),
+//                                      maxHeight: proxy.size.height,
+//                                      viewModel: CustomTabBarViewModel(obdService: OBDService(),
+//                                                                      garage: Garage())
+//            ) {
+//                Color.red
+//            }
+//        }
+//    }
+//}

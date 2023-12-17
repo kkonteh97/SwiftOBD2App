@@ -18,7 +18,7 @@ class VehicleDiagnosticsViewModel: ObservableObject {
 
     let obdService: OBDService
 
-    init(obdService: OBDService, garage: Garage) {
+    init(_ obdService: OBDService, _ garage: Garage) {
         self.obdService = obdService
         self.garage = garage
 
@@ -122,7 +122,6 @@ struct VehicleDiagnosticsView: View {
 
 #Preview {
     ZStack {
-        VehicleDiagnosticsView(viewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
-                                                        garage: Garage()))
+        VehicleDiagnosticsView(viewModel: VehicleDiagnosticsViewModel(OBDService(), Garage()))
     }
 }

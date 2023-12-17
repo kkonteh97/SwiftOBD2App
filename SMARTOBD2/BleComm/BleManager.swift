@@ -44,29 +44,25 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
     private var characteristicDiscoveryCompletion: (([CBCharacteristic]?, Error?) -> Void)?
     private var connectionCompletion: ((CBPeripheralProtocol?, Error?) -> Void)?
 
-    @Published var isDemoMode: Bool = false {
-           didSet {
-               switchToDemoMode()
-               print("Demo Mode: \(isDemoMode)")
-           }
-    }
 
     // MARK: - Initialization
     override init() {
         super.init()
-        #if targetEnvironment(simulator)
-        centralManager = CBCentralManagerMock(delegate: self, queue: nil)
-        #else
-        switchToDemoMode()
-        #endif
+        centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
+
+//        #if targetEnvironment(simulator)
+//        isDemoMode = true
+//        #else
+//        isDemoMode = false
+//        #endif
     }
 
-    func switchToDemoMode() {
-        if isDemoMode {
-            // switch to mock manager in demo mode
+    func demoModeSwitch(_ isDemoMode: Bool) {
+        // switch to mock manager in demo mode
+        switch isDemoMode {
+        case true:
             centralManager = CBCentralManagerMock(delegate: self, queue: nil)
-        } else {
-            // switch to real manager in production mode
+        case false:
             centralManager = CBCentralManager(delegate: self, queue: nil, options: nil)
         }
     }
@@ -132,6 +128,7 @@ class BLEManager: NSObject, ObservableObject, CBPeripheralProtocolDelegate, CBCe
         }
 
         if _name.contains(userDevice.DeviceName) {
+            stopScan()
             foundPeripheralCompletion?(foundPeripheral, nil)
         }
     }

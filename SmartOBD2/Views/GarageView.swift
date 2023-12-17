@@ -42,6 +42,9 @@ struct GarageView: View {
                                 .foregroundColor(.red)
                         }
                     }
+                    .swipeActions(edge: .leading) {
+
+                    }
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: 125, alignment: .leading)
                     .background(viewModel.currentVehicle == vehicle ? Color.blue : Color.clear)
@@ -69,7 +72,6 @@ struct GarageView: View {
                         Text("Back")
                     }
                 }
-
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -91,7 +93,7 @@ struct GarageView: View {
 }
 
 #Preview {
-    GarageView(viewModel: GarageViewModel(garage: Garage(), obdService: OBDService()))
+    GarageView(viewModel: GarageViewModel(OBDService(), Garage()))
         .background(LinearGradient(.darkStart, .darkEnd))
 }
 

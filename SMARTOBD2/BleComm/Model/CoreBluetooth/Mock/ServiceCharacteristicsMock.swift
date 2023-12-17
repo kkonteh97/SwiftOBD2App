@@ -55,7 +55,7 @@ class ServiceCharacteristicsMock {
 
     let header = "7E8"
 
-    public func writeValue(uuid: CBUUID, writeValue: Data, ecuSettings: inout MockECUSettings) {
+    public func writeValue(uuid: CBUUID, writeValue: Data, delegate: CBPeripheralProtocolDelegate, ecuSettings: inout MockECUSettings) {
         guard let dataString = String(data: writeValue, encoding: .utf8) else {
             print("Could not convert data to string")
             return
@@ -73,11 +73,9 @@ class ServiceCharacteristicsMock {
                     value = Data()
                     return
                 }
-
                 value = responseData
             } else {
-                value = Data()
-                print("Unknown command: ", dataString.debugDescription)
+
             }
         default:
             break

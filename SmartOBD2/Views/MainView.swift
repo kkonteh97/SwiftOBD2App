@@ -21,14 +21,15 @@ struct MainView: View {
     let testingScreenViewModel: TestingScreenViewModel
     let diagnosticsViewModel: VehicleDiagnosticsViewModel
 
-    init(garage: Garage, obdService: OBDService = OBDService()) {
-        self.garageViewModel        =   GarageViewModel(garage: garage, obdService: obdService)
-        self.settingsViewModel      =   SettingsViewModel(obdService: obdService)
-        self.homeViewModel          =   HomeViewModel(obdService: obdService, garage: garage)
-        self.liveDataViewModel      =   LiveDataViewModel(obdService: obdService, garage: garage)
-        self.bottomSheetViewModel   =   CustomTabBarViewModel(obdService: obdService, garage: garage)
-        self.testingScreenViewModel =   TestingScreenViewModel(obdService: obdService, garage: garage)
-        self.diagnosticsViewModel   =   VehicleDiagnosticsViewModel(obdService: obdService, garage: garage)
+    init(garage: Garage) {
+        let obdService = OBDService()
+        self.garageViewModel        =   GarageViewModel(obdService, garage)
+        self.settingsViewModel      =   SettingsViewModel(obdService,  garage)
+        self.homeViewModel          =   HomeViewModel(obdService, garage)
+        self.liveDataViewModel      =   LiveDataViewModel(obdService, garage)
+        self.bottomSheetViewModel   =   CustomTabBarViewModel(obdService, garage)
+        self.testingScreenViewModel =   TestingScreenViewModel(obdService, garage)
+        self.diagnosticsViewModel   =   VehicleDiagnosticsViewModel(obdService, garage)
     }
 
     var body: some View {

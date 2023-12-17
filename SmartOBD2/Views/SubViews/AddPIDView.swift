@@ -68,7 +68,7 @@ struct AddPIDView: View {
     }
 }
 
-#Preview {
-    AddPIDView(viewModel: LiveDataViewModel(obdService: OBDService(),
-                                            garage: Garage()))
-}
+//#Preview {
+//    AddPIDView(viewModel: LiveDataViewModel(obdService: OBDService(),
+//                                            garage: Garage()))
+//}

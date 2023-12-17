@@ -23,7 +23,7 @@ class TestingScreenViewModel: ObservableObject {
 
     @Published var connectPeripheral: CBPeripheralProtocol?
 
-    init(obdService: OBDService, garage: Garage) {
+    init(_ obdService: OBDService, _ garage: Garage) {
         self.obdService = obdService
         self.garage = garage
         garage.$currentVehicle

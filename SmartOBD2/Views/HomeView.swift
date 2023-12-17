@@ -112,17 +112,17 @@ struct SettingsAboutSectionView: View {
     }
 }
 
-#Preview {
-    ZStack {
-        LinearGradient(.darkStart, .darkEnd)
-            .ignoresSafeArea()
-        HomeView(
-            viewModel: HomeViewModel(obdService: OBDService(),
-                                     garage: Garage()),
-            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
-                           garage: Garage()),
-            garageViewModel: GarageViewModel(garage: Garage(), obdService: OBDService()),
-            settingsViewModel: SettingsViewModel(obdService: OBDService()),
-            testingScreenViewModel: TestingScreenViewModel(obdService: OBDService(), garage: Garage()))
-    }
-}
+//#Preview {
+//    ZStack {
+//        LinearGradient(.darkStart, .darkEnd)
+//            .ignoresSafeArea()
+//        HomeView(
+//            viewModel: HomeViewModel(obdService: OBDService(),
+//                                     garage: Garage()),
+//            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
+//                           garage: Garage()),
+//            garageViewModel: GarageViewModel(obdService: OBDService(), garage: Garage()),
+//            settingsViewModel: SettingsViewModel(obdService: OBDService()),
+//            testingScreenViewModel: TestingScreenViewModel(obdService: OBDService(), garage: Garage()))
+//    }
+//}

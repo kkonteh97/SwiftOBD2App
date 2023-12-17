@@ -21,7 +21,7 @@ struct LogsView: View {
     }
 }
 
-#Preview {
-    DashBoardView(liveDataViewModel: LiveDataViewModel(obdService: OBDService(),
-                                                       garage: Garage()))
-}
+//#Preview {
+//    DashBoardView(liveDataViewModel: LiveDataViewModel(obdService: OBDService(),
+//                                                       garage: Garage()))
+//}

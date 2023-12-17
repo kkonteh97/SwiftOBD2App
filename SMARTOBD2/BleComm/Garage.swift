@@ -40,7 +40,14 @@ class Garage: ObservableObject {
         // Load garageVehicles from UserDefaults
 //        UserDefaults.standard.removeObject(forKey: "garageVehicles")
 //        UserDefaults.standard.removeObject(forKey: "currentCarId")
+        #if targetEnvironment(simulator)
+        loadMockGarage()
+        #else
+        loadGarage()
+        #endif
+    }
 
+    func loadGarage() {
         if let data = UserDefaults.standard.data(forKey: "garageVehicles"),
            let decodedVehicles = try? JSONDecoder().decode([Vehicle].self, from: data) {
             self.garageVehicles = decodedVehicles
@@ -53,8 +60,19 @@ class Garage: ObservableObject {
 
         // Load currentVehicleId from UserDefaults
         self.currentVehicleId = UserDefaults.standard.integer(forKey: "currentCarId")
-
         currentVehicle = getVehicle(id: currentVehicleId ?? 0)
+    }
+
+    func loadMockGarage() {
+        self.garageVehicles = [Vehicle(id: 1, make: "M-BMW", model: "X5", year: "2015", obdinfo: OBDInfo()),
+                               Vehicle(id: 2, make: "M-Mercedes", model: "C300", year: "2018", obdinfo: OBDInfo()),
+                               Vehicle(id: 3, make: "M-Toyota", model: "Camry", year: "2019", obdinfo: OBDInfo())]
+
+        if let maxId = garageVehicles.map({ $0.id }).max() {
+              self.nextId = maxId + 1
+        }
+
+        currentVehicle = garageVehicles[0]
     }
 
     func addVehicle(make: String, model: String, year: String, obdinfo: OBDInfo? = nil) {
@@ -94,6 +112,16 @@ class Garage: ObservableObject {
     func saveGarageVehicles() {
         if let encodedData = try? JSONEncoder().encode(garageVehicles) {
             UserDefaults.standard.set(encodedData, forKey: "garageVehicles")
+        }
+    }
+
+    func switchToDemoMode(_ isDemoMode: Bool) {
+        // put garage in demo mode
+        switch isDemoMode {
+        case true:
+            loadMockGarage()
+        case false:
+            loadGarage()
         }
     }
 }
