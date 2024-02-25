@@ -1,4 +1,4 @@
-name: SMARTOBD2
+name: SwiftOBD2
 options:
   bundleIdPrefix: com.myapp
 targets:
@@ -7,7 +7,7 @@ targets:
     platform: iOS
     deploymentTarget: "15.0"
     info:
-      path: "SMARTOBD2/Info.plist"
+      path: "SwiftOBD2/Info.plist"
       properties:
         CFBundleDisplayName: $(PRODUCT_NAME)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
@@ -20,5 +20,5 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
     sources:
-      - path: "SMARTOBD2"
+      - path: "SwiftOBD2"
 
