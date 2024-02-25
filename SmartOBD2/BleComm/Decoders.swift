@@ -114,30 +114,84 @@ extension Unit {
     static let degrees = Unit(symbol: "°")
     static let gramsPerSecond = Unit(symbol: "g/s")
     static let none = Unit(symbol: "")
-    static let kmh = Unit(symbol: "km/h")
     static let rpm = Unit(symbol: "rpm")
-    static let kPa = Unit(symbol: "kPa")
+    static let kph = Unit(symbol: "KP/H")
+    static let mph = Unit(symbol: "MP/H")
+
+    static let Pascal = Unit(symbol: "Pa")
     static let bar = Unit(symbol: "bar")
+    static let ppm = Unit(symbol: "ppm")
+    static let ratio = Unit(symbol: "ratio")
 }
 
 let uasIDS: [UInt8: UAS] = [
     // Unsigned
     0x01: UAS(signed: false, scale: 1.0, unit: Unit.count),
     0x02: UAS(signed: false, scale: 0.1, unit: Unit.count),
+    0x03: UAS(signed: false, scale: 0.01, unit: Unit.count),
+    0x04: UAS(signed: false, scale: 0.001, unit: Unit.count),
+    0x05: UAS(signed: false, scale: 0.0000305, unit: Unit.count),
+    0x06: UAS(signed: false, scale: 0.000305, unit: Unit.count),
     0x07: UAS(signed: false, scale: 0.25, unit: Unit.rpm),
-    0x09: UAS(signed: false, scale: 1, unit: Unit.kmh),
+    0x09: UAS(signed: false, scale: 1, unit: UnitSpeed.kilometersPerHour),
+
+    0x0A: UAS(signed: false, scale: 0.122, unit: UnitElectricPotentialDifference.millivolts),
+    0x0B: UAS(signed: false, scale: 0.001, unit: UnitElectricPotentialDifference.volts),
+
+    0x10: UAS(signed: false, scale: 1, unit: UnitDuration.milliseconds),
+    0x11: UAS(signed: false, scale: 100, unit: UnitDuration.milliseconds),
     0x12: UAS(signed: false, scale: 1, unit: UnitDuration.seconds),
+    0x13: UAS(signed: false, scale: 1, unit: UnitElectricResistance.microohms),
+    0x14: UAS(signed: false, scale: 1, unit: UnitElectricResistance.ohms),
+    0x15: UAS(signed: false, scale: 1, unit: UnitElectricResistance.kiloohms),
+    0x16: UAS(signed: false, scale: 0.1, unit: Unit.celsius, offset: -40.0),
+    0x17: UAS(signed: false, scale: 0.01, unit: UnitPressure.kilopascals),
+    0x18: UAS(signed: false, scale: 0.0117, unit: UnitPressure.kilopascals),
+    0x19: UAS(signed: false, scale: 0.079, unit: UnitPressure.kilopascals),
+    0x1A: UAS(signed: false, scale: 1, unit: UnitPressure.kilopascals),
+    0x1B: UAS(signed: false, scale: 10, unit: UnitPressure.kilopascals),
+    0x1C: UAS(signed: false, scale: 0.01, unit: UnitAngle.degrees),
+    0x1D: UAS(signed: false, scale: 0.5, unit: UnitAngle.degrees),
+    //unit ratio
+    0x1E: UAS(signed: false, scale: 0.0000305, unit: Unit.ratio),
+    0x1F: UAS(signed: false, scale: 0.05, unit: Unit.ratio),
+    0x20: UAS(signed: false, scale: 0.00390625, unit: Unit.ratio),
+    0x21: UAS(signed: false, scale: 1, unit: UnitFrequency.millihertz),
+    0x22: UAS(signed: false, scale: 1, unit: UnitFrequency.hertz),
+    0x23: UAS(signed: false, scale: 1, unit: UnitFrequency.kilohertz),
+    0x24: UAS(signed: false, scale: 1, unit: Unit.count),
+    0x25: UAS(signed: false, scale: 1, unit: UnitLength.kilometers),
 
     0x27: UAS(signed: false, scale:  0.01, unit: Unit.gramsPerSecond),
 
     // Signed
     0x81: UAS(signed: true, scale: 1.0, unit: Unit.count),
-    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count)
+    0x82: UAS(signed: true, scale: 0.1, unit: Unit.count),
+
+    0x83: UAS(signed: true, scale: 0.01, unit: Unit.count),
+    0x84: UAS(signed: true, scale: 0.001, unit: Unit.count),
+    0x85: UAS(signed: true, scale: 0.0000305, unit: Unit.count),
+    0x86: UAS(signed: true, scale: 0.000305, unit: Unit.count),
+    0x87: UAS(signed: true, scale: 1, unit: Unit.ppm),
+    //
+    0x8A: UAS(signed: true, scale: 0.122, unit: UnitElectricPotentialDifference.millivolts),
+    0x8B: UAS(signed: true, scale: 0.001, unit: UnitElectricPotentialDifference.volts),
+    0x8C: UAS(signed: true, scale: 0.01, unit: UnitElectricPotentialDifference.volts),
+    0x8D: UAS(signed: true, scale: 0.00390625, unit: UnitElectricCurrent.milliamperes),
+    0x8E: UAS(signed: true, scale: 0.001, unit: UnitElectricCurrent.amperes),
+    //
+    0x90: UAS(signed: true, scale: 1, unit: UnitDuration.milliseconds),
+    //
+    0x96: UAS(signed: true, scale: 0.1, unit: Unit.celsius),
+
+    0x99: UAS(signed: true, scale: 0.1, unit: UnitPressure.kilopascals),
+
+    0xFC: UAS(signed: true, scale: 0.01, unit: UnitPressure.kilopascals),
+    0xFD: UAS(signed: true, scale: 0.001, unit: UnitPressure.kilopascals),
+    0xFE: UAS(signed: true, scale: 0.25, unit: Unit.Pascal),
 ]
 
-
-
-enum Decoder: Codable {
+enum Decoders: Codable {
     case pid
     case status
     case singleDTC
@@ -183,50 +237,60 @@ enum Decoder: Codable {
     case encoded_string
     case none
 
+    func decodeSpeed(_ data: Data) -> Measurement<Unit>? {
+        let uas = UAS(signed: false, scale: 1, unit: UnitSpeed.kilometersPerHour)
+        let measurement = uas.decode(bytes: data)
+        return  measurement
+    }
+
+    func KPHtoMPH(_ kph: Double) -> Double {
+        return kph * 0.621371
+    }
+
     func decode(data: Data) -> OBDDecodeResult? {
         switch self {
         case .pid:
             return nil
         case .status:
-            return .statusResult(status(data))
+            return .statusResult(Decoders.status(data))
         case .uas0x09:
-            guard let measurement = decodeUAS(data, id: 0x09) else { return .noResult }
+            guard let measurement = decodeSpeed(data) else { return .noResult }
+            // speed is in km/h
             return .measurementResult(measurement)
         case .uas0x07:
             guard let measurement = decodeUAS(data, id: 0x07) else { return .noResult }
             return .measurementResult(measurement)
         case .temp:
-            guard let temp = temp(data) else { return .noResult }
+            guard let temp = Decoders.temp(data) else { return .noResult }
             return .measurementResult(temp)
         case .percent:
-            guard let percent = percent(data) else { return .noResult }
+            guard let percent = Decoders.percent(data) else { return .noResult }
             return .measurementResult(percent)
         case .currentCentered:
-            guard let currentCentered = currentCentered(data) else { return .noResult }
+            guard let currentCentered = Decoders.currentCentered(data) else { return .noResult }
             return .measurementResult(currentCentered)
         case .airStatus:
-            guard let airStatus = currentCentered(data) else { return .noResult }
+            guard let airStatus = Decoders.currentCentered(data) else { return .noResult }
             return .measurementResult(airStatus)
         case .singleDTC:
-            guard let dtc = singleDtc(data) else { return .noResult }
+            guard let dtc = Decoders.singleDtc(data) else { return .noResult }
             return .troubleCode([dtc])
 
-            // TODO : add fuel status return type
         case .fuelStatus:
             guard let fuelStatus = fuelStatus(data) else { return .noResult }
             return .stringResult(fuelStatus)
 
         case .percentCentered:
-            guard let percentCentered = percent(data) else { return .noResult }
+            guard let percentCentered = Decoders.percent(data) else { return .noResult }
             return .measurementResult(percentCentered)
         case .fuelPressure:
-            guard let fuelPressure = fuelPressure(data) else { return .noResult }
+            guard let fuelPressure = Decoders.fuelPressure(data) else { return .noResult }
             return .measurementResult(fuelPressure)
         case .pressure:
-            guard let pressure = pressure(data) else { return .noResult }
+            guard let pressure = Decoders.pressure(data) else { return .noResult }
             return .measurementResult(pressure)
         case .timingAdvance:
-            guard let timingAdvance = timingAdvance(data) else { return .noResult }
+            guard let timingAdvance = Decoders.timingAdvance(data) else { return .noResult }
             return .measurementResult(timingAdvance)
             // TODO : add obd Compliance return type
 
@@ -279,12 +343,12 @@ enum Decoder: Codable {
             return .measurementResult(uasValue)
 
         case .sensorVoltageBig:
-            guard let voltage = sensorVoltage(data) else { return .noResult }
+            guard let voltage = Decoders.sensorVoltageBig(data) else { return .noResult }
             return .measurementResult(voltage)
 
         case .evapPressure:
-             guard let pressure = evapPressure(data) else { return .noResult }
-             return .measurementResult(pressure)
+            guard let pressure = evapPressure(data) else { return .noResult }
+            return .measurementResult(pressure)
         case .none:
             return nil
         case .absoluteLoad:
@@ -300,133 +364,100 @@ enum Decoder: Codable {
             guard let type = fuelType(data) else { return .noResult }
             return .stringResult(type)
         case .absEvapPressure:
-            guard let pressure = absEvapPressure(data) else { return .noResult }
+            guard let pressure = Decoders.absEvapPressure(data) else { return .noResult }
             return .measurementResult(pressure)
         case .evapPressureAlt:
-            guard let pressure = evapPressureAlt(data) else { return .noResult }
+            guard let pressure = Decoders.evapPressureAlt(data) else { return .noResult }
             return .measurementResult(pressure)
         case .injectTiming:
-            guard let timing = injectTiming(data) else { return .noResult }
+            guard let timing = Decoders.injectTiming(data) else { return .noResult }
             return .measurementResult(timing)
         case .dtc:
-            guard let troubleCodes = dtc(data) else { return .noResult }
+            guard let troubleCodes = Decoders.dtc(data) else { return .noResult }
             return .troubleCode(troubleCodes)
         case .fuelRate:
             guard let rate = fuelRate(data) else { return .noResult }
             return .measurementResult(rate)
         case .monitor:
-            guard let monitor = monitor(data) else { return .noResult }
+            guard let monitor = Decoders.monitor(data) else { return .noResult }
             return .measurementMonitor(monitor)
         case .count:
             return nil
         case .cvn:
             return nil
         case .encoded_string:
+            guard let string = encoded_string(data) else { return .noResult }
+            return .stringResult(string)
+        }
+    }
+
+    func encoded_string(_ data: Data) -> String? {
+        guard var string = String(bytes: data, encoding: .utf8) else {
             return nil
         }
+
+        string = string
+            .replacingOccurrences(of: "[^a-zA-Z0-9]",
+                                  with: "",
+                                  options: .regularExpression)
+
+        return string
     }
 
-    func dtc(_ data: Data) -> [TroubleCode]? {
-        // converts a frame of 2-byte DTCs into a list of DTCs
-        let data = Data(data[1...])
-        var codes: [TroubleCode] = []
-        // send data to parceDtc 2 byte at a time
-        for n in stride(from: 0, to: data.count - 1, by: 2) {
-            let endIndex = min(n + 1, data.count - 1)
-            print(data[n...endIndex])
-            guard let dtc = parseDTC(data[n...endIndex]) else {
-                continue
-            }
-            codes.append(dtc)
-        }
-        return codes
-    }
-
-    func monitor(_ data: Data) -> Monitor? {
-        let databytes = data
+    static func monitor(_ data: Data) -> Monitor? {
+        var databytes = Data(data)
 
         let mon = Monitor()
 
-//        let extra_bytes = data.count % 9
+        // test that we got the right number of bytes
+        let extra_bytes = databytes.count % 9
 
-//        if extra_bytes != 0 {
-//            print("Encountered monitor message with non-multiple of 9 bytes. Truncating...")
-//            databytes = data[..<(data.count - extra_bytes)]
-//        }
+        if extra_bytes != 0 {
+            print("Encountered monitor message with non-multiple of 9 bytes. Truncating...", databytes.count, extra_bytes)
+            databytes = databytes.dropLast(extra_bytes)
+        }
 
-        for n in stride(from: 0, to: databytes.count - 1, by: 2) {
-            let test = parse_monitor_test(databytes[n...(n + 1)], mon)
-            print(test?.description ?? "No test")
-            if let test = test,
-               let tid = test.tid {
+        // look at data in blocks of 9 bytes (one test result)
+        for i in stride(from: 0, to: databytes.count, by: 9) {
+            let subdata = databytes.subdata(in: i..<i+9)
+            print("\nSubdata: ", subdata.compactMap {String(format: "%02x", $0)})
+            let test = parse_monitor_test(subdata)
+            if let test = test, let tid = test.tid {
+                print(test.name ?? "")
+                print(test.desc ?? "")
+                print("Value: ", test.value ?? "No value")
+                print("Min: ", test.min ?? "No value")
+                print("Max: ", test.max ?? "No value")
+                print(test.description)
                 mon.tests[tid] = test
             }
         }
-
         return mon
     }
 
-    func parse_monitor_test(_ data: Data, _ mon: Monitor) -> MonitorTest? {
-        var test = MonitorTest()
-        let bits = BitArray(data: data).binaryArray
-        let tid = data[0]
-        print(tid)
-        if let testInfo = TestIds(rawValue: tid) {
-            test.name = testInfo.name
-            test.desc = testInfo.desc
-
-        } else {
-            print("Encountered unknown Test ID")
-            test.name = "Unknown"
-            test.desc = "Unknown"
-        }
-
-        let uasId = Int(data[1])
-        guard let uas = uasIDS.first(where: { $0.key == uasId }) else {
-            print("Encountered Unknown Units and Scaling ID")
-            return nil
-        }
-
-        let valueRange = Array(bits[3..<5])
-        let minRange =   Array(bits[5..<7])
-        let maxRange =   Array(bits[7..<9]) // Assuming data length is at least 9
-
-        let multiplier = uas.value.scale
-
-        test.tid = tid
-        test.value = bytesToDouble(valueRange) * multiplier
-        test.min = bytesToDouble(minRange) * multiplier
-        test.max = bytesToDouble(maxRange) * multiplier
-
-        return test
-    }
-
-    func bytesToDouble(_ data: [Int]) -> Double {
-        var value = 0.0
-        for (index, bit) in data.enumerated() {
-            value += Double(bit) * pow(2.0, Double(index))
-        }
-        return value
+    func decodeUAS(_ data: Data, id: UInt8) -> Measurement<Unit>? {
+        return uasIDS[id]?.decode(bytes: data)
     }
 
     func fuelRate(_ data: Data) -> Measurement<Unit>? {
         let value = Double(bytesToInt(data)) * 0.05
-        return Measurement(value: Double(value), unit: UnitFuelEfficiency.litersPer100Kilometers)
+        return Measurement(value: value, unit: UnitFuelEfficiency.litersPer100Kilometers)
     }
 
-    func injectTiming(_ data: Data) -> Measurement<Unit>? {
-        let value = (bytesToInt(data) - 26880) / 128
-        return Measurement(value: Double(value), unit: UnitPressure.degrees)
+    static func injectTiming(_ data: Data) -> Measurement<Unit>? {
+        let value = (Double(bytesToInt(data)) - 26880) / 128
+        return Measurement(value: value, unit: UnitPressure.degrees)
     }
 
-    func evapPressureAlt(_ data: Data) -> Measurement<Unit>? {
-        let value = bytesToInt(data) - 32767
-        return Measurement(value: Double(value), unit: UnitPressure.kilopascals)
+    // -32767 to 32768 Pa
+    static func evapPressureAlt(_ data: Data) -> Measurement<Unit>? {
+        let value = Double(bytesToInt(data)) - 32767
+        return Measurement(value: value, unit: Unit.Pascal)
     }
 
-    func absEvapPressure(_ data: Data) -> Measurement<Unit>? {
-        let value = bytesToInt(data) / 200
-        return Measurement(value: Double(value), unit: UnitPressure.kilopascals)
+    static func absEvapPressure(_ data: Data) -> Measurement<Unit>? {
+        let value =  Double(bytesToInt(data)) / 200
+        return Measurement(value: value, unit: UnitPressure.kilopascals)
     }
 
     func fuelType(_ data: Data) -> String? {
@@ -456,25 +487,19 @@ enum Decoder: Codable {
         return Measurement(value: value, unit: UnitPressure.kilopascals)
     }
 
-    func sensorVoltage(_ data: Data) -> Measurement<Unit>? {
-        let value = bytesToInt(data[2..<4])
-        let voltage = (Double(value) * 8.0) / 65535
-        return Measurement(value: voltage, unit: UnitElectricPotentialDifference.volts)
-    }
-
     func auxInputStatus(_ data: Data) -> Bool? {
         return ((data[0] >> 7) & 1) == 1
     }
 
     func o2Sensors(_ data: Data) -> String? {
         let bits = BitArray(data: data)
-//        return (
-//                (),  # bank 0 is invalid
-//                tuple(bits[:2]),  # bank 1
-//                tuple(bits[2:4]),  # bank 2
-//                tuple(bits[4:6]),  # bank 3
-//                tuple(bits[6:]),  # bank 4
-//            )
+        //        return (
+        //                (),  # bank 0 is invalid
+        //                tuple(bits[:2]),  # bank 1
+        //                tuple(bits[2:4]),  # bank 2
+        //                tuple(bits[4:6]),  # bank 3
+        //                tuple(bits[6:]),  # bank 4
+        //            )
 
         let bank1 = Array(bits.binaryArray[0..<4])
         let bank2 = Array(bits.binaryArray[4..<8])
@@ -484,19 +509,19 @@ enum Decoder: Codable {
 
     func o2SensorsAlt(_ data: Data) -> String? {
         let bits = BitArray(data: data)
-//        return (
-//                (),  # bank 0 is invalid
-//                tuple(bits[:2]),  # bank 1
-//                tuple(bits[2:4]),  # bank 2
-//                tuple(bits[4:6]),  # bank 3
-//                tuple(bits[6:]),  # bank 4
-//            )
+        //        return (
+        //                (),  # bank 0 is invalid
+        //                tuple(bits[:2]),  # bank 1
+        //                tuple(bits[2:4]),  # bank 2
+        //                tuple(bits[4:6]),  # bank 3
+        //                tuple(bits[6:]),  # bank 4
+        //            )
 
         let bank1 = Array(bits.binaryArray[0..<2])
         let bank2 = Array(bits.binaryArray[2..<4])
         let bank3 = Array(bits.binaryArray[4..<6])
         let bank4 = Array(bits.binaryArray[6..<8])
-        
+
         return "\(bank1), \(bank2), \(bank3), \(bank4)"
     }
 
@@ -522,32 +547,32 @@ enum Decoder: Codable {
 
         if highBits.filter({ $0 == 1 }).count == 1, let index = highBits.firstIndex(of: 1) {
             if 7 - index < FUEL_STATUS.count {
-                       status_1 = FUEL_STATUS[7 - index]
+                status_1 = FUEL_STATUS[7 - index]
             } else {
-               print("Invalid response for fuel status (high bits set)")
+                print("Invalid response for fuel status (high bits set)")
             }
         } else {
             print("Invalid response for fuel status (multiple/no bits set)")
         }
 
         if lowBits.filter({ $0 == 1 }).count == 1, let index = lowBits.firstIndex(of: 1) {
-                if 7 - index < FUEL_STATUS.count {
-                    status_2 = FUEL_STATUS[7 - index]
-                } else {
-                    print("Invalid response for fuel status (low bits set)")
-                }
+            if 7 - index < FUEL_STATUS.count {
+                status_2 = FUEL_STATUS[7 - index]
+            } else {
+                print("Invalid response for fuel status (low bits set)")
+            }
         } else {
             print("Invalid response for fuel status (multiple/no bits set in low bits)")
         }
 
         if let status_1 = status_1, let status_2 = status_2 {
-               return "Status 1: \(status_1), Status 2: \(status_2)"
-       } else if let status = status_1 ?? status_2 {
-           return "Status: \(status)"
-       } else {
-           print("No valid status found.")
-           return nil
-       }
+            return "Status 1: \(status_1), Status 2: \(status_2)"
+        } else if let status = status_1 ?? status_2 {
+            return "Status: \(status)"
+        } else {
+            print("No valid status found.")
+            return nil
+        }
     }
 
     // 0 to 1.275 volts
@@ -557,99 +582,92 @@ enum Decoder: Codable {
         return Measurement(value: voltage, unit: UnitElectricPotentialDifference.volts)
     }
 
-    func decodeUAS(_ data: Data, id: UInt8) -> Measurement<Unit>? {
-        return uasIDS[id]?.decode(bytes: data)
+    static func dtc(_ data: Data) -> [TroubleCode]? {
+        // converts a frame of 2-byte DTCs into a list of DTCs
+        let data = Data(data)
+        var codes: [TroubleCode] = []
+        // send data to parceDtc 2 byte at a time
+        for n in stride(from: 0, to: data.count - 1, by: 2) {
+            let endIndex = min(n + 1, data.count - 1)
+            guard let dtc = parseDTC(data[n...endIndex]) else {
+                continue
+            }
+            codes.append(dtc)
+        }
+        return codes
     }
 
-    func singleDtc(_ data: Data) -> TroubleCode? {
+    static func singleDtc(_ data: Data) -> TroubleCode? {
         return parseDTC(data)
     }
 
-    func parseDTC(_ data: Data) -> TroubleCode? {
-        print(data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
-
-        if (data.count != 2) || (data == Data([0x00, 0x00])) {
-            print("error")
-            return nil
-        }
-        let binary = BitArray(data: data).binaryArray
-        print(binary)
-
-        // BYTES: (16,      35      )
-        // HEX:    4   1    2   3
-        // BIN:    01000001 00100011
-        //         [][][  in hex   ]
-        //         | / /
-        // DTC:    C0123
-        var dtc = ["P", "C", "B", "U"][Int(data[0]) >> 6]  // the last 2 bits of the first byte
-//        dtc += String((data[0] >> 4) & 0b0011)  // the next pair of 2 bits. Mask off the bits we read above
-        dtc += String(format: "%04X", (UInt16(data[0]) & 0x3F) << 8 | UInt16(data[1]))
-
-//        dtc += bytes_to_hex(_bytes)[1:4]
-//        dtc += bytesToHex(data)
-        print(dtc)
-        return TroubleCode(rawValue: dtc)
-    }
-
-    func bytesToHex(_ data: Data) -> String {
-        return data.map { String(format: "%02X", $0) }.joined()
-    }
-
-    // 0 to 765 kPa
-    func fuelPressure(_ data: Data) -> Measurement<Unit>? {
-        print(data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
-        var value = data.first ?? 0
-        value *= 3
-        return  Measurement(value: Double(value), unit: UnitPressure.kilopascals)
-    }
-
-    // 0 to 255 kPa
-    func pressure(_ data: Data) -> Measurement<Unit>? {
-        let value = data[0]
-        return Measurement(value: Double(value), unit: UnitPressure.kilopascals)
-    }
-
-    func percent(_ data: Data) -> Measurement<Unit>? {
+    static func percent(_ data: Data) -> Measurement<Unit>? {
         var value = Double(data.first ?? 0)
         value = value * 100.0 / 255.0
         return Measurement(value: value, unit: Unit.percent)
     }
 
-    func percentCentered(_ data: Data) -> Measurement<Unit>? {
+    static func percentCentered(_ data: Data) -> Measurement<Unit>? {
         var value = Double(data.first ?? 0)
         value = (value - 128) * 100.0 / 128.0
         return Measurement(value: value, unit: Unit.percent)
     }
 
-    func currentCentered(_ data: Data) -> Measurement<Unit>? {
-         let value = Double(data.first ?? 0) - 128
-         return Measurement(value: value, unit: UnitElectricCurrent.amperes)
-     }
-
-    func airStatus(_ data: Data) -> Measurement<Unit>? {
-           let bits = BitArray(data: data).binaryArray
-
-           let numSet = bits.filter { $0 == 1 }.count
-           if numSet == 1 {
-               let index = 7 - bits.firstIndex(of: 1)!
-               return Measurement(value: Double(index), unit: UnitElectricCurrent.amperes)
-           }
-           return nil
+    // -128 to 128 mA
+    static func currentCentered(_ data: Data) -> Measurement<Unit>? {
+        var value = Double(bytesToInt(data[2...3]))
+        value = (value / 256.0) - 128.0
+        return Measurement(value: value, unit: UnitElectricCurrent.milliamperes)
     }
 
-    func temp(_ data: Data) -> Measurement<Unit>? {
+    // 0 to 1.275 volts
+    static func sensorVoltage(_ data: Data) -> Measurement<Unit>? {
+        let voltage = Double(data[0]) / 200
+        return Measurement(value: voltage, unit: UnitElectricPotentialDifference.volts)
+    }
+
+    static func sensorVoltageBig(_ data: Data) -> Measurement<Unit>? {
+        let value = bytesToInt(data[2..<4])
+        let voltage = (Double(value) * 8.0) / 65535
+        return Measurement(value: voltage, unit: UnitElectricPotentialDifference.volts)
+    }
+
+    // 0 to 765 kPa
+    static func fuelPressure(_ data: Data) -> Measurement<Unit>? {
+        var value = Double(data[0])
+        value = value * 3
+        return  Measurement(value: value, unit: UnitPressure.kilopascals)
+    }
+
+    // 0 to 255 kPa
+    static func pressure(_ data: Data) -> Measurement<Unit>? {
+        let value = data[0]
+        return Measurement(value: Double(value), unit: UnitPressure.kilopascals)
+    }
+
+    func airStatus(_ data: Data) -> Measurement<Unit>? {
+        let bits = BitArray(data: data).binaryArray
+
+        let numSet = bits.filter { $0 == 1 }.count
+        if numSet == 1 {
+            let index = 7 - bits.firstIndex(of: 1)!
+            return Measurement(value: Double(index), unit: UnitElectricCurrent.amperes)
+        }
+        return nil
+    }
+
+    static func temp(_ data: Data) -> Measurement<Unit>? {
         let value = Double(bytesToInt(data)) - 40.0
         return Measurement(value: value, unit: UnitTemperature.celsius)
     }
 
-    func timingAdvance(_ data: Data) -> Measurement<Unit>? {
-            let value = Double(data.first ?? 0) / 2.0 - 64.0
-            return  Measurement(value: value, unit: UnitAngle.degrees)
+    static func timingAdvance(_ data: Data) -> Measurement<Unit>? {
+        let value = Double(data.first ?? 0) / 2.0 - 64.0
+        return  Measurement(value: value, unit: UnitAngle.degrees)
     }
 
-    func status(_ data: Data) -> Status {
+    static func status(_ data: Data) -> Status {
         let IGNITIONTYPE = ["Spark", "Compression"]
-
         //            ┌Components not ready
         //            |┌Fuel not ready
         //            ||┌Misfire not ready
@@ -664,7 +682,7 @@ enum Decoder: Codable {
         //   [# DTC] X        [supprt] [~ready]
 
         // convert to binaryarray
-        let bits = BitArray(data: data)
+        let bits = BitArray(data: data[1...])
 
         var output = Status()
         output.MIL = bits.binaryArray[0] == 1
@@ -678,21 +696,6 @@ enum Decoder: Codable {
         }
         return output
     }
-
-    func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
-        let test = StatusTest(testName, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
-        switch testName {
-        case "MISFIRE_MONITORING":
-            output.misfireMonitoring = test
-        case "FUEL_SYSTEM_MONITORING":
-            output.fuelSystemMonitoring = test
-        case "COMPONENT_MONITORING":
-            output.componentMonitoring = test
-        default:
-            break
-        }
-    }
-
 
     //    func fuelStatus(_ messages: [Message]) -> (String?, String?) {
     //        guard let data = messages.first?.data.dropFirst(2) else {
@@ -730,27 +733,85 @@ enum Decoder: Codable {
     //    }
 }
 
+func parse_monitor_test(_ data: Data) -> MonitorTest? {
+    var test = MonitorTest()
+    //        let string = data.compactMap { String(format: "%02x", $0) }
+
+    let tid = data[1]
+    let cid = data[2]
+
+    if let testInfo = TestIds[tid] {
+        test.name = testInfo.0
+        test.desc = testInfo.1
+    } else {
+        print("Encountered unknown Test ID: ", String(format: "%02x"))
+        test.name = "TID: $\(String(format: "%02x", tid)) CID: $\(String(format: "%02x", cid))"
+        test.desc = "Unknown"
+    }
+
+    guard let uas = uasIDS[cid] else {
+        print("Encountered Unknown Units and Scaling ID: ", String(format: "%02x", cid))
+        return nil
+    }
+
+    let valueRange = data[3...4]
+    print("Value Range: ", valueRange.compactMap { String(format: "%02x", $0) })
+    let minRange = data[5...6]
+    print("Min Range: ", minRange.compactMap { String(format: "%02x", $0) })
+    let maxRange =   data[7...]
+    print("Max Range: ", maxRange.compactMap { String(format: "%02x", $0) })
+
+    test.tid = tid
+    test.value = uas.decode(bytes: valueRange)
+    test.min = uas.decode(bytes: minRange)?.value
+    test.max = uas.decode(bytes: maxRange)?.value
+    return test
+}
+
+func parseDTC(_ data: Data) -> TroubleCode? {
+    if (data.count != 2) || (data == Data([0x00, 0x00])) {
+        return nil
+    }
+    guard let first = data.first, let second = data.last else { return nil }
+
+    // BYTES: (16,      35      )
+    // HEX:    4   1    2   3
+    // BIN:    01000001 00100011
+    //         [][][  in hex   ]
+    //         | / /
+    // DTC:    C0123
+    var dtc = ["P", "C", "B", "U"][Int(first) >> 6]  // the last 2 bits of the first byte
+    dtc += String((first >> 4) & 0b0011)  // the next pair of 2 bits. Mask off the bits we read above
+    dtc += String(format: "%04X", (UInt16(first) & 0x3F) << 8 | UInt16(second)).dropFirst()
+    // pull description from the DTCs array
+
+    let troubleCode = TroubleCode(code: dtc, description: codes[dtc] ?? "No description available.")
+    return troubleCode
+}
+
+func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ output: inout Status) {
+    let test = StatusTest(testName, (bits.binaryArray[13 + index] != 0), (bits.binaryArray[9 + index] == 0))
+    switch testName {
+    case "MISFIRE_MONITORING":
+        output.misfireMonitoring = test
+    case "FUEL_SYSTEM_MONITORING":
+        output.fuelSystemMonitoring = test
+    case "COMPONENT_MONITORING":
+        output.componentMonitoring = test
+    default:
+        break
+    }
+}
+
 class Monitor {
     var tests: [UInt8: MonitorTest] = [:]
-
-    init() {
-        for value in TestIds.allCases {
-            tests[value.rawValue] = MonitorTest(tid: value.rawValue, name: value.name, desc: value.desc, value: nil, min: nil, max: nil)
-        }
-    }
-
-    func add(test: MonitorTest) {
-        if let tid = test.tid {
-            self.tests[tid] = test
-        }
-    }
 }
 
 struct MonitorTest {
     var tid: UInt8?
     var name: String?
     var desc: String?
-    var value: Double?
+    var value: Measurement<Unit>?
     var min: Double?
     var max: Double?
 
@@ -758,7 +819,7 @@ struct MonitorTest {
         guard let value = value, let min = min, let max = max else {
             return false
         }
-        return value >= min && value <= max
+        return value.value >= min && value.value <= max
     }
 
     var isNull: Bool {
@@ -766,11 +827,9 @@ struct MonitorTest {
     }
 
     var description: String {
-        return "\(desc ?? "") : \(value ?? 0) [\(passed ? "PASSED" : "FAILED")]"
+        return "\(desc ?? "") : \(value?.value ?? 0) [\(passed ? "PASSED" : "FAILED")]"
     }
 }
-
-
 
 let baseTests = [
     "MISFIRE_MONITORING",
@@ -872,75 +931,17 @@ let OBD_COMPLIANCE = [
     "Heavy Duty Euro OBD Stage VI (HD EOBD-IV)",
 ]
 
-enum TestIds: UInt8, CaseIterable {
-    case RTLThresholdVoltage = 0x01
-    case LTRThresholdVoltage = 0x02
-    case LowVoltageSwitchTime = 0x03
-    case HighVoltageSwitchTime = 0x04
-    case RTLSwitchTime = 0x05
-    case LTRSwitchTime = 0x06
-    case MINVoltage = 0x07
-    case MAXVoltage = 0x08
-    case TransitionTime = 0x09
-    case SensorPeriod = 0x0A
-    case MisFireAverage = 0x0B
-    case MisFireCount = 0x0C
-
-    var name: String {
-        switch self {
-        case .RTLThresholdVoltage:
-            return "RTLThresholdVoltage"
-        case .LTRThresholdVoltage:
-            return "LTRThresholdVoltage"
-        case .LowVoltageSwitchTime:
-            return "LowVoltageSwitchTime"
-        case .HighVoltageSwitchTime:
-            return "HighVoltageSwitchTime"
-        case .RTLSwitchTime:
-            return "RTLSwitchTime"
-        case .LTRSwitchTime:
-            return "LTRSwitchTime"
-        case .MINVoltage:
-            return "MINVoltage"
-        case .MAXVoltage:
-            return "MAXVoltage"
-        case .TransitionTime:
-            return "TransitionTime"
-        case .SensorPeriod:
-            return "SensorPeriod"
-        case .MisFireAverage:
-            return "MisFireAverage"
-        case .MisFireCount:
-            return "MisFireCount"
-        }
-    }
-
-    var desc: String {
-           switch self {
-           case .RTLThresholdVoltage:
-               return "Rich to lean sensor threshold voltage"
-           case .LTRThresholdVoltage:
-               return "Lean to rich sensor threshold voltage"
-           case .LowVoltageSwitchTime:
-               return "Low sensor voltage for switch time calculation"
-           case .HighVoltageSwitchTime:
-               return "High sensor voltage for switch time calculation"
-           case .RTLSwitchTime:
-               return "Rich to lean sensor switch time"
-           case .LTRSwitchTime:
-               return "Lean to rich sensor switch time"
-           case .MINVoltage:
-               return "Minimum sensor voltage for test cycle"
-           case .MAXVoltage:
-               return "Maximum sensor voltage for test cycle"
-           case .TransitionTime:
-               return "Time between sensor transitions"
-           case .SensorPeriod:
-               return "Sensor period"
-           case .MisFireAverage:
-               return "Average misfire counts for last ten driving cycles"
-           case .MisFireCount:
-               return "Misfire counts for last/current driving cycles"
-           }
-       }
-}
+let TestIds: [UInt8: (String, String)] = [
+    0x01: ("RTLThresholdVoltage", "The voltage at which the sensor switches from rich to lean"),
+    0x02: ("LTRThresholdVoltage", "The voltage at which the sensor switches from lean to rich"),
+    0x03: ("LowVoltageSwitchTime", "The time it takes for the sensor to switch from rich to lean"),
+    0x04: ("HighVoltageSwitchTime", "The time it takes for the sensor to switch from lean to rich"),
+    0x05: ("RTLSwitchTime", "The time it takes for the sensor to switch from rich to lean"),
+    0x06: ("LTRSwitchTime", "The time it takes for the sensor to switch from lean to rich"),
+    0x07: ("MINVoltage", "The minimum voltage the sensor can output"),
+    0x08: ("MAXVoltage", "The maximum voltage the sensor can output"),
+    0x09: ("TransitionTime", "The time it takes for the sensor to transition from one voltage to another"),
+    0x0A: ("SensorPeriod", "The time between sensor readings"),
+    0x0B: ("MisFireAverage", "The average number of misfires per 1000 revolutions"),
+    0x0C: ("MisFireCount", "The number of misfires since the last reset"),
+]
