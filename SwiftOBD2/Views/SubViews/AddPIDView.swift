@@ -8,51 +8,36 @@
 import SwiftUI
 import Combine
 
-class AddPIDViewModel: ObservableObject {
-    let garage: Garage
-    var cancellables = Set<AnyCancellable>()
-
-//    @Published var currentVehicle: Vehicle?
-
-    init(garage: Garage) {
-        self.garage = garage
-//        garage.$currentVehicleId
-//            .sink { currentVehicleId in
-//                self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId })
-//            }
-//            .store(in: &cancellables)
-    }
-}
-
 struct AddPIDView: View {
     @ObservedObject var viewModel: LiveDataViewModel
+    @EnvironmentObject var garage: Garage
+
     var body: some View {
-        if let car = viewModel.currentVehicle {
+        if let car = garage.currentVehicle {
             VStack(alignment: .leading) {
                 Text("Supported sensors for \(car.year) \(car.make) \(car.model)")
                 Divider().background(Color.white)
 
                 ScrollView(.vertical, showsIndicators: false) {
                     if let supportedPIDs = car.obdinfo.supportedPIDs  {
-                        // filter out live PIDs
-                        let livePIDs = supportedPIDs.filter { $0.properties.live }
-                        ForEach(livePIDs, id: \.self) { pid in
+                        ForEach(supportedPIDs.filter { $0.properties.live }.sorted(), id: \.self) { pid in
                             HStack {
                                 Text(pid.properties.description)
-                                    .font(.caption)
+                                    .font(.system(size: 14, weight: .semibold, design: .default))
                                     .padding()
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.endColor())
+                                RoundedRectangle(cornerRadius: 10)
+//                                    .fill(Color.endColor())
+                                    .fill(Color.clear)
+                                    .contentShape(Rectangle())
                                     .background(
-                                        RoundedRectangle(cornerRadius: 20)
+                                        RoundedRectangle(cornerRadius: 10)
                                             .stroke(viewModel.data.keys.contains(pid) ? Color.blue : Color.clear, lineWidth: 2)
                                     )
                             )
                             .padding(.horizontal)
-                            .padding(.vertical, 5)
                             .onTapGesture {
                                 viewModel.addPIDToRequest(pid)
                             }
@@ -68,7 +53,7 @@ struct AddPIDView: View {
     }
 }
 
-//#Preview {
-//    AddPIDView(viewModel: LiveDataViewModel(obdService: OBDService(),
-//                                            garage: Garage()))
-//}
+#Preview {
+    AddPIDView(viewModel: LiveDataViewModel())
+        .environmentObject(Garage())
+}

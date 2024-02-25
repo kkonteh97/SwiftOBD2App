@@ -17,20 +17,17 @@ struct Model: Codable, Hashable  {
     let years: [String]
 }
 
-
 class AddVehicleViewModel: ObservableObject {
     @Published var carData: [Manufacturer]?
-    var setupOrder: [OBDCommand.General] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
+    @Published var showError = false
 
-    let garage: Garage
-    let obdService: OBDService
-
-
-    init(garage: Garage,
-         obdService: OBDService
-    ) {
-        self.garage = garage
-        self.obdService =  obdService
+    init() {
+        do {
+            try fetchData()
+            showError = false
+        } catch {
+            showError = true
+        }
     }
 
     func fetchData() throws {
@@ -38,22 +35,134 @@ class AddVehicleViewModel: ObservableObject {
         let data = try Data(contentsOf: url)
         self.carData = try JSONDecoder().decode([Manufacturer].self, from: data)
     }
+}
 
+struct AddVehicleView: View {
+    @Binding var isPresented: Bool
 
-    func addVehicle(make: String, model: String, year: String,
-                    vin: String = "", obdinfo: OBDInfo? = nil) {
-        garage.addVehicle(make: make, model: model, year: year)
+    var body: some View {
+        NavigationView {
+            ZStack {
+                BackgroundView(isDemoMode: .constant(false))
+                VStack {
+                    List {
+                        NavigationLink(destination: AutoAddVehicleView(isPresented: $isPresented)) {
+                            Text("Auto-detect Vehicle")
+                        }
+                        .listRowBackground(Color.darkStart.opacity(0.3))
+
+                        NavigationLink(destination: ManuallyAddVehicleView(isPresented: $isPresented)) {
+                            Text( "Manually Add Vehicle")
+                        }
+                        .listRowBackground(Color.darkStart.opacity(0.3))
+                    }
+                    .scrollContentBackground(.hidden)
+
+                }
+            }
+            .navigationTitle("Add Vehicle")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+struct AutoAddVehicleView: View {
+    @EnvironmentObject var garage: Garage
+    @EnvironmentObject var obdService: OBDService
+
+    @Binding var isPresented: Bool
+    @State var statusMessage: String = ""
+    @State var isLoading: Bool = false
+
+    let notificationFeedback = UINotificationFeedbackGenerator()
+    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+
+    var body: some View {
+        ZStack(alignment: .center) {
+            BackgroundView(isDemoMode: .constant(false))
+            VStack(alignment: .center, spacing: 10) {
+                Text("Before you start")
+                    .font(.title)
+                Text("Plug in the scanner to the OBD port\nTurn on your vehicles engine\nMake sure that Bluetooth is on")
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+
+                detectButton
+            }
+            .padding(30)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+            .padding(.bottom, 40)
+        }
     }
 
-    func detectVehicle(device: OBDDevice) async throws -> VINInfo? {
-        let obdInfo = try await obdService.startConnection(setupOrder: self.setupOrder, device: device,
-                                                        obdinfo: OBDInfo()
-        )
-        print(obdInfo)
+    var detectButton: some View {
+        VStack {
+            Text(statusMessage)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .padding(.bottom)
+
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .scaleEffect(2.0, anchor: .center)
+            } else {
+                Button {
+                    impactFeedback.prepare()
+                    impactFeedback.impactOccurred()
+                    detectVehicle()
+                } label: {
+                    Text("Detect Vehicle")
+                        .padding(10)
+                }
+                .buttonStyle(.bordered)
+                .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+            }
+        }
+        .frame(maxHeight: 200)
+    }
+
+    func detectVehicle() {
+        isLoading = true
+        notificationFeedback.prepare()
+
+        Task {
+            do {
+                guard let vinInfo = try await connect() else {
+                    DispatchQueue.main.async {
+                        statusMessage = "Vehicle Not Detected"
+                        isLoading = false
+                    }
+                    return
+                }
+                DispatchQueue.main.async {
+                    statusMessage = "Found Vehicle"
+                    notificationFeedback.notificationOccurred(.success)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    statusMessage = "Make: \(vinInfo.Make)\nModel: \(vinInfo.Model)\nYear: \(vinInfo.ModelYear)"
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    isLoading = false
+                    isPresented = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    statusMessage = "Error: \(error.localizedDescription)"
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    func connect() async throws -> VINInfo? {
+        var obdInfo = OBDInfo()
+        try await obdService.startConnection(&obdInfo)
         guard let vin = obdInfo.vin else {
             return nil
         }
-        print(vin)
 
         guard let vinInfo = try await getVINInfo(vin: vin).Results.first else {
             return nil
@@ -61,7 +170,7 @@ class AddVehicleViewModel: ObservableObject {
 
         DispatchQueue.main.async {
             self.garage.addVehicle(
-                make: vinInfo.Make, 
+                make: vinInfo.Make,
                 model: vinInfo.Model,
                 year: vinInfo.ModelYear,
                 obdinfo: obdInfo
@@ -71,181 +180,90 @@ class AddVehicleViewModel: ObservableObject {
     }
 }
 
-struct AddVehicleView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
-    @Binding var isPresented: Bool
-
-    var body: some View {
-        NavigationView {
-            VStack {
-                List {
-                    NavigationLink(destination: AutoAddVehicleView(viewModel: viewModel, isPresented: $isPresented)) {
-                        Text("Automagically Select Vehicle")
-                    }
-                    NavigationLink(destination: ManuallyAddVehicleView(viewModel: viewModel, isPresented: $isPresented)) {
-                        Text( "Manually Select Vehicle")
-                    }
-                    .onAppear {
-                        do {
-                            try viewModel.fetchData()
-                        } catch {
-                            print(error.localizedDescription)
-                        }
-                    }
-                }
-                .navigationTitle("Add Vehicle")
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
-
-struct AutoAddVehicleView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
-    @EnvironmentObject var globalSettings: GlobalSettings
-
-    @Binding var isPresented: Bool
-    @State var statusMessage: String = ""
-    @State var isLoading: Bool = false
-    var body: some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text("Before you start:")
-                .font(.title)
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Plug in the scanner to the OBD port")
-                    .font(.subheadline)
-
-                Text("Turn on your vehicles engine")
-                    .font(.subheadline)
-
-                Text("Make sure that Bluetooth is on")
-                    .font(.subheadline)
-            }
-            VStack {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(2.0, anchor: .center)
-                } else {
-                    HStack {
-                        Text(statusMessage)
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .multilineTextAlignment(.leading)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: 100)
-            .padding(.horizontal, 10)
-
-            Button {
-                isLoading = true
-                Task {
-                    do {
-                        guard let vinInfo = try await viewModel.detectVehicle(device: globalSettings.userDevice) else {
-                            DispatchQueue.main.async {
-                                statusMessage = "Vehicle Not Detected"
-                                isLoading = false
-                            }
-                            return
-                        }
-                        DispatchQueue.main.async {
-                                isLoading = false
-                                statusMessage = "Found Vehicle"
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            statusMessage = "Make: \(vinInfo.Make)\nModel: \(vinInfo.Model)\nYear: \(vinInfo.ModelYear)"
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            isPresented = false
-                        }
-                    } catch {
-                        print(error.localizedDescription)
-                        DispatchQueue.main.async {
-                            statusMessage = "Error: \(error.localizedDescription)"
-                            isLoading = false
-                        }
-                    }
-                }
-            } label: {
-                Text("Detect Vehicle")
-                    .font(.headline)
-            }
-        }
-    }
-}
-
 struct ManuallyAddVehicleView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
+    @ObservedObject var viewModel = AddVehicleViewModel()
     @Binding var isPresented: Bool
 
     var body: some View {
+        ZStack {
+            BackgroundView(isDemoMode: .constant(false))
             if let carData = viewModel.carData {
                 List {
                     ForEach(carData.sorted(by: { $0.make < $1.make }), id: \.self) { manufacturer in
                         NavigationLink(
-                            destination: ModelView(viewModel: viewModel,
-                                                   isPresented: $isPresented,
+                            destination: ModelView(isPresented: $isPresented,
                                                    manufacturer: manufacturer),
                             label: {
                                 Text(manufacturer.make)
                             })
                     }
+                    .listRowBackground(Color.darkStart.opacity(0.3))
                 }
-                .navigationTitle("Select Make")
-                .navigationBarTitleDisplayMode(.inline)
+                .scrollContentBackground(.hidden)
+                .listStyle(.inset)
             } else {
                 ProgressView()
             }
+        }
+        .navigationTitle("Select Make")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct ModelView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
     @State var selectedModel: Model?
     @Binding var isPresented: Bool
 
     let manufacturer: Manufacturer
 
     var body: some View {
-        List {
-            ForEach(manufacturer.models.sorted(by: { $0.name < $1.name }), id: \.self) { carModel in
-                NavigationLink(
-                    destination: YearView(viewModel: viewModel,
-                                          isPresented: $isPresented,
-                                          carModel: carModel,
-                                          manufacturer: manufacturer),
-                    label: {
-                        Text(carModel.name)
-                    })
+        ZStack {
+            BackgroundView(isDemoMode: .constant(false))
+            List {
+                ForEach(manufacturer.models.sorted(by: { $0.name < $1.name }), id: \.self) { carModel in
+                    NavigationLink(
+                        destination: YearView(isPresented: $isPresented,
+                                              carModel: carModel,
+                                              manufacturer: manufacturer),
+                        label: {
+                            Text(carModel.name)
+                        })
+                }
+                .listRowBackground(Color.darkStart.opacity(0.3))
             }
+            .scrollContentBackground(.hidden)
+            .listStyle(.inset)
         }
-        .navigationBarTitle(manufacturer.make)
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
     }
 }
 
 struct YearView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
     @Binding var isPresented: Bool
 
     let carModel: Model
     let manufacturer: Manufacturer
 
     var body: some View {
-        List {
-            ForEach(carModel.years.sorted(by: { $0 > $1 }), id: \.self) { year in
-                NavigationLink(
-                    destination: ConfirmView(viewModel: viewModel,
-                                             isPresented: $isPresented,
-                                             carModel: carModel,
-                                             manufacturer: manufacturer,
-                                             year: year
-                                            ),
-                    label: {
-                        Text("\(year)")
-                            .font(.headline)
-                    })
+        ZStack {
+            BackgroundView(isDemoMode: .constant(false))
+            List {
+                ForEach(carModel.years.sorted(by: { $0 > $1 }), id: \.self) { year in
+                    NavigationLink(
+                        destination: ConfirmView(isPresented: $isPresented,
+                                                 carModel: carModel,
+                                                 manufacturer: manufacturer,
+                                                 year: year),
+                        label: {
+                            Text("\(year)")
+                                .font(.headline)
+                        })
+                }
+                .listRowBackground(Color.darkStart.opacity(0.3))
             }
+            .scrollContentBackground(.hidden)
+            .listStyle(.inset)
         }
         .navigationBarTitle(manufacturer.make + " " + carModel.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -253,7 +271,7 @@ struct YearView: View {
 }
 
 struct ConfirmView: View {
-    @ObservedObject var viewModel: AddVehicleViewModel
+    @EnvironmentObject var garage: Garage
     @Binding var isPresented: Bool
 
     let carModel: Model
@@ -261,35 +279,81 @@ struct ConfirmView: View {
     let year: String
 
     var body: some View {
-        VStack {
-            Text("\(year) \(manufacturer.make) \(carModel.name)")
-                .font(.title)
-                .padding()
-            Button {
-                viewModel.addVehicle(
-                    make: manufacturer.make,
-                    model: carModel.name,
-                    year: year
-                )
-                isPresented = false
+        ZStack {
+            BackgroundView(isDemoMode: .constant(false))
+            VStack {
+                Text("\(year) \(manufacturer.make) \(carModel.name)")
+                    .font(.title)
+                    .padding()
+                Button {
+                    garage.addVehicle(
+                        make: manufacturer.make,
+                        model: carModel.name,
+                        year: year
+                    )
+                    isPresented = false
 
-            } label: {
-                VStack {
-                    Text("Add Vehicle")
+                } label: {
+                    VStack {
+                        Text("Add Vehicle")
+                    }
+                    .frame(width: 200, height: 50)
                 }
-                .frame(width: 200, height: 50)                    
             }
         }
     }
 }
 
-//#Preview {
-//    AutoAddVehicleView(viewModel: AddVehicleViewModel(garage: Garage(),
-//                                                      obdService: OBDService()
-//                                                     ),
-//                       isPresented: .constant(true)
-//    )
-//    .environmentObject(GlobalSettings())
+#Preview {
+    AddVehicleView(isPresented: .constant(true))
+            .environmentObject(GlobalSettings())
+            .environmentObject(OBDService())
+            .environmentObject(Garage())
+
+}
+
+struct BackgroundView: View {
+    @Binding var isDemoMode: Bool
+
+    var body: some View {
+            LinearGradient(Color.darkStart.opacity(0.8), .darkEnd.opacity(0.4))
+                .ignoresSafeArea()
+
+            if isDemoMode {
+                ZStack {
+                    Text("Demo Mode")
+                        .font(.system(size: 40, weight: .semibold)) // Reduced font size
+                        .foregroundColor(Color.charcoal.opacity(0.2))
+                        .offset(y: -5)
+                        .shadow(color: .black, radius: 5, x: 3, y: 3) // Softened shadow
+                        .rotationEffect(.degrees(-30))
+
+                    Text("Demo Mode")
+                        .font(.system(size: 40, weight: .semibold)) // Reduced font size
+                        .foregroundColor(Color.black.opacity(0.2))
+                        .offset(y: 2)
+                        .rotationEffect(.degrees(-30))
+                }
+            }
+    }
+}
+
+//func getVINInfo(vin: String) async throws -> VINResults {
+//    let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
+//
+//    guard let url = URL(string: endpoint) else {
+//        throw URLError(.badURL)
+//    }
+//
+//    let (data, response) = try await URLSession.shared.data(from: url)
+//
+//    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+//        throw URLError(.badServerResponse)
+//    }
+//
+//    let decoder = JSONDecoder()
+//    let decoded = try decoder.decode(VINResults.self, from: data)
+//    return decoded
 //}
 //        ScrollView(.vertical, showsIndicators: false) {
 //            ForEach(0 ..< viewModel.carData.count, id: \.self) { carIndex in

@@ -17,7 +17,7 @@ struct ECUHeader {
 // Possible setup errors
 enum SetupError: Error {
     case noECUCharacteristic
-    case invalidResponse
+    case invalidResponse(message: String)
     case noProtocolFound
     case adapterInitFailed
     case timeout
@@ -43,15 +43,13 @@ func decodeToStatus(_ result: OBDDecodeResult) -> Status? {
     }
 }
 
-class ELM327: ObservableObject {
-
+final class ELM327 {
     // MARK: - Properties
-
     let logger = Logger.elmCom
-    var ecuCharacteristic: CBCharacteristic?
 
     // Bluetooth manager
-    var bleManager: BLEManager
+    private let bleManager: BLEManager
+
     var obdProtocol: PROTOCOL = .NONE
 
     init(bleManager: BLEManager) {
@@ -59,12 +57,10 @@ class ELM327: ObservableObject {
     }
 
     // MARK: - Adapter and Vehicle Setup
-    func setupVehicle(desiredProtocol: PROTOCOL?) async throws -> OBDInfo {
-        var obdInfo = OBDInfo()
-
+    func setupVehicle(obdInfo: inout OBDInfo) async throws {
         var obdProtocol: PROTOCOL?
 
-        if let desiredProtocol = desiredProtocol {
+        if let desiredProtocol = obdInfo.obdProtocol {
             do {
                 obdProtocol = try await manualProtocolDetection(desiredProtocol: desiredProtocol)
             } catch {
@@ -73,7 +69,7 @@ class ELM327: ObservableObject {
         }
 
         if obdProtocol == nil {
-                obdProtocol = try await connectToVehicle(autoProtocol: true, desiredProtocol: nil)
+            obdProtocol = try await connectToVehicle(autoProtocol: true)
         }
 
         guard let obdProtocol = obdProtocol else {
@@ -82,9 +78,26 @@ class ELM327: ObservableObject {
 
         self.obdProtocol = obdProtocol
         obdInfo.obdProtocol = obdProtocol
-
+        if obdInfo.vin == nil {
+            obdInfo.vin = await requestVin()
+        }
         try await setHeader(header: ECUHeader.ENGINE)
-        return obdInfo
+    }
+
+    func connectToVehicle(autoProtocol: Bool) async throws -> PROTOCOL? {
+        if autoProtocol {
+            guard let obdProtocol = try await autoProtocolDetection() else {
+                logger.error("No protocol found")
+                throw SetupError.noProtocolFound
+            }
+            return obdProtocol
+        } else {
+            guard let obdProtocol = try await manualProtocolDetection(desiredProtocol: nil) else {
+                logger.error("No protocol found")
+                throw SetupError.noProtocolFound
+            }
+            return obdProtocol
+        }
     }
 
     // MARK: - Protocol Selection
@@ -94,9 +107,8 @@ class ELM327: ObservableObject {
         _ = try await sendMessageAsync("0100", withTimeoutSecs: 10)
 
         let obdProtocolNumber = try await sendMessageAsync("ATDPN")
-        print(obdProtocolNumber[0].dropFirst())
         guard let obdProtocol = PROTOCOL(rawValue: String(obdProtocolNumber[0].dropFirst())) else {
-            throw SetupError.invalidResponse
+            throw SetupError.invalidResponse(message: "Invalid protocol number: \(obdProtocolNumber)")
         }
 
         try await testProtocol(obdProtocol: obdProtocol)
@@ -106,13 +118,12 @@ class ELM327: ObservableObject {
 
     private func manualProtocolDetection(desiredProtocol: PROTOCOL?) async throws -> PROTOCOL? {
         if let desiredProtocol = desiredProtocol {
-            try await testProtocol(obdProtocol: desiredProtocol)
+            try? await testProtocol(obdProtocol: desiredProtocol)
             return desiredProtocol
         }
         while obdProtocol != .NONE {
             do {
                 try await testProtocol(obdProtocol: obdProtocol)
-                logger.info("Protocol: \(self.obdProtocol.description)")
                 return obdProtocol // Exit the loop if the protocol is found successfully
             } catch {
                 // Other errors are propagated
@@ -133,7 +144,6 @@ class ELM327: ObservableObject {
         let r100 = try await sendMessageAsync("0100", withTimeoutSecs: 10)
 
         if r100.joined().contains("NO DATA") {
-            logger.info("car is off")
             throw SetupError.ignitionOff
         }
 
@@ -150,8 +160,7 @@ class ELM327: ObservableObject {
         _ = populateECUMap(messages)
     }
 
-
-    func adapterInitialization(setupOrder: [OBDCommand.General]) async throws {
+    func adapterInitialization(setupOrder: [OBDCommand.General] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]) async throws {
         for step in setupOrder {
             switch step {
             case .ATD, .ATL0, .ATE0, .ATH1, .ATAT1, .ATSTFF, .ATH0:
@@ -160,8 +169,7 @@ class ELM327: ObservableObject {
                 _ = try await sendMessageAsync(step.properties.command)
             case .ATRV:
                 // get the voltage
-                let voltage = try await sendMessageAsync(step.properties.command)
-                logger.info("Voltage: \(voltage)")
+               _ = try await sendMessageAsync(step.properties.command)
             case .ATDPN:
                 // Describe current protocol number
                 let protocolNumber = try await sendMessageAsync(step.properties.command)
@@ -170,60 +178,63 @@ class ELM327: ObservableObject {
         }
     }
 
-    func connectToVehicle(autoProtocol: Bool, desiredProtocol: PROTOCOL?) async throws -> PROTOCOL? {
-        if autoProtocol {
-            guard let obdProtocol = try await autoProtocolDetection() else {
-                logger.error("No protocol found")
-                throw SetupError.noProtocolFound
-            }
-            return obdProtocol
-        } else {
-            guard let obdProtocol = try await manualProtocolDetection(desiredProtocol: desiredProtocol) else {
-                logger.error("No protocol found")
-                throw SetupError.noProtocolFound
-            }
-            return obdProtocol
-        }
-    }
-
     private func setHeader(header: String) async throws {
         _ = try await okResponse(message: "AT SH " + header)
     }
 
+    func stopConnection() {
+        bleManager.disconnectPeripheral()
+    }
 
     // MARK: - Message Sending
 
-    func sendMessageAsync(_ message: String, withTimeoutSecs: TimeInterval = 2) async throws -> [String] {
-        let response: [String] = try await withTimeout(seconds: withTimeoutSecs) {
-            let res = try await self.bleManager.sendMessageAsync(message, characteristic: self.ecuCharacteristic)
-            return res
-        }
-        return response
+    func sendMessageAsync(_ message: String, withTimeoutSecs: TimeInterval = 5) async throws -> [String] {
+        return try await self.bleManager.sendMessageAsync(message)
     }
 
-    func okResponse(message: String) async throws -> [String] {
+    private func okResponse(message: String) async throws -> [String] {
         let response = try await self.sendMessageAsync(message)
         if response.contains("OK") {
             return response
         } else {
             logger.error("Invalid response: \(response)")
-            throw SetupError.invalidResponse
+            throw SetupError.invalidResponse(message: response[0])
+        }
+    }
+
+    func getStatus() async throws -> Status? {
+        let statusCommand = OBDCommand.Mode1.status
+        let statusResponse = try await sendMessageAsync(statusCommand.properties.command)
+        let statueMessages = try OBDParcer(statusResponse, idBits: obdProtocol.idBits).messages
+
+        guard let statusData = statueMessages[0].data else {
+            return nil
+        }
+        guard let decodedStatus = statusCommand.properties.decoder.decode(data: statusData) else {
+            return nil
+        }
+        switch decodedStatus {
+        case .statusResult(let value):
+            return value
+        default:
+            return nil
         }
     }
 
     func scanForTroubleCodes() async throws -> [TroubleCode]? {
-        let command = OBDCommand.Mode3.GET_DTC
-        let response = try await sendMessageAsync(command.properties.command)
-        let messages = try OBDParcer(response, idBits: obdProtocol.idBits).messages
+        let dtcCommand = OBDCommand.Mode3.GET_DTC
+        let dtcResponse = try await sendMessageAsync(dtcCommand.properties.command)
 
-        guard let data = messages[0].data else {
+        let dtcMessages = try OBDParcer(dtcResponse, idBits: obdProtocol.idBits).messages
+
+        guard let dtcData = dtcMessages[0].data else {
             return nil
         }
-        guard let decodedValue = command.properties.decoder.decode(data: data) else {
+        guard let decodedDtc = dtcCommand.properties.decoder.decode(data: dtcData) else {
             return nil
         }
 
-        switch decodedValue {
+        switch decodedDtc {
         case .troubleCode(let value):
             return value
         default:
@@ -231,27 +242,38 @@ class ELM327: ObservableObject {
         }
     }
 
-    func requestVin() async -> String? {
-        do {
-            let vinResponse = try await sendMessageAsync("0902")
-            let messages = try OBDParcer(vinResponse, idBits: obdProtocol.idBits).messages
-            guard let data = messages[0].data else {
-                return nil
-            }
-            guard var vinString = String(bytes: data, encoding: .utf8) else {
-                return nil
-            }
+    func clearTroubleCodes() async throws {
+        let command = OBDCommand.Mode4.CLEAR_DTC
 
-            vinString = vinString
-                .replacingOccurrences(of: "[^a-zA-Z0-9]",
-                                      with: "",
-                                      options: .regularExpression)
+        let response = try await sendMessageAsync(command.properties.command)
+        print("Response: \(response)")
+    }
 
-            return vinString
-        } catch {
-            logger.error("Error requesting VIN")
+    private func requestVin() async -> String? {
+        let command = OBDCommand.Mode9.VIN
+        guard let vinResponse = try? await sendMessageAsync(command.properties.command) else {
             return nil
         }
+
+        let messages = try? OBDParcer(vinResponse, idBits: obdProtocol.idBits).messages
+        guard let data = messages?[0].data,
+                var vinString = String(bytes: data, encoding: .utf8) else {
+            return nil
+        }
+
+        vinString = vinString
+            .replacingOccurrences(of: "[^a-zA-Z0-9]",
+                                  with: "",
+                                  options: .regularExpression)
+
+        return vinString
+    }
+}
+
+extension ELM327 {
+    func requestPIDs(_ pids: [OBDCommand]) async throws -> [Message] {
+        let response = try await sendMessageAsync("01" + pids.compactMap { $0.properties.command.dropFirst(2) }.joined())
+        return try OBDParcer(response, idBits: obdProtocol.idBits).messages
     }
 
     private func populateECUMap(_ messages: [Message]) -> [UInt8: ECUID]? {
@@ -335,49 +357,5 @@ struct BatchedResponse {
         //        print("Buffer: \(buffer.compactMap { String(format: "%02X ", $0) }.joined())")
 
         return cmd.properties.decoder.decode(data: value.dropFirst())
-    }
-}
-
-//private func decodeVIN(response: String) async -> String {
-//    // Find the index of the occurrence of "49 02"
-//    guard let prefixIndex = response.range(of: "49 02")?.upperBound else {
-//        logger.error("Prefix not found in the response")
-//        return ""
-//    }
-//    // Extract the VIN hex string after "49 02"
-//    let vinHexString = response[prefixIndex...]
-//        .split(separator: " ")
-//        .joined() // Remove spaces
-//
-//    // Convert the hex string to ASCII characters
-//    var asciiString = ""
-//    var hex = vinHexString
-//    while !hex.isEmpty {
-//        let startIndex = hex.startIndex
-//        let endIndex = hex.index(startIndex, offsetBy: 2)
-//
-//        if let hexValue = UInt8(hex[startIndex..<endIndex], radix: 16) {
-//            let unicodeScalar = UnicodeScalar(hexValue)
-//            asciiString.append(Character(unicodeScalar))
-//        } else {
-//            logger.error("Error converting hex to UInt8")
-//        }
-//        hex.removeFirst(2)
-//    }
-//    // Remove non-alphanumeric characters from the VIN
-//    let vinNumber = asciiString.replacingOccurrences(
-//        of: "[^a-zA-Z0-9]",
-//        with: "",
-//        options: .regularExpression
-//    )
-//    // getvininfo
-//    return vinNumber
-//}
-
-
-extension ELM327 {
-    func requestPIDs(_ pids: [OBDCommand]) async throws -> [Message] {
-        let response = try await sendMessageAsync("01" + pids.compactMap { $0.properties.command.dropFirst(2) }.joined())
-        return try OBDParcer(response, idBits: obdProtocol.idBits).messages
     }
 }

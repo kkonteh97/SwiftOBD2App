@@ -8,35 +8,37 @@
 import SwiftUI
 
 struct CustomTabBarContainerView<Content: View>: View {
-    @ObservedObject var viewModel: CustomTabBarViewModel
-
     @Binding var selection: TabBarItem
     let maxHeight: Double
     let content: Content
     @State private var tabs: [TabBarItem] = []
-
+    @Binding var displayType: BottomSheetType
+    @Binding var statusMessage: String?
     init(
          selection: Binding<TabBarItem>,
          maxHeight: Double,
-         viewModel: CustomTabBarViewModel,
+         displayType: Binding<BottomSheetType>,
+         statusMessage: Binding<String?>,
          @ViewBuilder content: () -> Content
     ) {
-        self._selection = selection
-        self.maxHeight = maxHeight
-        self.viewModel = viewModel
-        self.content = content()
+        self._selection       = selection
+        self.maxHeight        = maxHeight
+        self._displayType     = displayType
+        self._statusMessage = statusMessage
+        self.content          = content()
     }
 
     var body: some View {
         GeometryReader { proxy in
             CustomTabBarView(
                         tabs: tabs,
-                        viewModel: viewModel,
                         selection: $selection,
-                        maxHeight: proxy.size.height
+                        maxHeight: proxy.size.height,
+                        displayType: $displayType,
+                        statusMessage: $statusMessage
                 ) {
-                    content
-                        .ignoresSafeArea()
+                        content
+                            .ignoresSafeArea()
                 }
                 .onPreferenceChange(TabBarItemsPK.self, perform: { value in
                     self.tabs = value

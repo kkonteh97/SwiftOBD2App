@@ -7,14 +7,6 @@
 
 import SwiftUI
 
-struct DashBoardView: View {
-    @ObservedObject var liveDataViewModel: LiveDataViewModel
-
-    var body: some View {
-        LiveDataView(viewModel: liveDataViewModel)
-    }
-}
-
 struct LogsView: View {
     var body: some View {
         Text("Hello World")

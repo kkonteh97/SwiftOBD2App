@@ -23,17 +23,20 @@ class GlobalSettings: ObservableObject {
     @Published var displayType: BottomSheetType = .quarterScreen
     @Published var statusMessage = ""
     @Published var showAltText = false
-    @Published var userDevice: OBDDevice = .carlyOBD
 }
 
 @main
-struct SmartOBD2App: App {
+struct SwiftOBD2App: App {
     var globalSettings = GlobalSettings()
+    @StateObject var obdService = OBDService()
+    @StateObject var garage = Garage()
 
     var body: some Scene {
         WindowGroup {
-            MainView(garage: Garage())
+            MainView()
                 .environmentObject(globalSettings)
+                .environmentObject(garage)
+                .environmentObject(obdService)
         }
     }
 }

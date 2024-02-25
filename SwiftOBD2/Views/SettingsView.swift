@@ -24,32 +24,11 @@ class SettingsViewModel: ObservableObject {
 }
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: SettingsViewModel
     @EnvironmentObject var globalSettings: GlobalSettings
     @State var isDemoMode = false
 
     var body: some View {
         VStack {
-            Picker("OBD2 Adapter", selection: $globalSettings.userDevice) {
-                ForEach(OBDDevice.allCases.filter { isDemoMode ?  $0 == .mockOBD : $0 != .mockOBD }, id: \.self) { device in
-                    Text(device.properties.DeviceName)
-                        .tag(device)
-                }
-            }
-            .pickerStyle(.navigationLink)
-
-            Toggle("Demo Mode", isOn: $isDemoMode)
-                .toggleStyle(SwitchToggleStyle(tint: .red))
-                .onChange(of: isDemoMode) { value in
-                    switch value {
-                        case true:
-                            globalSettings.userDevice = .mockOBD
-                        case false:
-                            print(isDemoMode)
-                    }
-                    viewModel.switchToDemoMode(value)
-
-                }
             Spacer()
         }
         .padding()
@@ -89,6 +68,6 @@ struct RoundedRectangleStyle: ViewModifier {
 }
 
 #Preview {
-    SettingsView(viewModel: SettingsViewModel(OBDService(), Garage()))
+    SettingsView()
         .environmentObject(GlobalSettings())
 }

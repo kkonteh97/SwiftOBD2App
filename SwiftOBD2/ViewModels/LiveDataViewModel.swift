@@ -44,39 +44,22 @@ class DataItem: Identifiable, Codable {
 }
 
 class LiveDataViewModel: ObservableObject {
-    let obdService: OBDService
-    let garage: Garage
-
     private var cancellables = Set<AnyCancellable>()
 
-    @Published var currentVehicle: Vehicle?
 
     @Published var isRequestingPids = false
 
     @Published var data: [OBDCommand : DataItem] = [:]
     @Published var order: [OBDCommand] = []
-    @Published var connectionState: ConnectionState = .notConnected
+    @Published var isRequesting: Bool = false
 
-
-    private var timer: Timer?
-    private var appendMeasurementsTimer: DispatchSourceTimer?
+    var timer: Timer?
+    var appendMeasurementsTimer: DispatchSourceTimer?
     private let measurementTimeLimit: TimeInterval = 120
 
-    init(_ obdService: OBDService, _ garage: Garage) {
-        self.obdService = obdService
-        self.garage = garage
+    init() {
 
-        obdService.$connectionState
-            .sink { [weak self] state in
-                self?.connectionState = state
-            }
-            .store(in: &cancellables)
-
-        garage.$currentVehicle
-            .sink { currentVehicle in
-                self.currentVehicle = currentVehicle
-            }
-            .store(in: &cancellables)
+        UserDefaults.standard.removeObject(forKey: "pidData")
 
         if let piddata = UserDefaults.standard.data(forKey: "pidData"),
            let pidData = try? JSONDecoder().decode([DataItem].self, from: piddata) {
@@ -86,15 +69,18 @@ class LiveDataViewModel: ObservableObject {
             }
         } else {
             // default pids SPEED and RPM
-            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), selectedGauge: .gaugeType1)
-            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), selectedGauge: .gaugeType2)
+            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), selectedGauge: .gaugeType2)
+            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), selectedGauge: .gaugeType4)
             order.append(.mode1(.rpm))
             order.append(.mode1(.speed))
         }
     }
 
+    deinit {
+        saveDataItems()
+    }
+
     func saveDataItems() {
-        print("saving data items")
         if let encodedData = try? JSONEncoder().encode(Array(data.values)) {
             UserDefaults.standard.set(encodedData, forKey: "pidData")
         }
@@ -113,30 +99,31 @@ class LiveDataViewModel: ObservableObject {
         }
     }
 
-    private func stopTimer() {
+    func updateDataItems(messages: [Message], keys: [OBDCommand], isMetric: MeasurementUnits) {
+        DispatchQueue.main.async {
+            guard !messages.isEmpty else { return }
+            guard let data = messages[0].data else { return }
+
+            var res = BatchedResponse(response: data)
+            keys.forEach { cmd in
+                guard let value = res.getValueForCommand(cmd) else {
+                    return
+                }
+
+                if let existingItem = self.data[cmd],
+                   let newValue = decodeToMeasurement(value) {
+
+                    existingItem.value = newValue.value
+                    existingItem.unit = newValue.unit.symbol
+                }
+            }
+            self.isRequestingPids = false
+        }
+    }
+
+    func stopTimer() {
         timer?.invalidate()
         timer = nil
-    }
-
-    private func startTimer() {
-        stopTimer()
-        appendMeasurementsTimer?.cancel()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.01,
-                                     repeats: true) { [weak self] _ in
-            self?.startRequestingPIDs()
-        }
-        startAppendMeasurementsTimer()
-    }
-
-    func controlRequestingPIDs(status: Bool) {
-        if status {
-            guard timer == nil else { return }
-            startTimer()
-        } else {
-            stopTimer()
-            appendMeasurementsTimer?.cancel()
-            isRequestingPids = false
-        }
     }
 
     func startAppendMeasurementsTimer() {
@@ -155,45 +142,6 @@ class LiveDataViewModel: ObservableObject {
                   item.measurements.append(PIDMeasurement(time: Date(), value: item.value))
                   item.measurements = item.measurements.filter { $0.id.timeIntervalSinceNow > -self.measurementTimeLimit }
             }
-        }
-    }
-
-    func startRequestingPIDs() {
-        guard !isRequestingPids else {
-            return
-        }
-        isRequestingPids = true
-        Task {
-            do {
-                let messages = try await obdService.elm327.requestPIDs(order)
-                updateDataItems(messages: messages, keys: order)
-            } catch {
-                print(error)
-            }
-        }
-    }
-
-    private func updateDataItems(messages: [Message], keys: [OBDCommand]) {
-        guard !messages.isEmpty else {
-                return
-        }
-        guard let data = messages[0].data else {
-            return
-        }
-        DispatchQueue.main.async {
-            var res = BatchedResponse(response: data)
-            keys.forEach { cmd in
-                guard let value = res.getValueForCommand(cmd) else {
-                    return
-                }
-                    // Update the data directly
-                if let existingItem = self.data[cmd],
-                   let newValue = decodeToMeasurement(value) {
-                    existingItem.value = newValue.value
-                    existingItem.unit = newValue.unit.symbol
-                }
-            }
-            self.isRequestingPids = false
         }
     }
 }

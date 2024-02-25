@@ -8,79 +8,105 @@
 import SwiftUI
 
 struct HomeView: View {
-    @ObservedObject var viewModel: HomeViewModel
-    @ObservedObject var diagnosticsViewModel: VehicleDiagnosticsViewModel
-    @ObservedObject var garageViewModel: GarageViewModel
-    @ObservedObject var settingsViewModel: SettingsViewModel
-    @ObservedObject var testingScreenViewModel: TestingScreenViewModel
-
-    @EnvironmentObject var globalSettings: GlobalSettings
     @Environment(\.colorScheme) var colorScheme
+    @Binding var displayType: BottomSheetType
+    @Binding var isDemoMode: Bool
+    @Binding var statusMessage: String?
+    @EnvironmentObject var obdService: OBDService
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 0), GridItem(.flexible(), spacing: 0)], spacing: 20) {
-                    SectionView(title: "Diagnostics", 
-                                subtitle: "Read Vehicle Health",
-                                iconName: "wrench.and.screwdriver",
-                                destination: VehicleDiagnosticsView(viewModel: diagnosticsViewModel))
-                    SectionView(title: "Logs",
-                                subtitle: "View Logs",
-                                iconName: "flowchart",
-                                destination: LogsView())
-                    SectionView(title: "Battery",
-                                subtitle: "Monitor Battery Health",
-                                iconName: "minus.plus.batteryblock",
-                                destination: BatteryTestView())
-                }
-                .padding(.vertical, 20)
-
-                Divider().background(Color.white).padding(.horizontal, 20)
-                NavigationLink {
-                    SettingsView(viewModel: settingsViewModel)
-                        .background(LinearGradient(.darkStart, .darkEnd))
-                } label: {
-                    SettingsAboutSectionView(title: "Settings", iconName: "gear", iconColor: .green.opacity(0.6))
-                }
-
-                Divider().background(Color.white).padding(.horizontal, 20)
-                
-                NavigationLink(destination: GarageView(viewModel: garageViewModel)) {
-                    SettingsAboutSectionView(title: "Garage", iconName: "car.circle", iconColor: .blue.opacity(0.6))
-                }.simultaneousGesture(TapGesture().onEnded{
-                    globalSettings.displayType = .none
-                })
-                Divider().background(Color.white).padding(.horizontal, 20)
-                NavigationLink(destination: AboutView()) {
-                    SettingsAboutSectionView(title: "About", iconName: "info.circle", iconColor: .secondary)
-                }.simultaneousGesture(TapGesture().onEnded{
-                    globalSettings.displayType = .none
-                })
-
-                Divider().background(Color.white).padding(.horizontal, 20)
-                NavigationLink {
-                    TestingScreen(viewModel: testingScreenViewModel)
-                        .background(LinearGradient(.darkStart, .darkEnd))
-                        .onAppear {
-                            withAnimation {
-                                globalSettings.displayType = .none
+        ZStack {
+            BackgroundView(isDemoMode: $isDemoMode)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
+                        SectionView(title: "Diagnostics",
+                                    subtitle: "Read Vehicle Health",
+                                    iconName: "wrench.and.screwdriver",
+                                    destination: VehicleDiagnosticsView(displayType: $displayType, isDemoMode: $isDemoMode)
+                        )
+                        .disabled(obdService.connectionState != .connectedToVehicle)
+                        .simultaneousGesture(TapGesture().onEnded {
+                            if obdService.connectionState != .connectedToVehicle {
+                                statusMessage = "Not connected to vehicle"
+                                withAnimation {
+                                    displayType = .halfScreen
+                                }
+                            } else {
+                                withAnimation {
+                                    displayType = .none
+                                }
                             }
-                        }
-                        .onDisappear {
+                        })
+
+                        SectionView(title: "Logs",
+                                    subtitle: "View Logs",
+                                    iconName: "flowchart",
+                                    destination: LogsView())
+                        .simultaneousGesture(TapGesture().onEnded {
                             withAnimation {
-                                globalSettings.displayType = .quarterScreen
+                                displayType = .none
                             }
+                        })
+                        .disabled(true)
+                        .opacity(0.5)
+                        .overlay(Text("Coming Soon")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(5)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(5)
+                            .padding(5), alignment: .topTrailing)
+                    }
+                    .padding(20)
+                    .padding(.bottom, 20)
+
+                    Divider().background(Color.white).padding(.horizontal, 10)
+                    NavigationLink(destination: GarageView(displayType: $displayType,
+                                                           isDemoMode: $isDemoMode)) {
+                        SettingsAboutSectionView(title: "Garage", iconName: "car.circle", iconColor: .blue.opacity(0.6))
+                    }
+                                                           .simultaneousGesture(TapGesture().onEnded {
+                                                               withAnimation {
+                                                                   displayType = .none
+                                                               }
+                                                           })
+
+                    NavigationLink {
+                        SettingsView(isDemoMode: isDemoMode)
+                    } label: {
+                        SettingsAboutSectionView(title: "Settings", iconName: "gear", iconColor: .green.opacity(0.6))
+                    }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        withAnimation {
+                            displayType = .none
                         }
-                        .transition(.move(edge: .bottom))
+                    })
 
-                } label: {
-                    SettingsAboutSectionView(title: "Testing Hub", iconName: "car.circle", iconColor: .blue.opacity(0.6))
+//                    NavigationLink {
+//                        TestingScreen(displayType: $displayType)
+//                    } label: {
+//                        SettingsAboutSectionView(title: "Testing Hub", iconName: "gear", iconColor: .green.opacity(0.6))
+//                    }
+//                    .simultaneousGesture(TapGesture().onEnded {
+//                        withAnimation {
+//                            displayType = .none
+//                        }
+//                    })
+
+                    Link(destination: URL(string: "https://discord.gg/TRWvwUTns8")!) {
+                        SettingsAboutSectionView(title: "Join Discord Server ", iconName: "info.circle", iconColor: .yellow.opacity(0.6))
+                    }
                 }
-
-                Divider().background(Color.white).padding(.horizontal, 20)
             }
-            .padding()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack {
+                    Text("Powered by SMARTOBD2")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(5)
+                }
+            }
         }
     }
 }

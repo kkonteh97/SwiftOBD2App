@@ -30,7 +30,16 @@ enum OBDDecodeResult {
 struct FuelStatus {
 }
 
-struct Status {
+enum MeasurementUnits: String, Codable {
+    case metric = "Metric"
+    case imperial = "Imperial"
+
+    static var allCases: [MeasurementUnits] {
+        [.metric, .imperial]
+    }
+}
+
+struct Status: Codable, Hashable {
     var MIL: Bool = false
     var dtcCount: UInt8 = 0
     var ignitionType: String = ""
@@ -46,6 +55,19 @@ struct Status {
         componentMonitoring = StatusTest()
     }
 }
+
+struct StatusTest: Codable, Hashable {
+    var name: String = ""
+    var supported: Bool = false
+    var ready: Bool = false
+
+    init(_ name: String = "", _ supported: Bool = false, _ ready: Bool = false) {
+        self.name = name
+        self.supported = supported
+        self.ready = ready
+    }
+}
+
 
 struct BitArray {
     let data: Data
@@ -237,24 +259,25 @@ enum Decoders: Codable {
     case encoded_string
     case none
 
-    func decodeSpeed(_ data: Data) -> Measurement<Unit>? {
+    func decodeSpeed(_ data: Data, _ isMetric: MeasurementUnits) -> Measurement<Unit>? {
         let uas = UAS(signed: false, scale: 1, unit: UnitSpeed.kilometersPerHour)
         let measurement = uas.decode(bytes: data)
-        return  measurement
+        let imperialMeasurement = Measurement(value: KPHtoMPH(measurement?.value ?? 0.0), unit: Unit.mph)
+        return isMetric == .metric ? measurement : imperialMeasurement
     }
 
     func KPHtoMPH(_ kph: Double) -> Double {
         return kph * 0.621371
     }
 
-    func decode(data: Data) -> OBDDecodeResult? {
+    func decode(data: Data, isMetric: MeasurementUnits = .metric) -> OBDDecodeResult? {
         switch self {
         case .pid:
             return nil
         case .status:
             return .statusResult(Decoders.status(data))
         case .uas0x09:
-            guard let measurement = decodeSpeed(data) else { return .noResult }
+            guard let measurement = decodeSpeed(data, isMetric) else { return .noResult }
             // speed is in km/h
             return .measurementResult(measurement)
         case .uas0x07:
@@ -805,6 +828,12 @@ func processBaseTest(_ testName: String, _ index: Int, _ bits: BitArray, _ outpu
 
 class Monitor {
     var tests: [UInt8: MonitorTest] = [:]
+
+//    init() {
+//        for value in TestIds.allCases {
+//            tests[value.rawValue] = MonitorTest(tid: value.rawValue, name: value.name, desc: value.desc, value: nil, min: nil, max: nil)
+//        }
+//    }
 }
 
 struct MonitorTest {

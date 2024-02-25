@@ -11,7 +11,7 @@ import Combine
 class CustomTabBarViewModel: ObservableObject {
     @Published var garage: Garage
     @Published var garageVehicles: [Vehicle] = []
-    @Published var connectionState: ConnectionState = .notConnected
+    @Published var connectionState: ConnectionState = .disconnected
     @Published var currentVehicle: Vehicle?
 
     var setupOrder: [OBDCommand.General] = [.ATD, .ATZ, .ATL0, .ATE0, .ATH1, .ATAT1, .ATRV, .ATDPN]
@@ -48,16 +48,16 @@ class CustomTabBarViewModel: ObservableObject {
         garage.deleteVehicle(vehicle)
     }
 
-    func setupAdapter(setupOrder: [OBDCommand.General], device: OBDDevice) async throws {
-        guard var vehicle = currentVehicle else { throw OBDServiceError.noVehicleSelected }
-        let obdInfo = try await obdService.startConnection(setupOrder: setupOrder, device: device, obdinfo: vehicle.obdinfo)
-        vehicle.obdinfo = obdInfo
-        let finalVehicle = vehicle
-        DispatchQueue.main.async {
-            self.garage.updateVehicle(finalVehicle)
-            self.garage.setCurrentVehicle(by: finalVehicle.id)
-        }
-    }
+//    func setupAdapter(setupOrder: [OBDCommand.General]) async throws {
+//        guard var vehicle = currentVehicle else { throw OBDServiceError.noVehicleSelected }
+//        let obdInfo = try await obdService.startConnection(setupOrder: setupOrder, obdinfo: vehicle.obdinfo)
+//        vehicle.obdinfo = obdInfo
+//        let finalVehicle = vehicle
+//        DispatchQueue.main.async {
+//            self.garage.updateVehicle(finalVehicle)
+//            self.garage.setCurrentVehicle(by: finalVehicle.id)
+//        }
+//    }
 }
 
 func getVINInfo(vin: String) async throws -> VINResults {

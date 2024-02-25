@@ -14,7 +14,7 @@ enum DataDisplayMode {
 }
 
 struct LiveDataView: View {
-    @ObservedObject var viewModel: LiveDataViewModel
+    @ObservedObject var viewModel = LiveDataViewModel()
     @State private var displayMode = DataDisplayMode.gauges
     @State private var showingSheet = false
     @State var isRequesting: Bool = false
@@ -27,9 +27,19 @@ struct LiveDataView: View {
     @EnvironmentObject var globalSettings: GlobalSettings
     var columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
 
-    init(viewModel: LiveDataViewModel
+    @EnvironmentObject var obdService: OBDService
+
+    @Binding var displayType: BottomSheetType
+    @Binding var statusMessage: String?
+    @Binding var isDemoMode: Bool
+
+    init(displayType: Binding<BottomSheetType>,
+         statusMessage: Binding<String?>,
+         isDemoMode: Binding<Bool>
     ) {
-        self.viewModel = viewModel
+        self._displayType = displayType
+        self._statusMessage = statusMessage
+        self._isDemoMode = isDemoMode
     }
 
     var body: some View {
@@ -122,25 +132,71 @@ struct LiveDataView: View {
     }
 
     private func toggleRequestingPIDs() {
-        guard viewModel.connectionState == .connectedToVehicle else {
-            globalSettings.showAltText = true
-            globalSettings.statusMessage = "Not Connected"
+        guard obdService.connectionState == .connectedToVehicle else {
+            statusMessage = "Not Connected"
             toggleDisplayType(to: .halfScreen)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation {
-                    globalSettings.showAltText = false
+                    statusMessage = nil
                 }
             }
             return
         }
-        if viewModel.isRequestingPids {
-            viewModel.controlRequestingPIDs(status: false)
+        switch viewModel.isRequesting {
+        case true:
+            controlRequestingPIDs(status: false)
             toggleDisplayType(to: .quarterScreen)
-            self.isRequesting = false
-        } else {
-            viewModel.controlRequestingPIDs(status: true)
+        case false:
+            controlRequestingPIDs(status: true)
             toggleDisplayType(to: .none)
-            isRequesting = true
+        }
+    }
+
+    func controlRequestingPIDs(status: Bool) {
+        switch status {
+        case true:
+            guard viewModel.timer == nil else { return }
+            startTimer()
+            withAnimation(.easeInOut(duration: 0.5)) {
+                viewModel.isRequesting = true
+            }
+            UIApplication.shared.isIdleTimerDisabled = true
+        case false:
+            viewModel.stopTimer()
+            viewModel.appendMeasurementsTimer?.cancel()
+            withAnimation {
+                viewModel.isRequesting = false
+            }
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
+    }
+
+    func startTimer() {
+        viewModel.stopTimer()
+        viewModel.appendMeasurementsTimer?.cancel()
+        viewModel.timer = Timer.scheduledTimer(withTimeInterval: 0.01,
+                                               repeats: true) {  _ in
+            self.startRequestingPIDs()
+        }
+        viewModel.startAppendMeasurementsTimer()
+    }
+
+    func startRequestingPIDs() {
+        guard viewModel.isRequestingPids == false else {
+            return
+        }
+        viewModel.isRequestingPids = true
+        Task {
+            do {
+                let messages = try await obdService.requestPIDs(viewModel.order)
+                viewModel.updateDataItems(messages: messages,
+                                          keys: viewModel.order, isMetric: MeasurementUnits.metric)
+            } catch {
+                DispatchQueue.main.async {
+                    self.controlRequestingPIDs(status: false)
+                    toggleDisplayType(to: .quarterScreen)
+                }
+            }
         }
     }
 

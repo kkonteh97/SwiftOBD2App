@@ -6,122 +6,380 @@
 //
 
 import SwiftUI
-import Combine
 
-class VehicleDiagnosticsViewModel: ObservableObject {
-    @Published var garage: Garage
-//    @Published var currentVehicle: Vehicle?
-    @Published var garageVehicles: [Vehicle] = []
-    @Published var troubleCodes: [TroubleCode] = []
+struct Stage: Identifiable, Hashable {
+    let id: UUID = UUID()
+    let name: String
+}
 
-    private var cancellables = Set<AnyCancellable>()
+struct DiagnosticsScreen: View {
+    @State private var startPoint = UnitPoint(x: -1, y: 0.5)
+    @State private var endPoint = UnitPoint(x: 0, y: 0.5)
 
-    let obdService: OBDService
+    @Binding var stages: [Stage]
+    @Binding var requestingTroubleCodes: Bool
+    @Binding var requestingTroubleCodesError: Bool
 
-    init(_ obdService: OBDService, _ garage: Garage) {
-        self.obdService = obdService
-        self.garage = garage
+    var body: some View {
+        VStack(spacing: 10) {
+            ZStack(alignment: .center) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white)
+                    .frame(width: 220, height: 100)
+                    .overlay(alignment: .leading) {
+                        if stages.last?.name != "Complete" {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(LinearGradient(gradient: Gradient(colors: [.gray.opacity(0.5), .darkEnd.opacity(0.5)]), startPoint: startPoint, endPoint: endPoint))
+                        } else {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.darkEnd.opacity(0.5))
+                        }
+                    }
 
-        garage.$garageVehicles
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.garageVehicles, on: self)
-            .store(in: &cancellables)
+                Image("car")
+                    .resizable()
+                    .renderingMode(.template)
+                    .frame(width: 150, height: 150)
+                    .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
 
-//        garage.$currentVehicleId
-//                .sink { currentVehicleId in
-//                    self.currentVehicle = self.garage.garageVehicles.first(where: { $0.id == currentVehicleId } )
-//                }
-//                .store(in: &cancellables)
-    }
-
-    func scanForTroubleCodes() {
-        Task {
-            do {
-                guard let troubleCodes = try await obdService.scanForTroubleCodes() else {
-                    return
-                }
-                DispatchQueue.main.async {
-                    self.troubleCodes = troubleCodes
-                }
-                print("Trouble Codes: \(troubleCodes)")
-            } catch {
-                print(error.localizedDescription)
             }
+            .frame(maxWidth: .infinity)
+            .onAppear() {
+                withAnimation(Animation.linear(duration: 1).repeatForever(autoreverses: true)) {
+                    self.startPoint = UnitPoint(x: 1, y: 0.5)
+                    self.endPoint = UnitPoint(x: 1.5, y: 0.5)
+                }
+            }
+            .padding(.top)
+
+            VStack(alignment: .leading, spacing: 10) {
+
+                HStack(alignment: .lastTextBaseline) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(stages, id: \.self) { stage in
+                            Text(stage.name)
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        }
+                    }
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(stages.dropLast()) { _ in
+                            Image(systemName: "checkmark.circle.fill")
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(.green)
+                        }
+                        ZStack(alignment: .center) {
+                            if stages.last?.name == "Complete" {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundColor(.green)
+                            } else {
+                                if !requestingTroubleCodesError {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .resizable()
+                                        .frame(width: 20, height: 20)
+                                        .foregroundColor(.red)
+                                }
+                            }
+                        }
+                    }
+                    .padding(5)
+                    .background {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(Color.white, lineWidth: 1)
+                    }
+                    .animation(.linear(duration: 0.5), value: stages.last)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+            }
+            .animation(.linear(duration: 0.5), value: stages.last)
+            if stages.last?.name == "Complete" || requestingTroubleCodesError {
+                Button {
+                    requestingTroubleCodes = false
+                } label : {
+                    Text("Continue")
+                        .font(.body)
+                        .foregroundColor(.white)
+                        .padding()
+                    //                    .frame(maxWidth: .infinity)
+                        .background(Color.blue.opacity(0.8))
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.5), radius: 5, x: 0, y: 5)
+                }
+                .padding()
+                .buttonStyle(.plain)
+                .transition(.slide)
+            }
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.4))
     }
 }
 
 struct VehicleDiagnosticsView: View {
-    @ObservedObject var viewModel: VehicleDiagnosticsViewModel
+    @EnvironmentObject var globalSettings: GlobalSettings
+    @EnvironmentObject var garage: Garage
+    @EnvironmentObject var obdService: OBDService
 
-    var body: some View {
-        ZStack {
-            LinearGradient(.darkStart, .darkEnd)
-                .ignoresSafeArea()
+    @Environment(\.dismiss) var dismiss
+    @Binding var displayType: BottomSheetType
+    @Binding var isDemoMode: Bool
+    @State private var showAlert = false
+    @State private var alertMessage = ""
+    @State private var loading = false
+    @State private var clearCodeAlert = false
+    @State var troubleCodes: [TroubleCode] = []
 
-            VStack {
-                HStack {
-                    Button {
-                        print("Button tapped")
-                    } label: {
-                        Text("Clear Trouble Codes")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                            .padding(15)
-                            .background(Color.red)
-                            .cornerRadius(10)
-                    }
-                    Button {
-                        viewModel.scanForTroubleCodes()
-                    } label: {
-                        Text("Scan for Trouble Codes")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                            .padding(15)
-                            .background(Color.pinknew)
-                            .cornerRadius(10)
-                    }
-                }
+    @State var requestingTroubleCodes = false
+    @State var requestingTroubleCodesError = false
 
-                Divider().background(Color.white).padding(10)
+    let notificationFeedback = UINotificationFeedbackGenerator()
+    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
 
-                ForEach(viewModel.troubleCodes, id: \.self) { troubleCode in
-                    VStack {
-                        HStack {
-                            Text(troubleCode.rawValue)
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Text(troubleCode.description)
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding()
-                        Divider().background(Color.white).padding(10)
-                    }
-                }
-
-            
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .navigationTitle(navTitle)
-        .navigationBarTitleDisplayMode(.inline)
+    func appendStage(_ stage: Stage) {
+        stages.append(stage)
     }
 
-    var navTitle: String {
-        if let currentVehicle = viewModel.garage.currentVehicle {
-               return "\(currentVehicle.year) \(currentVehicle.make) \(currentVehicle.model)"
-           } else {
-               return "Garage Empty"
-           }
-       }
+    var current: Vehicle?
+
+    @MainActor
+    func scanForTroubleCodes() async {
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        notificationFeedback.prepare()
+        requestingTroubleCodesError = false
+
+        guard var currentVehicle = garage.currentVehicle else {
+            self.alertMessage = "No vehicle selected"
+            showAlert = true
+            requestingTroubleCodes = false
+            return
+        }
+        stages = [Stage(name: "Getting engine parameters")]
+        appendStage(Stage(name: "Starting diagnostics"))
+
+        do {
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let status = try await obdService.getStatus() else {
+                appendStage(Stage(name: "No status codes found"))
+                requestingTroubleCodesError = true
+                return
+            }
+            currentVehicle.obdinfo.status = status
+            appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
+            guard status.dtcCount > 0  else {
+                appendStage(Stage(name: "No trouble codes found"))
+                appendStage(Stage(name: "Complete"))
+                return
+            }
+            appendStage(Stage(name: "Reading trouble codes"))
+            guard let troubleCodes = try await obdService.scanForTroubleCodes() else {
+                appendStage(Stage(name: "No trouble codes found"))
+                requestingTroubleCodesError = true
+                return
+            }
+            try await Task.sleep(nanoseconds: 2_500_000_000)
+            currentVehicle.obdinfo.troubleCodes = troubleCodes
+            garage.updateVehicle(currentVehicle)
+            appendStage(Stage(name: "Trouble codes found"))
+            for i in troubleCodes.indices {
+                withAnimation {
+                    if !troubleCodes.contains(troubleCodes[i]) {
+                        self.troubleCodes.append(troubleCodes[i])
+                    }
+                    appendStage(Stage(name: troubleCodes[i].code + ": " + troubleCodes[i].description))
+                }
+            }
+
+            appendStage(Stage(name: "Complete"))
+            notificationFeedback.notificationOccurred(.success)
+        }  catch let error as BLEManagerError {
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.description
+            showAlert = true
+            requestingTroubleCodesError = true
+        }  catch let error as OBDServiceError {
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.description
+            showAlert = true
+            requestingTroubleCodesError = true
+        } catch {
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.localizedDescription
+            showAlert = true
+            requestingTroubleCodesError = true
+        }
+    }
+
+    @MainActor
+    func clearCode() async {
+        impactFeedback.prepare()
+        impactFeedback.impactOccurred()
+        notificationFeedback.prepare()
+
+        do {
+            try await obdService.clearTroubleCodes()
+
+            self.loading = true
+            notificationFeedback.notificationOccurred(.success)
+        }  catch let error as BLEManagerError {
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.description
+            self.showAlert = true
+        }  catch let error as OBDServiceError {
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.description
+            self.showAlert = true
+        } catch {
+            print(error.localizedDescription)
+            notificationFeedback.notificationOccurred(.error)
+            self.alertMessage = error.localizedDescription
+            self.showAlert = true
+        }
+    }
+
+    @Namespace var animation
+    @State var stages: [Stage] = []
+    var body: some View {
+        ZStack {
+            BackgroundView(isDemoMode: $isDemoMode)
+            if requestingTroubleCodes {
+                DiagnosticsScreen(stages: $stages,
+                                  requestingTroubleCodes: $requestingTroubleCodes,
+                                  requestingTroubleCodesError: $requestingTroubleCodesError)
+                .transition(.opacity)
+                .animation(.easeInOut, value: requestingTroubleCodes)
+                .matchedGeometryEffect(id: "diagnostics", in: animation)
+            } else {
+                VStack(alignment: .leading) {
+                    if let currentVehicle = garage.currentVehicle {
+                        Image("car")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: .infinity)
+                            .overlay(alignment: .topLeading) {
+                                VStack(alignment: .leading) {
+                                    Text("\(currentVehicle.year) \(currentVehicle.make)")
+                                    Text("\(currentVehicle.model)")
+                                }
+                                .padding(.horizontal)
+                                .foregroundColor(.white)
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                            }
+
+                        HStack {
+                            Text("DTC count:")
+                            Spacer()
+                            if  let dtcCount = currentVehicle.obdinfo.status?.dtcCount  {
+                                Text(String(dtcCount))
+                            }
+                        }
+                        .listRowBackground(Color.darkStart.opacity(0.3))
+                        .padding()
+                        Text("Confirmed Codes")
+                            .padding(.horizontal)
+                        if  let troubleCodes = currentVehicle.obdinfo.troubleCodes {
+                            List(troubleCodes, id: \.self) { troubleCode in
+                                VStack {
+                                    HStack(spacing: 20) {
+                                        Text(troubleCode.code)
+                                        Text(troubleCode.description)
+                                        Spacer()
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                                }
+                                .transition(.slide)
+                                .padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .animation(.easeInOut, value: troubleCode)
+                                .listRowBackground(Color.clear)
+                            }
+                            .listStyle(.inset)
+                            .scrollContentBackground(.hidden)
+                        }
+                    }
+                    Spacer()
+                }
+                .matchedGeometryEffect(id: "diagnostics", in: animation)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("", isPresented: $showAlert) {} message: {
+            Text(alertMessage)
+        }
+        .alert("Wait", isPresented: $clearCodeAlert) {
+            Button("Cancel", role: .cancel) {}
+
+            Button("Clear Codes", role: .destructive) {
+                guard !loading else { return }
+                self.loading = true
+                Task {
+                    await scanForTroubleCodes()
+                    loading = false
+                }
+            }
+
+        } message: {
+            Text("Do not attempt to clear codes while the engine is running. Clearing codes while the engine is running can cause serious damage to your vehicle.")
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    withAnimation {
+                        displayType = .quarterScreen
+                        dismiss()
+                    }
+                } label: {
+                    Label("Back", systemImage: "chevron.backward")
+                }
+            }
+
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Clear Codes", role: .destructive) {
+                    clearCodeAlert = true
+                }
+                .buttonStyle(.bordered)
+                .disabled(loading)
+                .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button("Scan", role: .none) {
+                    guard !requestingTroubleCodes else { return }
+                    withAnimation {
+                        self.requestingTroubleCodes = true
+                    }
+                    Task {
+                        await scanForTroubleCodes()
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(loading)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 15))
+                .shadow(color: .black.opacity(0.5), radius: 5, x: 0, y: 5)
+            }
+        }
+    }
 }
 
 #Preview {
-    ZStack {
-        VehicleDiagnosticsView(viewModel: VehicleDiagnosticsViewModel(OBDService(), Garage()))
+    NavigationView {
+        VehicleDiagnosticsView(displayType: .constant(.quarterScreen), isDemoMode: .constant(false))
+            .environmentObject(GlobalSettings())
+            .environmentObject(OBDService())
+            .environmentObject(Garage())
     }
 }
+

@@ -13,76 +13,138 @@ enum TestingDisplayMode {
     case bluetooth
 }
 
+class TestingScreenViewModel: ObservableObject {
+    @Published var lastMessageID: String = ""
+}
+
 struct TestingScreen: View {
-    @ObservedObject var viewModel: TestingScreenViewModel
+    @StateObject var viewModel = TestingScreenViewModel()
     @State private var history: [History] = []
     @Environment(\.colorScheme) var colorScheme
-    @State private var selectedCommand: OBDCommand = OBDCommand.mode1(.speed)
+    @State private var selectedCommand: OBDCommand = OBDCommand.mode6(.MONITOR_O2_B1S1)
     @State private var displayMode = TestingDisplayMode.bluetooth
     @State private var selectedPeripheral: Peripheral?
+    @State private var command = ""
+
+
+    @EnvironmentObject var globalSettings: GlobalSettings
+    @Environment(\.dismiss) var dismiss
+    @Binding var displayType: BottomSheetType
+
+    @EnvironmentObject var obd2Service: OBDService
+    @EnvironmentObject var garage: Garage
 
     var body: some View {
-        VStack {
-            Picker("Display Mode", selection: $displayMode) {
-                Text("Messages").tag(TestingDisplayMode.messages)
-                Text("Bluetooth Query").tag(TestingDisplayMode.bluetooth)
+        ZStack {
+            BackgroundView(isDemoMode: .constant(false))
+            VStack {
+                Picker("Display Mode", selection: $displayMode) {
+                    Text("Messages").tag(TestingDisplayMode.messages)
+                    Text("Bluetooth Query").tag(TestingDisplayMode.bluetooth)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+
+                switch displayMode {
+                case .messages:
+                    messagesSection
+                case .bluetooth:
+                    bluetoothSection
+                }
             }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.bottom, 20)
+        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    displayType = .quarterScreen
+                    dismiss()
+                } label: {
+                    Label("Back", systemImage: "chevron.backward")
+                }
+            }
+        }
+    }
 
-            switch displayMode {
-            case .messages:
-                Text("Request History")
-                    .font(.system(size: 20))
-
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: false) {
-                        ForEach(history, id: \.id) { history in
-                            MessageView(message: history)
-                        }
+    func sendCommand(command: OBDCommand)  {
+        Task {
+            do {
+                print("Sending Command: \(command.properties.command)")
+                let response = try await obd2Service.elm327.sendMessageAsync(command.properties.command)
+                print("Response: \(response.joined(separator: " "))")
+                let messages = try OBDParcer(response, idBits: 11).messages
+                guard let data = messages[0].data else { return }
+                let decodedValue = command.properties.decoder.decode(data: data)
+                switch decodedValue {
+                case .measurementMonitor(let value):
+                    for test in value.tests {
+//                        print("name: \(String(describing: test.value.name))\nValue: \(test.value.value ?? 0)\nMax: \(String(describing: test.value.max)) \nMin: \(String(describing: test.value.passed))")
                     }
-                    .onChange(of: viewModel.lastMessageID) { id in
-                        withAnimation{
-                            proxy.scrollTo(id, anchor: .bottom)
-                        }
+                case .statusResult(let value):
+                    print("Status: \(value)")
+                default:
+                    return
+                }
+                history.append(History(command: command.properties.command,
+                                       response: response.joined(separator: " "))
+                )
+            } catch {
+                print("Error setting up adapter: \(error)")
+            }
+        }
+    }
+
+    private var messagesSection: some View {
+        VStack {
+            Text("Request History")
+                .font(.system(size: 20))
+
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    ForEach(history, id: \.id) { history in
+                        TestMessageView(message: history)
                     }
                 }
-
-                if let car = viewModel.garage.currentVehicle {
-                    if let supportedPIDs = car.obdinfo.supportedPIDs {
-                        HStack {
-                            Picker("Select A command", selection: $selectedCommand) {
-                                ForEach(supportedPIDs, id: \.self) { pid in
-                                    Text(pid.properties.description)
-                                        .tag(pid)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            Spacer()
-                            Button(action: /*@START_MENU_TOKEN@*/{}/*@END_MENU_TOKEN@*/, label: {
-                                /*@START_MENU_TOKEN@*/Text("Button")/*@END_MENU_TOKEN@*/
-                            })
-                        }
-                        .padding(.vertical)
+                .onChange(of: viewModel.lastMessageID) { id in
+                    withAnimation{
+                        proxy.scrollTo(id, anchor: .bottom)
                     }
                 }
 
                 HStack {
-                    TextField("Enter Command", text: $viewModel.command)
-                        .padding()
-                        .font(.system(size: 16))
-                        .foregroundColor(.black)
-                        .background(
-                            RoundedRectangle(cornerRadius: 25)
-                        )
+                    if let supportedPids =  garage.currentVehicle?.obdinfo.supportedPIDs {
+                        Picker("Select A command", selection: $selectedCommand) {
+                            ForEach(supportedPids, id: \.self) { pid in
+                                Text(pid.properties.description)
+                                    .tag(pid)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    Spacer()
+                    Button {
+                        sendCommand(command: selectedCommand)
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 30))
+                            .fontWeight(.semibold)
+                    }
+                }
+                .padding(.vertical)
+
+                HStack {
+                    TextField("Enter Command", text: $command)
+                        .keyboardShortcut("m", modifiers: .command)
                         .defersSystemGestures(on: .vertical)
+                        .foregroundColor(.black)
 
                     Button {
-                        guard !viewModel.command.isEmpty else { return }
+                        guard !command.isEmpty else { return }
                         Task {
                             do {
-                                let response = try await viewModel.sendMessage()
-                                history.append(History(command: viewModel.command,
+                                let response = try await sendMessage()
+                                history.append(History(command: command,
                                                        response: response.joined(separator: " "))
                                 )
                             } catch {
@@ -91,155 +153,149 @@ struct TestingScreen: View {
                         }
 
                     } label: {
-                        Image(systemName: "arrow.up.circle")
+                        Image(systemName: "arrow.up.circle.fill")
                             .foregroundColor(.blue)
-                            .padding(10)
-                            .padding(.horizontal, 5)
-                            .font(.largeTitle)
+                            .font(.system(size: 30))
                             .fontWeight(.semibold)
                     }
                 }
-                .padding()
-
-        case .bluetooth:
-                bluetoothSection
+                .background(
+                    RoundedRectangle(cornerRadius: 25)
+                )
             }
+            .font(.system(size: 16))
         }
+        .padding()
+    }
+
+    func sendMessage() async throws -> [String] {
+        let response = try await obd2Service.elm327.sendMessageAsync(command)
+            return response
     }
 
     private var bluetoothSection: some View {
         VStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                ForEach(viewModel.peripherals) { peripheral in
-                    PeripheralRow(peripheral: peripheral)
-                        .onTapGesture {
-                            self.selectedPeripheral = peripheral
+                ScrollView(.vertical, showsIndicators: false) {
+                    if let peripherals = obd2Service.foundPeripherals {
+                        ForEach(peripherals) { peripheral in
+                            PeripheralRow(peripheral: peripheral)
+                                .onTapGesture {
+                                    self.selectedPeripheral = peripheral
+                                }
+                        }
                     }
                 }
-            }
-            Spacer()
+                .sheet(item: $selectedPeripheral) { peripheral in
+                    PeripheralInfo(peripheral: peripheral)
+                }
+                Spacer()
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            viewModel.startScanning()
+//            viewModel.startScanning()
         }
-        .sheet(item: $selectedPeripheral) { peripheral in
-            PeripheralInfo(viewModel: viewModel, peripheral: peripheral)
+    }
+}
+
+struct PeripheralRow: View {
+    let peripheral: Peripheral
+    @EnvironmentObject var obd2Service: OBDService
+
+    var body: some View {
+        HStack {
+            Text(peripheral.name)
+            Text(String(peripheral.rssi))
+            Spacer()
+            Text(obd2Service.connectedPeripheral?.identifier == peripheral.peripheral.identifier ? "Connected" : "Tap to Connect")
+                .foregroundColor(.white)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: 50)
+        .background {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.charcoal)
         }
     }
 }
 
 struct PeripheralInfo: View {
-    @ObservedObject var viewModel: TestingScreenViewModel
-    var peripheral: Peripheral
+    @State var peripheral: Peripheral
+    @EnvironmentObject var obd2Service: OBDService
 
     var body: some View {
-        VStack {
-                HStack {
-                    Text(peripheral.name)
-                    Spacer()
-                    if viewModel.connectPeripheral != nil {
-                        Button(action: {}) {
-                            Text("Disconnect")
-                                .foregroundColor(.white)
-                                .font(.system(size: 20))
-                                .padding()
-                        }
-                    } else {
-                        Button(action: { viewModel.connect(to: peripheral) }) {
-                            Text("Connect")
-                                .foregroundColor(.white)
-                                .font(.system(size: 20))
-                                .padding()
-                        }
-                    }
+        VStack(alignment: .leading) {
+            Text(peripheral.peripheral.name ?? "Unknown Device")
+                .font(.system(size: 24, weight: .bold))
+
+            Text("PeripheralUUID: \(peripheral.peripheral.identifier.uuidString)")
+
+            HStack {
+                Button("Connect") {
+                    obd2Service.bleManager.connect(to: peripheral.peripheral)
                 }
-            if let connectPeripheral = viewModel.connectPeripheral {
-                Text("peripheralUUID: \(peripheral.peripheral.identifier.uuidString)")
-                ScrollView(.vertical, showsIndicators: false) {
-                    ForEach(connectPeripheral.services ?? [], id:\.uuid) { service in
-                        ServiceRow(viewModel: viewModel, service: service)
-                    }
+                .buttonStyle(.bordered)
+                Button("Disconnect") {
+                    obd2Service.disconnectPeripheral(peripheral: peripheral)
+                }
+                .buttonStyle(.bordered)
+            }
+            .frame(maxWidth: .infinity)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                ForEach(peripheral.peripheral.services ?? [], id:\.uuid) { service in
+                    ServiceRow(service: service)
                 }
             }
-                Spacer()
+
+            Spacer()
         }
-        .padding()
+        .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 struct ServiceRow: View {
-    @ObservedObject var viewModel: TestingScreenViewModel
     let service: CBService
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Service")
-                .font(.system(size: 20))
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Service: \(service.uuid)")
 
-            Text("\(service.uuid)")
-                .font(.system(size: 16))
-
-            Divider().background(Color.white).padding(10)
-            HStack {
-                Text("Characteristics")
-                Spacer()
-            }
+            Text("Characteristics")
             ForEach(service.characteristics ?? [], id: \.uuid) { characteristic in
-                CharacteristicRow(viewModel: viewModel, characteristic: characteristic)
+                CharacteristicRow(characteristic: characteristic)
             }
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.charcoal)
-        }
+        .font(.system(size: 18, weight: .semibold))
+        .padding(.vertical)
     }
 }
 
 struct CharacteristicRow: View {
-    @ObservedObject var viewModel: TestingScreenViewModel
     let characteristic: CBCharacteristic
     @State var response: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("\(characteristic.uuid)")
-                    .font(.system(size: 12))
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.white)
-            }
-            
-            HStack {
-                Text("Properties: ")
-                    .font(.system(size: 12))
-                Text("[\(propertiesAsString())]")
-                    .font(.system(size: 12))
-            }
+            Text("\(characteristic.uuid)")
+
+                Text("Properties: [\(propertiesAsString())]")
+
             if let response = response {
                 Text("response: \(response)")
-                    .font(.system(size: 12))
             }
         }
-        .padding(.vertical)
-        .frame(maxWidth: .infinity, maxHeight: 75)
-        .background {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.charcoal)
-        }
-        .onTapGesture {
-            Task {
-                let response = try await viewModel.testCharacteristic(characteristic)
-                DispatchQueue.main.async {
-                    self.response = response
-                }
-            }
-        }
+        .font(.system(size: 16))
+        .frame(maxWidth: .infinity, alignment: .leading)
+//        .onTapGesture {
+//            Task {
+//                let response = try await viewModel.testCharacteristic(characteristic)
+//                DispatchQueue.main.async {
+//                    self.response = response
+//                }
+//            }
+//        }
     }
     // Helper function to convert properties to a readable string
        private func propertiesAsString() -> String {
@@ -263,32 +319,13 @@ struct CharacteristicRow: View {
        }
 }
 
-struct PeripheralRow: View {
-    let peripheral: Peripheral
-
-    var body: some View {
-        HStack {
-            Text(peripheral.name)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundColor(.white)
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: 50)
-        .background {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.charcoal)
-        }
-    }
-}
-
 struct History: Identifiable {
     var id = UUID()
     var command: String
     var response: String
 }
 
-struct MessageView: View {
+struct TestMessageView: View {
     var message: History
 
     var body: some View {
@@ -307,10 +344,122 @@ struct MessageView: View {
     }
 }
 
-//struct CarScreen_Previews: PreviewProvider {
-//    static var previews: some View {
-//        TestingScreen(viewModel: TestingScreenViewModel(obdService: OBDService(), 
-//                                                        garage: Garage())
-//        )
+//class TestingScreenViewModel: ObservableObject {
+//
+//    let obdService: OBDServiceProtocol
+//    let garage: GarageProtocol
+//    private var cancellables = Set<AnyCancellable>()
+//
+//    @Published var command: String = ""
+//    @Published var currentVehicle: Vehicle?
+//    @Published var isRequestingPids = false
+//    @Published var lastMessageID: String = ""
+//    @Published var peripherals: [Peripheral] = []
+//
+//    @Published var connectPeripheral: CBPeripheralProtocol?
+//
+//    init(_ obdService: OBDServiceProtocol, _ garage: GarageProtocol) {
+//        self.obdService = obdService
+//        self.garage = garage
+//        garage.currentVehiclePublisher
+//            .sink { currentVehicle in
+//                self.currentVehicle = currentVehicle
+//            }
+//            .store(in: &cancellables)
+//
+//        obdService.foundPeripheralsPublisher
+//            .sink { peripherals in
+//                self.peripherals = peripherals
+//            }
+//            .store(in: &cancellables)
+//
+//    }
+//
+//    func sendMessage() async throws -> [String] {
+//        return try await obdService.elm327.sendMessageAsync(command, withTimeoutSecs: 5)
+//    }
+//
+//    func startScanning() {
+//        obdService.bleManager.startScanning()
+//    }
+//
+//    func connect(to peripheral: Peripheral) {
+//        Task {
+//            do {
+//                let connectedPeripheral = try await obdService.connect(to: peripheral)
+//                print("Connected to to ", connectedPeripheral.name ?? "No Name")
+////                let services = try await obdService.elm327.bleManager.discoverServicesAsync(for: connectedPeripheral)
+////                for service in services {
+////                    print(service)
+////                    let characteristics = try await obdService.elm327.bleManager.discoverCharacteristicsAsync(connectedPeripheral, for: service)
+////                    for characteristic in characteristics {
+////                        print(characteristic)
+//////                        if characteristic.uuid.uuidString == "FFF1" {
+//////                            let data = try await testCharacteristic(characteristic)
+//////                            print("data ", data)
+//////                        }
+////                    }
+////                }
+//
+//                DispatchQueue.main.async {
+//                    self.connectPeripheral = connectedPeripheral
+//                }
+//
+//            } catch {
+//                print(error.localizedDescription)
+//            }
+//        }
+//    }
+//
+//    func testCharacteristic(_ characteristic: CBCharacteristic) async throws -> String {
+//        let data = try await obdService.bleManager.sendMessageAsync("ATZ", characteristic: characteristic)
+//        print("here ", data)
+//        return data.joined(separator: " ")
+//    }
+//
+//    func requestPid(_ command: OBDCommand) {
+//        guard !isRequestingPids else {
+//            return
+//        }
+//        isRequestingPids = true
+//        Task {
+//            do {
+//                let messages = try await obdService.elm327.requestPIDs([command])
+//                guard !messages.isEmpty else {
+//                    return
+//                }
+//                guard let data = messages[0].data else {
+//                    return
+//                }
+//                print(data.compactMap { String(format: "%02X", $0) }.joined(separator: " "))
+//                let decodedValue = command.properties.decoder.decode(data: data[1...])
+//                switch decodedValue {
+//                    //            case .measurementMonitor(let measurement):
+//                    //                print(measurement.tests)
+//                case .measurementResult(let status):
+//                    print(status.value)
+//                case .stringResult(let status):
+//                    print(status)
+//
+//                case .statusResult(let status):
+//                    print(status)
+//
+//                default :
+//                    print("Not a measurement monitor")
+//                }
+//                DispatchQueue.main.async {
+//                    self.isRequestingPids = false
+//                }
+//            } catch {
+//                print(error.localizedDescription)
+//            }
+//        }
 //    }
 //}
+
+#Preview {
+        TestingScreen(viewModel: TestingScreenViewModel(), displayType: .constant(.quarterScreen))
+        .environmentObject(GlobalSettings())
+        .environmentObject(OBDService())
+        .environmentObject(Garage())
+}

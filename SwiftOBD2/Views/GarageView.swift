@@ -8,23 +8,25 @@
 import SwiftUI
 
 struct GarageView: View {
-    @ObservedObject var viewModel: GarageViewModel
     @EnvironmentObject var globalSettings: GlobalSettings
+    @EnvironmentObject var garage: Garage
+
     @Environment(\.dismiss) var dismiss
+    @Binding var displayType: BottomSheetType
+    @Binding var isDemoMode: Bool
 
     @State private var isAddingVehicle = false
 
     var body: some View {
         ZStack {
-            LinearGradient(.darkStart, .darkEnd)
-                .ignoresSafeArea()
-            ScrollView(.vertical, showsIndicators: false) {
-                ForEach(viewModel.garage.garageVehicles) { vehicle in
+            BackgroundView(isDemoMode: $isDemoMode)
+            VStack {
+                List(garage.garageVehicles, id: \.self, selection: $garage.currentVehicle) { vehicle in
                     HStack {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(vehicle.make)
                                 .font(.system(size: 20, weight: .bold, design: .default))
-                                 .foregroundColor(.white)
+                                .foregroundColor(.white)
 
                             Text(vehicle.model)
                                 .font(.system(size: 14, weight: .bold, design: .default))
@@ -35,36 +37,29 @@ struct GarageView: View {
                                 .foregroundColor(.white)
                         }
                         Spacer()
-                        Button {
-                            viewModel.deleteVehicle(vehicle)
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
+                        if garage.currentVehicle?.id == vehicle.id {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.white)
+                                .font(.system(size: 20))
                         }
                     }
-                    .swipeActions(edge: .leading) {
-
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, maxHeight: 125, alignment: .leading)
-                    .background(viewModel.currentVehicle == vehicle ? Color.blue : Color.clear)
-                    .padding(.bottom, 15)
-                    .onTapGesture {
-                        withAnimation {
-                            viewModel.setCurrentVehicle(by: vehicle.id)
+                    .listRowBackground(garage.currentVehicle?.id == vehicle.id ? Color.blue : Color.clear)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button("Delete", role: .destructive) {
+                            garage.deleteVehicle(vehicle)
                         }
                     }
                 }
-                Spacer()
+                .padding(.top, 25)
+                .listStyle(.inset)
+                .scrollContentBackground(.hidden)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationBarBackButtonHidden(true)
-        .navigationTitle("Garage")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    globalSettings.displayType = .quarterScreen
+                    displayType = .quarterScreen
                     dismiss()
                 } label: {
                     HStack {
@@ -75,26 +70,33 @@ struct GarageView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
+                Button("Add Vehicle", role: .none) {
                     isAddingVehicle = true
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .foregroundColor(.white)
-                        .font(.system(size: 20))
                 }
+                .buttonStyle(.bordered)
+                .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
             }
         }
+        .gesture(DragGesture().onEnded({
+            if $0.translation.width > 100 {
+                displayType = .quarterScreen
+                dismiss()
+            }
+        }))
         .sheet(isPresented: $isAddingVehicle) {
-            AddVehicleView(viewModel: AddVehicleViewModel(garage: viewModel.garage, obdService: viewModel.obdService),
-                           isPresented: $isAddingVehicle
-            )
+            AddVehicleView(isPresented: $isAddingVehicle)
         }
     }
 }
 
 #Preview {
-    GarageView(viewModel: GarageViewModel(OBDService(), Garage()))
+    NavigationView {
+        GarageView(displayType: .constant(.quarterScreen),
+                   isDemoMode: .constant(false))
         .background(LinearGradient(.darkStart, .darkEnd))
+        .environmentObject(GlobalSettings())
+        .environmentObject(Garage())
+    }
 }
 
 

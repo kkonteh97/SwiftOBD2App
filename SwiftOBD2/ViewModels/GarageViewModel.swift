@@ -19,21 +19,17 @@ class GarageViewModel: ObservableObject {
     init(_ obdService: OBDService,_ garage: Garage) {
         self.obdService = obdService
         self.garage = garage
-
+        
         garage.$garageVehicles
             .receive(on: DispatchQueue.main)
             .assign(to: \.garageVehicles, on: self)
             .store(in: &cancellables)
-
+        
         garage.$currentVehicle
             .sink { currentVehicle in
                 self.currentVehicle = currentVehicle
             }
             .store(in: &cancellables)
-    }
-
-    func setCurrentVehicle(by id: Int) {
-        garage.setCurrentVehicle(by: id)
     }
     
     func deleteVehicle(_ vehicle: Vehicle) {
