@@ -8,18 +8,18 @@
 import SwiftUI
 import Combine
 
-struct Vehicle: Codable, Identifiable, Equatable, Hashable {
-    static func == (lhs: Vehicle, rhs: Vehicle) -> Bool {
+public struct Vehicle: Codable, Identifiable, Equatable, Hashable {
+    public static func == (lhs: Vehicle, rhs: Vehicle) -> Bool {
         return lhs.id == rhs.id
     }
-    let id: Int
-    var make: String
-    var model: String
-    var year: String
-    var obdinfo: OBDInfo = OBDInfo()
+    public let id: Int
+    public var make: String
+    public var model: String
+    public var year: String
+    public var obdinfo: OBDInfo?
 }
 
-class Garage: ObservableObject {
+public class Garage: ObservableObject {
     @Published var garageVehicles: [Vehicle] = []
     @Published var currentVehicle: Vehicle? {
         didSet {
@@ -39,7 +39,7 @@ class Garage: ObservableObject {
 
     private var nextId = 0 // Initialize with the next integer ID
 
-    init () {
+    public init () {
         // Load garageVehicles from UserDefaults
 //        UserDefaults.standard.removeObject(forKey: "garageVehicles")
 //        UserDefaults.standard.removeObject(forKey: "currentCarId")
@@ -71,7 +71,7 @@ class Garage: ObservableObject {
     }
 
     func addVehicle(make: String, model: String, year: String, obdinfo: OBDInfo? = nil) {
-        let vehicle = Vehicle(id: nextId, make: make, model: model, year: year, obdinfo: obdinfo ?? OBDInfo())
+        let vehicle = Vehicle(id: nextId, make: make, model: model, year: year, obdinfo: obdinfo)
         garageVehicles.append(vehicle)
         nextId += 1
         saveGarageVehicles()
@@ -123,11 +123,11 @@ class Garage: ObservableObject {
         }
     }
 
-    func switchToDemoMode(_ isDemoMode: Bool) {
+    public func switchToDemoMode(_ isDemoMode: Bool) {
         // put garage in demo mode
         switch isDemoMode {
         case true:
-            loadMockGarage()
+            print("Demo Mode")
         case false:
             loadGarage()
         }
@@ -139,7 +139,7 @@ class Garage: ObservableObject {
                                    model: "X5",
                                    year: "2015",
                                    obdinfo: OBDInfo(vin: "1234567890",
-                                                    supportedPIDs: [.mode6(.MONITOR_O2_B1S1), .mode1(.speed), .mode1(.rpm), .mode1(.maf), .mode1(.throttlePos), .mode1(.coolantTemp), .mode1(.fuelLevel), .mode1(.fuelType), .mode1(.shortFuelTrim1), .mode1(.O2Bank1Sensor3), .mode1(.runTime), .mode1(.intakePressure), .mode1(.intakeTemp), .mode1(.timingAdvance), .mode1(.engineLoad)],
+                                                    supportedPIDs: [OBDCommand.mode6(.MONITOR_O2_B1S1), OBDCommand.mode1(.speed), OBDCommand.mode1(.rpm), OBDCommand.mode1(.maf), .mode1(.throttlePos), .mode1(.coolantTemp), .mode1(.fuelLevel), OBDCommand.mode1(.fuelType), OBDCommand.mode1(.shortFuelTrim1), OBDCommand.mode1(.O2Bank1Sensor3), OBDCommand.mode1(.runTime), OBDCommand.mode1(.intakePressure), OBDCommand.mode1(.intakeTemp), OBDCommand.mode1(.timingAdvance), OBDCommand.mode1(.engineLoad)],
                                                     troubleCodes: [
                                                         TroubleCode(code: "P0000", description: "Fuel Volume Regulator Control Circuit/Open"),
                                                         TroubleCode(code: "P0001", description: "Fuel Volume Regulator Control Circuit Range/Performance"),
@@ -148,7 +148,8 @@ class Garage: ObservableObject {
                                                     ],
                                                     obdProtocol: .protocol6)
         )
-        let mockVehicle2 = Vehicle(id: 1, make: "Mock-Toyota", model: "Camry", year: "2019", obdinfo: OBDInfo(obdProtocol: .protocol6))
+
+        let mockVehicle2 = Vehicle(id: 1, make: "Mock-Toyota", model: "Camry", year: "2019", obdinfo: OBDInfo(obdProtocol: PROTOCOL.protocol6))
 
         self.garageVehicles = [mockVehicle1, mockVehicle2]
         currentVehicle = mockVehicle1
