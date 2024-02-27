@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 class VehiclePickerViewModel: ObservableObject {
     var carData: [Manufacturer] = []
@@ -27,7 +28,7 @@ class VehiclePickerViewModel: ObservableObject {
     }
 
     func addVehicle(make: String, model: String, year: String,
-                    vin: String = "", obdinfo: OBDInfo? = nil) {
+                    vin: String = "", obdinfo: OBDInfo?) {
         garage.addVehicle(make: make, model: model, year: year)
     }
 }
@@ -101,7 +102,7 @@ struct VehiclePickerView: View {
                 viewModel.addVehicle(
                     make: viewModel.carData[selectedManufacturer].make,
                     model: models[selectedModel].name,
-                    year: String(years[selectedYear])
+                    year: String(years[selectedYear]), obdinfo: nil
                 )
             }) {
                 Text("Add")

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import SwiftOBD2
 
 enum DataDisplayMode {
     case gauges
@@ -190,7 +191,7 @@ struct LiveDataView: View {
             do {
                 let messages = try await obdService.requestPIDs(viewModel.order)
                 viewModel.updateDataItems(messages: messages,
-                                          keys: viewModel.order, isMetric: MeasurementUnits.metric)
+                                          keys: viewModel.order)
             } catch {
                 DispatchQueue.main.async {
                     self.controlRequestingPIDs(status: false)

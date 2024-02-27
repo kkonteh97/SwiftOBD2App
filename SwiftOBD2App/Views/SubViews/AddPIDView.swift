@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import SwiftOBD2
 
 struct AddPIDView: View {
     @ObservedObject var viewModel: LiveDataViewModel
@@ -19,7 +20,7 @@ struct AddPIDView: View {
                 Divider().background(Color.white)
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    if let supportedPIDs = car.obdinfo.supportedPIDs  {
+                    if let supportedPIDs = car.obdinfo?.supportedPIDs  {
                         ForEach(supportedPIDs.filter { $0.properties.live }.sorted(), id: \.self) { pid in
                             HStack {
                                 Text(pid.properties.description)

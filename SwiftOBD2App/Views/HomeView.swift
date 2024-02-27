@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 struct HomeView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -25,19 +26,6 @@ struct HomeView: View {
                                     iconName: "wrench.and.screwdriver",
                                     destination: VehicleDiagnosticsView(displayType: $displayType, isDemoMode: $isDemoMode)
                         )
-                        .disabled(obdService.connectionState != .connectedToVehicle)
-                        .simultaneousGesture(TapGesture().onEnded {
-                            if obdService.connectionState != .connectedToVehicle {
-                                statusMessage = "Not connected to vehicle"
-                                withAnimation {
-                                    displayType = .halfScreen
-                                }
-                            } else {
-                                withAnimation {
-                                    displayType = .none
-                                }
-                            }
-                        })
 
                         SectionView(title: "Logs",
                                     subtitle: "View Logs",

@@ -6,20 +6,19 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 class SettingsViewModel: ObservableObject {
 
-    var obdService: OBDService
     var garage: Garage
 
-    init(_ obdService: OBDService, _ garage: Garage) {
-        self.obdService = obdService
+    init(_ garage: Garage) {
         self.garage = garage
     }
 
     func switchToDemoMode(_ isDemoMode: Bool) {
         garage.switchToDemoMode(isDemoMode)
-        obdService.switchToDemoMode(isDemoMode)
+//        obdService.switchToDemoMode(isDemoMode)
     }
 }
 

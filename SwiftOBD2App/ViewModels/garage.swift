@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import SwiftOBD2
 
 public struct Vehicle: Codable, Identifiable, Equatable, Hashable {
     public static func == (lhs: Vehicle, rhs: Vehicle) -> Bool {
@@ -18,6 +19,21 @@ public struct Vehicle: Codable, Identifiable, Equatable, Hashable {
     public var year: String
     public var obdinfo: OBDInfo?
 }
+
+public struct OBDInfo: Codable, Hashable {
+    public var vin: String?
+    public var supportedPIDs: [OBDCommand]?
+    public var troubleCodes: [TroubleCode]?
+    public var obdProtocol: PROTOCOL?
+    public var ecuMap: [UInt8: ECUID]?
+    public var status: Status?
+}
+
+public struct TroubleCode: Codable, Hashable {
+    public let code: String
+    public let description: String
+}
+
 
 public class Garage: ObservableObject {
     @Published var garageVehicles: [Vehicle] = []

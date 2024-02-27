@@ -7,6 +7,7 @@
 
 import Combine
 import SwiftUI
+import SwiftOBD2
 
 struct PIDMeasurement: Identifiable, Comparable, Hashable, Codable {
     static func < (lhs: PIDMeasurement, rhs: PIDMeasurement) -> Bool {
@@ -99,7 +100,7 @@ class LiveDataViewModel: ObservableObject {
         }
     }
 
-    func updateDataItems(messages: [Message], keys: [OBDCommand], isMetric: MeasurementUnits) {
+    func updateDataItems(messages: [Message], keys: [OBDCommand]) {
         DispatchQueue.main.async {
             guard !messages.isEmpty else { return }
             guard let data = messages[0].data else { return }
@@ -146,22 +147,6 @@ class LiveDataViewModel: ObservableObject {
     }
 }
 
-func decodeMeasurementToBindingDouble(_ measurement: OBDDecodeResult?) -> Binding<Double> {
-    guard let measurement = measurement else {
-        return .constant(0)
-    }
-    switch measurement {
-    case .stringResult(let value):
-        return .constant(Double(value) ?? 0)
-    case .measurementResult(let value):
-        return .constant(value.value)
-    case .noResult:
-        return .constant(0)
-    default:
-        return .constant(0)
-    }
-}
-
 func decodeToMeasurement(_ result: OBDDecodeResult) -> Measurement<Unit>? {
     switch result {
     case .measurementResult(let value):
@@ -171,32 +156,3 @@ func decodeToMeasurement(_ result: OBDDecodeResult) -> Measurement<Unit>? {
     }
 }
 
-func decodeMeasurementToDouble(_ measurement: OBDDecodeResult?) -> Double {
-    guard let measurement = measurement else {
-        return 0
-    }
-    switch measurement {
-    case .stringResult(let value):
-        return Double(value) ?? 0
-    case .measurementResult(let value):
-        return value.value
-    default:
-        return 0
-    }
-}
-
-func decodeMeasurementToString(_ measurement: OBDDecodeResult?) -> String {
-    guard let measurement = measurement else {
-        return "N/A"
-    }
-    switch measurement {
-    case .stringResult(let value):
-        return value
-    case .measurementResult(let value):
-        return "\(value.value) \(value.unit.symbol)"
-    case .noResult:
-        return "No Result"
-    default:
-        return "No Result"
-    }
-}

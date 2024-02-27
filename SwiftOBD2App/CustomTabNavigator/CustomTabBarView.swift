@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 enum BottomSheetType {
     case fullScreen
@@ -30,10 +31,10 @@ struct CustomTabBarView<Content: View>: View {
     let backgroundView: Content
     let tabs: [TabBarItem]
 
-    @EnvironmentObject var garage: Garage
 
     @Binding var statusMessage: String?
     @EnvironmentObject var obdService: OBDService
+    @EnvironmentObject var garage: Garage
 
 
     init(
@@ -219,12 +220,14 @@ extension CustomTabBarView {
                 toggleDisplayType(to: .halfScreen)
                 try await obdService.initAdapter()
                 self.statusMessage = "Initializing Vehicle"
-                try await obdService.initVehicle(obdinfo: &vehicle.obdinfo)
+                let obdinfo = try await obdService.initVehicle(nil)
+                vehicle.obdinfo?.vin = obdinfo.1
+                vehicle.obdinfo?.obdProtocol = obdinfo.0
                 self.statusMessage = "Getting PIDS"
-                vehicle.obdinfo.supportedPIDs = await obdService.getSupportedPIDs()
+                vehicle.obdinfo?.supportedPIDs = await obdService.getSupportedPIDs()
                 self.statusMessage = "Attempting to get VIN"
                 if vehicle.make == "None",
-                    let vin = vehicle.obdinfo.vin,
+                   let vin = vehicle.obdinfo?.vin,
                         vin.count > 0,
                             let vinResults = try? await getVINInfo(vin: vin).Results[0] {
                     vehicle.make = vinResults.Make
@@ -252,12 +255,7 @@ extension CustomTabBarView {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
                     toggleDisplayType(to: .quarterScreen)
                 }
-            } catch let error as BLEManagerError {
-                notificationFeedback.notificationOccurred(.error)
-                withAnimation {
-                    self.statusMessage = "Unable to to find OBD Adapter"
-                    self.isLoading = false
-                }
+
             } catch {
                 notificationFeedback.notificationOccurred(.error)
                 self.statusMessage = "Error Connecting to Vehicle"
@@ -362,12 +360,12 @@ extension CustomTabBarView {
                 HStack {
                     Text("VIN" )
                     Spacer()
-                    Text(garage.currentVehicle?.obdinfo.vin ?? "")
+                    Text(garage.currentVehicle?.obdinfo?.vin ?? "")
                 }
                 HStack {
                     Text("Protocol")
                     Spacer()
-                    Text(garage.currentVehicle?.obdinfo.obdProtocol?.description ?? "")
+                    Text(garage.currentVehicle?.obdinfo?.obdProtocol?.description ?? "")
                 }
                 HStack {
                     Text("ELM connection")
@@ -406,4 +404,23 @@ extension CustomTabBarView {
             .environmentObject(OBDService())
         }
     }
+}
+
+func getVINInfo(vin: String) async throws -> VINResults {
+    let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
+
+    print(endpoint)
+    guard let url = URL(string: endpoint) else {
+        throw URLError(.badURL)
+    }
+
+    let (data, response) = try await URLSession.shared.data(from: url)
+
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+        throw URLError(.badServerResponse)
+    }
+
+    let decoder = JSONDecoder()
+    let decoded = try decoder.decode(VINResults.self, from: data)
+    return decoded
 }

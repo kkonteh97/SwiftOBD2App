@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 struct Manufacturer: Codable, Hashable {
     let make: String
@@ -69,7 +70,6 @@ struct AddVehicleView: View {
 struct AutoAddVehicleView: View {
     @EnvironmentObject var garage: Garage
     @EnvironmentObject var obdService: OBDService
-
     @Binding var isPresented: Bool
     @State var statusMessage: String = ""
     @State var isLoading: Bool = false
@@ -158,9 +158,9 @@ struct AutoAddVehicleView: View {
     }
 
     func connect() async throws -> VINInfo? {
-        var obdInfo = OBDInfo()
-        try await obdService.startConnection(&obdInfo)
-        guard let vin = obdInfo.vin else {
+        let obdInfo = try await obdService.startConnection(nil)
+
+        guard let vin = obdInfo.1 else {
             return nil
         }
 
@@ -168,14 +168,6 @@ struct AutoAddVehicleView: View {
             return nil
         }
 
-        DispatchQueue.main.async {
-            self.garage.addVehicle(
-                make: vinInfo.Make,
-                model: vinInfo.Model,
-                year: vinInfo.ModelYear,
-                obdinfo: obdInfo
-            )
-        }
         return vinInfo
     }
 }
@@ -307,7 +299,6 @@ struct ConfirmView: View {
 #Preview {
     AddVehicleView(isPresented: .constant(true))
             .environmentObject(GlobalSettings())
-            .environmentObject(OBDService())
             .environmentObject(Garage())
 
 }
@@ -337,53 +328,3 @@ struct BackgroundView: View {
             }
     }
 }
-
-//func getVINInfo(vin: String) async throws -> VINResults {
-//    let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
-//
-//    guard let url = URL(string: endpoint) else {
-//        throw URLError(.badURL)
-//    }
-//
-//    let (data, response) = try await URLSession.shared.data(from: url)
-//
-//    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-//        throw URLError(.badServerResponse)
-//    }
-//
-//    let decoder = JSONDecoder()
-//    let decoded = try decoder.decode(VINResults.self, from: data)
-//    return decoded
-//}
-//        ScrollView(.vertical, showsIndicators: false) {
-//            ForEach(0 ..< viewModel.carData.count, id: \.self) { carIndex in
-//                VStack(alignment: .center, spacing: 20) {
-//                    Text(self.viewModel.carData[carIndex].make)
-//                }
-//                .padding()
-//                .frame(maxWidth: .infinity, maxHeight: 200)
-//                .background {
-//                    RoundedRectangle(cornerRadius: 10)
-//                        .fill(self.viewModel.carData[carIndex].make == selectMake ? .blue : .green)
-//                }
-//                .onTapGesture {
-//                    withAnimation {
-//                        selectMake = self.viewModel.carData[carIndex].make
-//                    }
-//                }
-//            }
-//        }
-//        .safeAreaInset(edge: .bottom, content: {
-//            if selectMake != nil {
-//                VStack {
-//                    Text("Next")
-//                        .transition(.move(edge: .top))
-//                }
-//                .frame(width: 200, height: 50)
-//                .background {
-//                    RoundedRectangle(cornerRadius: 10)
-//                        .fill(Color(.systemGray6))
-//                }
-//            }
-//        })
-//        .padding()

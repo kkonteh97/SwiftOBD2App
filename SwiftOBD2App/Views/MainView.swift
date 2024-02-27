@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import CoreBluetooth
+import SwiftOBD2
 
 struct MainView: View {
     @State private var tabSelection: TabBarItem = .dashBoard
@@ -44,8 +44,8 @@ struct MainView: View {
 #Preview {
     MainView()
         .environmentObject(GlobalSettings())
-        .environmentObject(OBDService())
         .environmentObject(Garage())
+        .environmentObject(OBDService())
 }
 
 

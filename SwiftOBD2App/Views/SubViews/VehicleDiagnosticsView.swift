@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 struct Stage: Identifiable, Hashable {
     let id: UUID = UUID()
@@ -128,7 +129,6 @@ struct DiagnosticsScreen: View {
 struct VehicleDiagnosticsView: View {
     @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var garage: Garage
-    @EnvironmentObject var obdService: OBDService
 
     @Environment(\.dismiss) var dismiss
     @Binding var displayType: BottomSheetType
@@ -141,7 +141,7 @@ struct VehicleDiagnosticsView: View {
 
     @State var requestingTroubleCodes = false
     @State var requestingTroubleCodesError = false
-
+    @EnvironmentObject var obd2Service: OBDService
     let notificationFeedback = UINotificationFeedbackGenerator()
     let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
 
@@ -169,26 +169,26 @@ struct VehicleDiagnosticsView: View {
 
         do {
             try await Task.sleep(nanoseconds: 2_000_000_000)
-            guard let status = try await obdService.getStatus() else {
+            guard let status = try await obd2Service.getStatus() else {
                 appendStage(Stage(name: "No status codes found"))
                 requestingTroubleCodesError = true
                 return
             }
-            currentVehicle.obdinfo.status = status
-            appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
+//            currentVehicle.obdinfo.status = status
+//            appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
             guard status.dtcCount > 0  else {
                 appendStage(Stage(name: "No trouble codes found"))
                 appendStage(Stage(name: "Complete"))
                 return
             }
             appendStage(Stage(name: "Reading trouble codes"))
-            guard let troubleCodes = try await obdService.scanForTroubleCodes() else {
-                appendStage(Stage(name: "No trouble codes found"))
-                requestingTroubleCodesError = true
-                return
-            }
+//            guard let troubleCodes = try await scanForTroubleCodes() else {
+//                appendStage(Stage(name: "No trouble codes found"))
+//                requestingTroubleCodesError = true
+//                return
+//            }
             try await Task.sleep(nanoseconds: 2_500_000_000)
-            currentVehicle.obdinfo.troubleCodes = troubleCodes
+            currentVehicle.obdinfo?.troubleCodes = troubleCodes
             garage.updateVehicle(currentVehicle)
             appendStage(Stage(name: "Trouble codes found"))
             for i in troubleCodes.indices {
@@ -203,11 +203,6 @@ struct VehicleDiagnosticsView: View {
             appendStage(Stage(name: "Complete"))
             notificationFeedback.notificationOccurred(.success)
         }  catch let error as BLEManagerError {
-            notificationFeedback.notificationOccurred(.error)
-            self.alertMessage = error.description
-            showAlert = true
-            requestingTroubleCodesError = true
-        }  catch let error as OBDServiceError {
             notificationFeedback.notificationOccurred(.error)
             self.alertMessage = error.description
             showAlert = true
@@ -227,18 +222,9 @@ struct VehicleDiagnosticsView: View {
         notificationFeedback.prepare()
 
         do {
-            try await obdService.clearTroubleCodes()
-
+            try await obd2Service.clearTroubleCodes()
             self.loading = true
             notificationFeedback.notificationOccurred(.success)
-        }  catch let error as BLEManagerError {
-            notificationFeedback.notificationOccurred(.error)
-            self.alertMessage = error.description
-            self.showAlert = true
-        }  catch let error as OBDServiceError {
-            notificationFeedback.notificationOccurred(.error)
-            self.alertMessage = error.description
-            self.showAlert = true
         } catch {
             print(error.localizedDescription)
             notificationFeedback.notificationOccurred(.error)
@@ -279,7 +265,7 @@ struct VehicleDiagnosticsView: View {
                         HStack {
                             Text("DTC count:")
                             Spacer()
-                            if  let dtcCount = currentVehicle.obdinfo.status?.dtcCount  {
+                            if  let dtcCount = currentVehicle.obdinfo?.status?.dtcCount  {
                                 Text(String(dtcCount))
                             }
                         }
@@ -287,7 +273,7 @@ struct VehicleDiagnosticsView: View {
                         .padding()
                         Text("Confirmed Codes")
                             .padding(.horizontal)
-                        if  let troubleCodes = currentVehicle.obdinfo.troubleCodes {
+                        if  let troubleCodes = currentVehicle.obdinfo?.troubleCodes {
                             List(troubleCodes, id: \.self) { troubleCode in
                                 VStack {
                                     HStack(spacing: 20) {
@@ -378,7 +364,6 @@ struct VehicleDiagnosticsView: View {
     NavigationView {
         VehicleDiagnosticsView(displayType: .constant(.quarterScreen), isDemoMode: .constant(false))
             .environmentObject(GlobalSettings())
-            .environmentObject(OBDService())
             .environmentObject(Garage())
     }
 }

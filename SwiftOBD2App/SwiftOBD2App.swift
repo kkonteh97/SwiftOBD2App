@@ -7,6 +7,7 @@
 
 import SwiftUI
 import OSLog
+import SwiftOBD2
 
 extension Logger {
     /// Using your bundle identifier is a great way to ensure a unique identifier.
@@ -26,17 +27,23 @@ class GlobalSettings: ObservableObject {
 }
 
 @main
-struct SwiftOBD2App: App {
-    var globalSettings = GlobalSettings()
+struct SMARTOBD2App: App {
+    @StateObject var globalSettings = GlobalSettings()
     @StateObject var obdService = OBDService()
     @StateObject var garage = Garage()
 
+    @State var SplashScreenIsActive: Bool = true
+
     var body: some Scene {
         WindowGroup {
-            MainView()
-                .environmentObject(globalSettings)
-                .environmentObject(garage)
-                .environmentObject(obdService)
+            if SplashScreenIsActive {
+                SplashScreenView(isActive: $SplashScreenIsActive)
+            } else {
+                MainView()
+                    .environmentObject(globalSettings)
+                    .environmentObject(garage)
+                    .environmentObject(obdService)
+            }
         }
     }
 }

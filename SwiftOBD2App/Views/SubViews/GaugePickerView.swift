@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftOBD2
 
 enum GaugeType: String, CaseIterable, Identifiable, Codable {
     case gaugeType1

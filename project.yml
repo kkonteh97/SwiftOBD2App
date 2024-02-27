@@ -16,6 +16,8 @@ targets:
         UILaunchStoryboardName: "LaunchScreen"
         NSBluetoothAlwaysUsageDescription: "This app uses Bluetooth to connect to nearby devices."
         NSBluetoothPeripheralUsageDescription: "This app uses Bluetooth to connect to nearby devices."
+        NSLocationAlwaysUsageDescription: "This app uses location services to connect to nearby devices."
+        NSLocationWhenInUseUsageDescription: "This app uses location services to connect to nearby devices."
         UIBackgroundModes: ["bluetooth-central"]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
