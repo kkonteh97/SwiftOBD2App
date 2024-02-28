@@ -218,9 +218,9 @@ extension CustomTabBarView {
             do {
                 self.statusMessage = "Initializing OBD Adapter (BLE)"
                 toggleDisplayType(to: .halfScreen)
-                try await obdService.initAdapter()
+                try await obdService.initializeAdapter()
                 self.statusMessage = "Initializing Vehicle"
-                let obdinfo = try await obdService.initVehicle(nil)
+                let obdinfo = try await obdService.initializeVehicle(nil)
                 vehicle.obdinfo?.vin = obdinfo.1
                 vehicle.obdinfo?.obdProtocol = obdinfo.0
                 self.statusMessage = "Getting PIDS"

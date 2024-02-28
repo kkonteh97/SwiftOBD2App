@@ -13,7 +13,6 @@ struct HomeView: View {
     @Binding var displayType: BottomSheetType
     @Binding var isDemoMode: Bool
     @Binding var statusMessage: String?
-    @EnvironmentObject var obdService: OBDService
 
     var body: some View {
         ZStack {
@@ -71,20 +70,16 @@ struct HomeView: View {
                         }
                     })
 
-//                    NavigationLink {
-//                        TestingScreen(displayType: $displayType)
-//                    } label: {
-//                        SettingsAboutSectionView(title: "Testing Hub", iconName: "gear", iconColor: .green.opacity(0.6))
-//                    }
-//                    .simultaneousGesture(TapGesture().onEnded {
-//                        withAnimation {
-//                            displayType = .none
-//                        }
-//                    })
-
-                    Link(destination: URL(string: "https://discord.gg/TRWvwUTns8")!) {
-                        SettingsAboutSectionView(title: "Join Discord Server ", iconName: "info.circle", iconColor: .yellow.opacity(0.6))
+                    NavigationLink {
+                        TestingScreen(displayType: $displayType)
+                    } label: {
+                        SettingsAboutSectionView(title: "Testing Hub", iconName: "gear", iconColor: .green.opacity(0.6))
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        withAnimation {
+                            displayType = .none
+                        }
+                    })
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -98,6 +93,7 @@ struct HomeView: View {
         }
     }
 }
+
 
 struct SettingsAboutSectionView: View {
     let title: String
@@ -126,17 +122,8 @@ struct SettingsAboutSectionView: View {
     }
 }
 
-//#Preview {
-//    ZStack {
-//        LinearGradient(.darkStart, .darkEnd)
-//            .ignoresSafeArea()
-//        HomeView(
-//            viewModel: HomeViewModel(obdService: OBDService(),
-//                                     garage: Garage()),
-//            diagnosticsViewModel: VehicleDiagnosticsViewModel(obdService: OBDService(),
-//                           garage: Garage()),
-//            garageViewModel: GarageViewModel(obdService: OBDService(), garage: Garage()),
-//            settingsViewModel: SettingsViewModel(obdService: OBDService()),
-//            testingScreenViewModel: TestingScreenViewModel(obdService: OBDService(), garage: Garage()))
-//    }
-//}
+#Preview {
+    NavigationView {
+        HomeView(displayType: .constant(.quarterScreen), isDemoMode: .constant(true), statusMessage: .constant(nil))
+    }.navigationViewStyle(.stack)
+}

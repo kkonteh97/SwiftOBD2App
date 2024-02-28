@@ -129,6 +129,7 @@ struct DiagnosticsScreen: View {
 struct VehicleDiagnosticsView: View {
     @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var garage: Garage
+    @EnvironmentObject var obd2Service: OBDService
 
     @Environment(\.dismiss) var dismiss
     @Binding var displayType: BottomSheetType
@@ -141,7 +142,6 @@ struct VehicleDiagnosticsView: View {
 
     @State var requestingTroubleCodes = false
     @State var requestingTroubleCodesError = false
-    @EnvironmentObject var obd2Service: OBDService
     let notificationFeedback = UINotificationFeedbackGenerator()
     let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
 
@@ -174,39 +174,35 @@ struct VehicleDiagnosticsView: View {
                 requestingTroubleCodesError = true
                 return
             }
-//            currentVehicle.obdinfo.status = status
-//            appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
+            currentVehicle.obdinfo?.status = status
+            appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
             guard status.dtcCount > 0  else {
                 appendStage(Stage(name: "No trouble codes found"))
                 appendStage(Stage(name: "Complete"))
                 return
             }
             appendStage(Stage(name: "Reading trouble codes"))
-//            guard let troubleCodes = try await scanForTroubleCodes() else {
-//                appendStage(Stage(name: "No trouble codes found"))
-//                requestingTroubleCodesError = true
-//                return
-//            }
+            guard let troubleCodes = try await obd2Service.scanForTroubleCodes() else {
+                appendStage(Stage(name: "No trouble codes found"))
+                requestingTroubleCodesError = true
+                return
+            }
             try await Task.sleep(nanoseconds: 2_500_000_000)
-            currentVehicle.obdinfo?.troubleCodes = troubleCodes
-            garage.updateVehicle(currentVehicle)
+
             appendStage(Stage(name: "Trouble codes found"))
-            for i in troubleCodes.indices {
+
+            for (code, description) in troubleCodes {
                 withAnimation {
-                    if !troubleCodes.contains(troubleCodes[i]) {
-                        self.troubleCodes.append(troubleCodes[i])
-                    }
-                    appendStage(Stage(name: troubleCodes[i].code + ": " + troubleCodes[i].description))
+                    self.troubleCodes.append(TroubleCode(code: code, description: description))
+                    appendStage(Stage(name: code + ": " + description))
                 }
             }
+            currentVehicle.obdinfo?.troubleCodes = troubleCodes.compactMap { TroubleCode(code: $0.key, description: $0.value) }
+
+            garage.updateVehicle(currentVehicle)
 
             appendStage(Stage(name: "Complete"))
             notificationFeedback.notificationOccurred(.success)
-        }  catch let error as BLEManagerError {
-            notificationFeedback.notificationOccurred(.error)
-            self.alertMessage = error.description
-            showAlert = true
-            requestingTroubleCodesError = true
         } catch {
             notificationFeedback.notificationOccurred(.error)
             self.alertMessage = error.localizedDescription

@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "757360B9A99DD835AB716E74"
-               BuildableName = "SMARTOBD2.app"
-               BlueprintName = "SMARTOBD2"
+               BuildableName = "SwiftOBD2App.app"
+               BlueprintName = "SwiftOBD2App"
                ReferencedContainer = "container:SwiftOBD2App.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,8 +44,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "757360B9A99DD835AB716E74"
-            BuildableName = "SMARTOBD2.app"
-            BlueprintName = "SMARTOBD2"
+            BuildableName = "SwiftOBD2App.app"
+            BlueprintName = "SwiftOBD2App"
             ReferencedContainer = "container:SwiftOBD2App.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,8 +61,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "757360B9A99DD835AB716E74"
-            BuildableName = "SMARTOBD2.app"
-            BlueprintName = "SMARTOBD2"
+            BuildableName = "SwiftOBD2App.app"
+            BlueprintName = "SwiftOBD2App"
             ReferencedContainer = "container:SwiftOBD2App.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

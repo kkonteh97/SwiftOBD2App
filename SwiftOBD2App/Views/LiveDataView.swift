@@ -19,16 +19,15 @@ struct LiveDataView: View {
     @State private var displayMode = DataDisplayMode.gauges
     @State private var showingSheet = false
     @State var isRequesting: Bool = false
-
     @State private var enLarge = false
-
     @State private var selectedPID: DataItem?
 
     @Namespace var namespace
-    @EnvironmentObject var globalSettings: GlobalSettings
-    var columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
 
+    @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var obdService: OBDService
+
+    var columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
 
     @Binding var displayType: BottomSheetType
     @Binding var statusMessage: String?
@@ -44,7 +43,8 @@ struct LiveDataView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
+        ZStack(alignment: .topTrailing) {
+            BackgroundView(isDemoMode: $isDemoMode)
             VStack {
                 headerButtons
                 Picker("Display Mode", selection: $displayMode) {
@@ -211,38 +211,10 @@ struct LiveDataView: View {
     }
 }
 
-
-
-//#Preview {
-//    ZStack {
-//        LiveDataView(viewModel: LiveDataViewModel(obdService: OBDService(),
-//                                                  garage: Garage())
-//        )
-//    }
-//}
-
-//                .chartYAxis {
-//                    AxisMarks(position: .leading)
-//                }
-
-
-//    let linearGradient = LinearGradient(gradient: Gradient(colors: [Color.accentColor.opacity(0.4), Color.accentColor.opacity(0)]),
-//                                        startPoint: .top,
-//                                        endPoint: .bottom)
-//    var body: some View {
-//        GroupBox(dataItem.command.properties.description) {
-//            Chart {
-//                ForEach(data) { data in
-//                    LineMark(
-//                        x: .value("time", data.timeString),
-//                        y: .value("Value", data.value)
-//                    )
-//                    .lineStyle(StrokeStyle(lineWidth: 2.0))
-//                    .interpolationMethod(.cardinal)
-//                }
-//            }
-//            .onReceive(timer, perform: updateData)
-//            .chartXAxis(.hidden)
-//            .chartYScale(domain: 0 ... dataItem.command.properties.maxValue)
-//        }
-//    }
+#Preview {
+    LiveDataView(displayType: .constant(.quarterScreen),
+                 statusMessage: .constant(""),
+                 isDemoMode: .constant(false))
+    .environmentObject(GlobalSettings())
+    .environmentObject(OBDService())
+}

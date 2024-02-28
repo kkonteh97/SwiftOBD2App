@@ -29,7 +29,7 @@ class GlobalSettings: ObservableObject {
 @main
 struct SMARTOBD2App: App {
     @StateObject var globalSettings = GlobalSettings()
-    @StateObject var obdService = OBDService()
+    @StateObject var obdService = OBDService(connectionType: .bluetooth)
     @StateObject var garage = Garage()
 
     @State var SplashScreenIsActive: Bool = true
