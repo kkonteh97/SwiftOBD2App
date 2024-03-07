@@ -72,20 +72,18 @@ struct TestingScreen: View {
                 print("Sending Command: \(command.properties.command)")
                 let response = try await obdService.sendCommand(command.properties.command)
                 print("Response: \(response.joined(separator: " "))")
-                let messages = try OBDParcer(response, idBits: 11).messages
-                guard let data = messages[0].data else { return }
-                let decodedValue = command.properties.decoder.decode(data: data)
-                switch decodedValue {
-                case .measurementMonitor(let value):
-                    for _ in value.tests {
+//                let decodedValue = command.properties.decode(data: data)
+//                switch decodedValue {
+//                case .measurementMonitor(let value):
+//                    for _ in value.tests {
 //                        print("name: \(String(describing: test.value.name))\nValue: \(test.value.value ?? 0)\nMax: \(String(describing: test.value.max)) \nMin: \(String(describing: test.value.passed))")
-                    }
-                case .statusResult(let value):
-                    print("Status: \(value)")
-                default:
-
-                    return
-                }
+//                    }
+//                case .statusResult(let value):
+//                    print("Status: \(value)")
+//                default:
+//
+//                    return
+//                }
                 history.append(History(command: command.properties.command,
                                        response: response.joined(separator: " "))
                 )

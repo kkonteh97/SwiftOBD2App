@@ -8,17 +8,6 @@
 import SwiftUI
 import SwiftOBD2
 
-struct VINResults: Codable {
-    let Results: [VINInfo]
-}
-
-struct VINInfo: Codable, Hashable {
-    let Make: String
-    let Model: String
-    let ModelYear: String
-    let EngineCylinders: String
-}
-
 struct GarageView: View {
     @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var garage: Garage

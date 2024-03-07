@@ -45,7 +45,7 @@ class DataItem: Identifiable, Codable {
 }
 
 class LiveDataViewModel: ObservableObject {
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
 
 
     @Published var isRequestingPids = false
@@ -54,8 +54,6 @@ class LiveDataViewModel: ObservableObject {
     @Published var order: [OBDCommand] = []
     @Published var isRequesting: Bool = false
 
-    var timer: Timer?
-    var appendMeasurementsTimer: DispatchSourceTimer?
     private let measurementTimeLimit: TimeInterval = 120
 
     init() {
@@ -70,8 +68,8 @@ class LiveDataViewModel: ObservableObject {
             }
         } else {
             // default pids SPEED and RPM
-            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), selectedGauge: .gaugeType2)
-            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), selectedGauge: .gaugeType4)
+            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), value: 754,selectedGauge: .gaugeType4)
+            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), value: 34,selectedGauge: .gaugeType1)
             order.append(.mode1(.rpm))
             order.append(.mode1(.speed))
         }
@@ -98,61 +96,6 @@ class LiveDataViewModel: ObservableObject {
                 order.remove(at: index)
             }
         }
-    }
-
-    func updateDataItems(messages: [Message], keys: [OBDCommand]) {
-        DispatchQueue.main.async {
-            guard !messages.isEmpty else { return }
-            guard let data = messages[0].data else { return }
-
-            var res = BatchedResponse(response: data)
-            keys.forEach { cmd in
-                guard let value = res.getValueForCommand(cmd) else {
-                    return
-                }
-
-                if let existingItem = self.data[cmd],
-                   let newValue = decodeToMeasurement(value) {
-
-                    existingItem.value = newValue.value
-                    existingItem.unit = newValue.unit.symbol
-                }
-            }
-            self.isRequestingPids = false
-        }
-    }
-
-    func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    func startAppendMeasurementsTimer() {
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
-        timer.schedule(deadline: .now(), repeating: .seconds(1))
-        timer.setEventHandler { [weak self] in
-            self?.appendMeasurements()
-        }
-        timer.resume()
-        appendMeasurementsTimer = timer
-    }
-
-    func appendMeasurements() {
-        DispatchQueue.main.async {
-              for (_, item) in self.data {
-                  item.measurements.append(PIDMeasurement(time: Date(), value: item.value))
-                  item.measurements = item.measurements.filter { $0.id.timeIntervalSinceNow > -self.measurementTimeLimit }
-            }
-        }
-    }
-}
-
-func decodeToMeasurement(_ result: OBDDecodeResult) -> Measurement<Unit>? {
-    switch result {
-    case .measurementResult(let value):
-        return value
-    default:
-        return Measurement(value: 0, unit: UnitSpeed.kilometersPerHour)
     }
 }
 

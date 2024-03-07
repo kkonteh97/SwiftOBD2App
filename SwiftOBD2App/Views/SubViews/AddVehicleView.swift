@@ -158,9 +158,9 @@ struct AutoAddVehicleView: View {
     }
 
     func connect() async throws -> VINInfo? {
-        let obdInfo = try await obdService.startConnection(nil)
+        let obdInfo = try await obdService.startConnection()
 
-        guard let vin = obdInfo.1 else {
+        guard let vin = obdInfo.vin else {
             return nil
         }
 

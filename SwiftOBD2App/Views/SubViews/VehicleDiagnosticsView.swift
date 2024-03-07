@@ -174,7 +174,7 @@ struct VehicleDiagnosticsView: View {
                 requestingTroubleCodesError = true
                 return
             }
-            currentVehicle.obdinfo?.status = status
+            currentVehicle.status = status
             appendStage(Stage(name: "DTC count: \(status.dtcCount)"))
             guard status.dtcCount > 0  else {
                 appendStage(Stage(name: "No trouble codes found"))
@@ -182,22 +182,18 @@ struct VehicleDiagnosticsView: View {
                 return
             }
             appendStage(Stage(name: "Reading trouble codes"))
-            guard let troubleCodes = try await obd2Service.scanForTroubleCodes() else {
-                appendStage(Stage(name: "No trouble codes found"))
-                requestingTroubleCodesError = true
-                return
-            }
+            let troubleCodes = try await obd2Service.scanForTroubleCodes()
             try await Task.sleep(nanoseconds: 2_500_000_000)
 
             appendStage(Stage(name: "Trouble codes found"))
 
-            for (code, description) in troubleCodes {
+            for troubleCode in troubleCodes {
                 withAnimation {
-                    self.troubleCodes.append(TroubleCode(code: code, description: description))
-                    appendStage(Stage(name: code + ": " + description))
+                    self.troubleCodes.append(troubleCode)
+                    appendStage(Stage(name: troubleCode.code + ": " + troubleCode.description))
                 }
             }
-            currentVehicle.obdinfo?.troubleCodes = troubleCodes.compactMap { TroubleCode(code: $0.key, description: $0.value) }
+            currentVehicle.troubleCodes = troubleCodes
 
             garage.updateVehicle(currentVehicle)
 
@@ -261,7 +257,7 @@ struct VehicleDiagnosticsView: View {
                         HStack {
                             Text("DTC count:")
                             Spacer()
-                            if  let dtcCount = currentVehicle.obdinfo?.status?.dtcCount  {
+                            if  let dtcCount = currentVehicle.status?.dtcCount  {
                                 Text(String(dtcCount))
                             }
                         }
@@ -269,7 +265,7 @@ struct VehicleDiagnosticsView: View {
                         .padding()
                         Text("Confirmed Codes")
                             .padding(.horizontal)
-                        if  let troubleCodes = currentVehicle.obdinfo?.troubleCodes {
+                        if  let troubleCodes = currentVehicle.troubleCodes {
                             List(troubleCodes, id: \.self) { troubleCode in
                                 VStack {
                                     HStack(spacing: 20) {

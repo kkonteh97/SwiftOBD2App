@@ -218,24 +218,21 @@ extension CustomTabBarView {
             do {
                 self.statusMessage = "Initializing OBD Adapter (BLE)"
                 toggleDisplayType(to: .halfScreen)
-                try await obdService.initializeAdapter()
-                self.statusMessage = "Initializing Vehicle"
-                let obdinfo = try await obdService.initializeVehicle(nil)
-                vehicle.obdinfo?.vin = obdinfo.1
-                vehicle.obdinfo?.obdProtocol = obdinfo.0
-                self.statusMessage = "Getting PIDS"
+
+                vehicle.obdinfo =  try await obdService.startConnection()
                 vehicle.obdinfo?.supportedPIDs = await obdService.getSupportedPIDs()
-                self.statusMessage = "Attempting to get VIN"
-                if vehicle.make == "None",
-                   let vin = vehicle.obdinfo?.vin,
-                        vin.count > 0,
-                            let vinResults = try? await getVINInfo(vin: vin).Results[0] {
-                    vehicle.make = vinResults.Make
-                    vehicle.model = vinResults.Model
-                    vehicle.year = vinResults.ModelYear
-                } else {
-                    showAddCarScreen = true
-                }
+
+//                if vehicle.make == "None",
+//                   let vin = vehicle.obdinfo?.vin,
+//                        vin.count > 0,
+//                            let vinResults = try? await getVINInfo(vin: vin).Results[0] {
+//                    vehicle.make = vinResults.Make
+//                    vehicle.model = vinResults.Model
+//                    vehicle.year = vinResults.ModelYear
+//                } else {
+//                    showAddCarScreen = true
+//                }
+
                 garage.updateVehicle(vehicle)
                 garage.setCurrentVehicle(to: vehicle)
 
@@ -406,21 +403,4 @@ extension CustomTabBarView {
     }
 }
 
-func getVINInfo(vin: String) async throws -> VINResults {
-    let endpoint = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/\(vin)?format=json"
 
-    print(endpoint)
-    guard let url = URL(string: endpoint) else {
-        throw URLError(.badURL)
-    }
-
-    let (data, response) = try await URLSession.shared.data(from: url)
-
-    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-        throw URLError(.badServerResponse)
-    }
-
-    let decoder = JSONDecoder()
-    let decoded = try decoder.decode(VINResults.self, from: data)
-    return decoded
-}

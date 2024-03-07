@@ -145,41 +145,10 @@ struct LiveDataView: View {
         }
         switch viewModel.isRequesting {
         case true:
-            controlRequestingPIDs(status: false)
-            toggleDisplayType(to: .quarterScreen)
+            stopRequestingPIDs()
         case false:
-            controlRequestingPIDs(status: true)
-            toggleDisplayType(to: .none)
+            startRequestingPIDs()
         }
-    }
-
-    func controlRequestingPIDs(status: Bool) {
-        switch status {
-        case true:
-            guard viewModel.timer == nil else { return }
-            startTimer()
-            withAnimation(.easeInOut(duration: 0.5)) {
-                viewModel.isRequesting = true
-            }
-            UIApplication.shared.isIdleTimerDisabled = true
-        case false:
-            viewModel.stopTimer()
-            viewModel.appendMeasurementsTimer?.cancel()
-            withAnimation {
-                viewModel.isRequesting = false
-            }
-            UIApplication.shared.isIdleTimerDisabled = false
-        }
-    }
-
-    func startTimer() {
-        viewModel.stopTimer()
-        viewModel.appendMeasurementsTimer?.cancel()
-        viewModel.timer = Timer.scheduledTimer(withTimeInterval: 0.01,
-                                               repeats: true) {  _ in
-            self.startRequestingPIDs()
-        }
-        viewModel.startAppendMeasurementsTimer()
     }
 
     func startRequestingPIDs() {
@@ -187,18 +156,42 @@ struct LiveDataView: View {
             return
         }
         viewModel.isRequestingPids = true
-        Task {
-            do {
-                let messages = try await obdService.requestPIDs(viewModel.order)
-                viewModel.updateDataItems(messages: messages,
-                                          keys: viewModel.order)
-            } catch {
-                DispatchQueue.main.async {
-                    self.controlRequestingPIDs(status: false)
-                    toggleDisplayType(to: .quarterScreen)
+        toggleDisplayType(to: .none)
+        UIApplication.shared.isIdleTimerDisabled = true
+
+        obdService.startContinuousUpdates(viewModel.order)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completion in
+                switch completion {
+                case .finished:
+                    print("Finished")
+                case .failure(let error):
+                    print("Error: \(error)")
+                    stopRequestingPIDs()
                 }
+            }, receiveValue: { measurements in
+                updateDataItems(measurements: measurements)
+            })
+            .store(in: &viewModel.cancellables)
+    }
+
+    func updateDataItems(measurements: [OBDCommand: MeasurementResult]) {
+        for (pid, measurement) in measurements {
+            if let _ = viewModel.data[pid] {
+                viewModel.data[pid]?.value = measurement.value
+                viewModel.data[pid]?.unit = measurement.unit.symbol
             }
         }
+    }
+
+    func stopRequestingPIDs() {
+        guard viewModel.isRequestingPids == true else {
+            return
+        }
+        UIApplication.shared.isIdleTimerDisabled = false
+        viewModel.isRequestingPids = false
+        viewModel.cancellables.removeAll()
+        toggleDisplayType(to: .quarterScreen)
     }
 
     private func toggleDisplayType(to displayType: BottomSheetType) {
