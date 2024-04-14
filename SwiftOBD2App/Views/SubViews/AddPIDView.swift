@@ -20,7 +20,7 @@ struct AddPIDView: View {
                 Divider().background(Color.white)
 
                 ScrollView(.vertical, showsIndicators: false) {
-                    if let supportedPIDs = car.obdinfo?.supportedPIDs  {
+                    if let supportedPIDs = car.obdinfo?.supportedPIDs {
                         ForEach(supportedPIDs.filter { $0.properties.live }.sorted(), id: \.self) { pid in
                             HStack {
                                 Text(pid.properties.description)
@@ -35,7 +35,7 @@ struct AddPIDView: View {
                                     .contentShape(Rectangle())
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(viewModel.data.keys.contains(pid) ? Color.blue : Color.clear, lineWidth: 2)
+                                            .stroke(viewModel.pidData.contains(where: { $0.command == pid }) ? Color.blue : Color.clear, lineWidth: 2)
                                     )
                             )
                             .padding(.horizontal)

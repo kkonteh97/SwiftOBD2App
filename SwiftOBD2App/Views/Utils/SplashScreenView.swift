@@ -31,13 +31,13 @@ struct SplashScreenView: View {
                 VStack {
                     ZStack {
                         VStack(spacing: 40) {
-                            Text("Smart OBD2")
+                            Text("SwiftOBD2")
                                 .font(.title)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
 
-                            Text("Your Car's Health Companion")
+                            Text("Give us a star on GitHub")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)

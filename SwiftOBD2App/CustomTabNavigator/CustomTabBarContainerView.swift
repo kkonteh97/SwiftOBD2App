@@ -47,7 +47,7 @@ struct CustomTabBarContainerView<Content: View>: View {
     }
 }
 
-//struct CustomTabBarContainerView_Previews: PreviewProvider {
+// struct CustomTabBarContainerView_Previews: PreviewProvider {
 //    static let tabs: [TabBarItem] = [.dashBoard, .features]
 //    static var previews: some View {
 //        GeometryReader { proxy in
@@ -60,4 +60,4 @@ struct CustomTabBarContainerView<Content: View>: View {
 //            }
 //        }
 //    }
-//}
+// }

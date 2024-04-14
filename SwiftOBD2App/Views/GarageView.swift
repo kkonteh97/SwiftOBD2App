@@ -100,8 +100,7 @@ struct GarageView: View {
     }
 }
 
-
-//class MockGarage: ObservableObject, GarageProtocol {
+// class MockGarage: ObservableObject, GarageProtocol {
 //    @Published var garageVehicles: [Vehicle]
 //    @Published var currentVehicleId: Int? {
 //        didSet {
@@ -152,4 +151,4 @@ struct GarageView: View {
 //    func deleteVehicle(_ car: Vehicle) {
 //        print("Deleting \(car)")
 //    }
-//}
+// }

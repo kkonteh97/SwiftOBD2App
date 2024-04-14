@@ -23,9 +23,9 @@ struct PIDMeasurement: Identifiable, Comparable, Hashable, Codable {
        }
 }
 
-class DataItem: Identifiable, Codable {
+class DataItem: Identifiable, Codable, ObservableObject {
     let command: OBDCommand
-    var value: Double
+    @Published var value: Double
     var unit: String?
     var selectedGauge: GaugeType?
     var measurements: [PIDMeasurement]
@@ -42,16 +42,49 @@ class DataItem: Identifiable, Codable {
         self.selectedGauge = selectedGauge
         self.measurements = measurements
     }
+
+    // MARK: - Codable
+    enum CodingKeys: String, CodingKey {
+        case command
+        case value
+        case unit
+        case selectedGauge
+        case measurements
+    }
+
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        command = try container.decode(OBDCommand.self, forKey: .command)
+        value = try container.decode(Double.self, forKey: .value)
+        unit = try container.decode(String.self, forKey: .unit)
+        selectedGauge = try container.decode(GaugeType.self, forKey: .selectedGauge)
+        measurements = try container.decode([PIDMeasurement].self, forKey: .measurements)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(command, forKey: .command)
+        try container.encode(value, forKey: .value)
+        try container.encode(unit, forKey: .unit)
+        try container.encode(selectedGauge, forKey: .selectedGauge)
+        try container.encode(measurements, forKey: .measurements)
+    }
+
+    func update(_ value: Double) {
+        self.value = value
+        measurements.append(PIDMeasurement(time: Date(), value: value))
+        if measurements.count > 100 {
+            measurements.removeFirst()
+        }
+    }
 }
 
 class LiveDataViewModel: ObservableObject {
     var cancellables = Set<AnyCancellable>()
 
-
     @Published var isRequestingPids = false
 
-    @Published var data: [OBDCommand : DataItem] = [:]
-    @Published var order: [OBDCommand] = []
+    @Published var pidData: [DataItem] = []
     @Published var isRequesting: Bool = false
 
     private let measurementTimeLimit: TimeInterval = 120
@@ -62,16 +95,11 @@ class LiveDataViewModel: ObservableObject {
 
         if let piddata = UserDefaults.standard.data(forKey: "pidData"),
            let pidData = try? JSONDecoder().decode([DataItem].self, from: piddata) {
-            for item in pidData {
-                self.data[item.command] = item
-                self.order.append(item.command)
-            }
+            self.pidData = pidData
         } else {
             // default pids SPEED and RPM
-            data[.mode1(.rpm)] = DataItem(command: .mode1(.rpm), value: 754,selectedGauge: .gaugeType4)
-            data[.mode1(.speed)] = DataItem(command: .mode1(.speed), value: 34,selectedGauge: .gaugeType1)
-            order.append(.mode1(.rpm))
-            order.append(.mode1(.speed))
+            pidData = [DataItem(command: .mode1(.rpm), value: 754, selectedGauge: .gaugeType4),
+                       DataItem(command: .mode1(.speed), value: 34, selectedGauge: .gaugeType1)]
         }
     }
 
@@ -80,22 +108,17 @@ class LiveDataViewModel: ObservableObject {
     }
 
     func saveDataItems() {
-        if let encodedData = try? JSONEncoder().encode(Array(data.values)) {
+        if let encodedData = try? JSONEncoder().encode(pidData) {
             UserDefaults.standard.set(encodedData, forKey: "pidData")
         }
     }
 
     func addPIDToRequest(_ pid: OBDCommand) {
-        guard order.count < 6 else { return }
-        if !data.keys.contains(pid) {
-            data[pid] = DataItem(command: pid, selectedGauge: .gaugeType1)
-            order.append(pid)
+        guard pidData.count < 6 else { return }
+        if !pidData.contains(where: { $0.command == pid }) {
+            pidData.append(DataItem(command: pid, selectedGauge: .gaugeType1))
         } else {
-            data.removeValue(forKey: pid)
-            if let index = order.firstIndex(of: pid) {
-                order.remove(at: index)
-            }
+            pidData.removeAll(where: { $0.command == pid })
         }
     }
 }
-

@@ -127,7 +127,7 @@ struct GraphView: View {
             .interpolationMethod(.linear)
         }
         .onReceive(timer, perform: updateData)
-        .onChange(of: data.count, perform: { value in
+        .onChange(of: data.count, perform: { _ in
 //            chartContentContainerWidth = CGFloat(value) * 10
         })
     }

@@ -34,7 +34,6 @@ struct SettingsView: View {
     }
 }
 
-
 struct ProtocolPicker: View {
     @Binding var selectedProtocol: PROTOCOL
 
@@ -47,7 +46,7 @@ struct ProtocolPicker: View {
                     Text(protocolItem.description).tag(protocolItem)
                 }
             }
-        }                
+        }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
     }

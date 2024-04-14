@@ -45,7 +45,7 @@ struct DiagnosticsScreen: View {
 
             }
             .frame(maxWidth: .infinity)
-            .onAppear() {
+            .onAppear {
                 withAnimation(Animation.linear(duration: 1).repeatForever(autoreverses: true)) {
                     self.startPoint = UnitPoint(x: 1, y: 0.5)
                     self.endPoint = UnitPoint(x: 1.5, y: 0.5)
@@ -105,7 +105,7 @@ struct DiagnosticsScreen: View {
             if stages.last?.name == "Complete" || requestingTroubleCodesError {
                 Button {
                     requestingTroubleCodes = false
-                } label : {
+                } label: {
                     Text("Continue")
                         .font(.body)
                         .foregroundColor(.white)
@@ -257,7 +257,7 @@ struct VehicleDiagnosticsView: View {
                         HStack {
                             Text("DTC count:")
                             Spacer()
-                            if  let dtcCount = currentVehicle.status?.dtcCount  {
+                            if  let dtcCount = currentVehicle.status?.dtcCount {
                                 Text(String(dtcCount))
                             }
                         }
@@ -359,4 +359,3 @@ struct VehicleDiagnosticsView: View {
             .environmentObject(Garage())
     }
 }
-

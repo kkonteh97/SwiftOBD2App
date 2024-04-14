@@ -64,8 +64,7 @@ struct LiveDataView: View {
 
                 case .graphs:
                     ScrollView(.vertical, showsIndicators: false) {
-                        ForEach(viewModel.order, id: \.self) { cmd in
-                            if let dataItem = viewModel.data[cmd] {
+                        ForEach(viewModel.pidData) { dataItem in
                                 Text(dataItem.command.properties.description +
                                      " " +
                                      String(dataItem.value) +
@@ -73,7 +72,6 @@ struct LiveDataView: View {
                                      (dataItem.unit ?? "")
                                 )
                                 ScrollChartView(dataItem: dataItem)
-                            }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -91,10 +89,8 @@ struct LiveDataView: View {
 
     private var gaugeView: some View {
         LazyVGrid(columns: columns) {
-            ForEach(viewModel.order, id: \.self) { cmd in
-                if let dataItem = viewModel.data[cmd] {
+            ForEach(viewModel.pidData) { dataItem in
                     GaugeView(dataItem: dataItem,
-                              value: dataItem.value,
                               selectedGauge: nil
                     )
                     .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 0.0) {
@@ -103,7 +99,6 @@ struct LiveDataView: View {
                             enLarge.toggle()
                         }
                     }
-                }
             }
         }
         .matchedGeometryEffect(id: "Gauge", in: namespace)
@@ -159,7 +154,7 @@ struct LiveDataView: View {
         toggleDisplayType(to: .none)
         UIApplication.shared.isIdleTimerDisabled = true
 
-        obdService.startContinuousUpdates(viewModel.order)
+        obdService.startContinuousUpdates(viewModel.pidData.map { $0.command })
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
                 switch completion {
@@ -177,9 +172,8 @@ struct LiveDataView: View {
 
     func updateDataItems(measurements: [OBDCommand: MeasurementResult]) {
         for (pid, measurement) in measurements {
-            if let _ = viewModel.data[pid] {
-                viewModel.data[pid]?.value = measurement.value
-                viewModel.data[pid]?.unit = measurement.unit.symbol
+            if let pid = viewModel.pidData.first(where: { $0.command == pid }) {
+                pid.update(measurement.value)
             }
         }
     }

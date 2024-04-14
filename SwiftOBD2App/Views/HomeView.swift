@@ -94,7 +94,6 @@ struct HomeView: View {
     }
 }
 
-
 struct SettingsAboutSectionView: View {
     let title: String
     let iconName: String

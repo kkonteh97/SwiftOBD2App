@@ -13,7 +13,7 @@ struct Manufacturer: Codable, Hashable {
     let models: [Model]
 }
 
-struct Model: Codable, Hashable  {
+struct Model: Codable, Hashable {
     let name: String
     let years: [String]
 }

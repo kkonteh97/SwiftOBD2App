@@ -31,11 +31,9 @@ struct CustomTabBarView<Content: View>: View {
     let backgroundView: Content
     let tabs: [TabBarItem]
 
-
     @Binding var statusMessage: String?
     @EnvironmentObject var obdService: OBDService
     @EnvironmentObject var garage: Garage
-
 
     init(
         tabs: [TabBarItem],
@@ -116,7 +114,7 @@ struct CustomTabBarView<Content: View>: View {
                                 } else {
                                     displayType = .quarterScreen
                                 }}))
-                    if obdService.connectionState != .connectedToVehicle  {
+                    if obdService.connectionState != .connectedToVehicle {
                         connectButton
                             .offset(y: self.offset + self.gestureOffset - maxHeight * 0.5)
                             .animation(.interactiveSpring(response: 0.5,
@@ -199,9 +197,8 @@ extension CustomTabBarView {
         }
     }
 
-
     @MainActor
-    private func connectButtonAction()  {
+    private func connectButtonAction() {
         Task {
             guard !isLoading else {
                 return
@@ -402,5 +399,3 @@ extension CustomTabBarView {
         }
     }
 }
-
-

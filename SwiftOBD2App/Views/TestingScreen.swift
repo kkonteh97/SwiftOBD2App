@@ -66,7 +66,7 @@ struct TestingScreen: View {
         }
     }
 
-    func sendCommand(command: OBDCommand)  {
+    func sendCommand(command: OBDCommand) {
         Task {
             do {
                 print("Sending Command: \(command.properties.command)")
@@ -105,7 +105,7 @@ struct TestingScreen: View {
                     }
                 }
                 .onChange(of: viewModel.lastMessageID) { id in
-                    withAnimation{
+                    withAnimation {
                         proxy.scrollTo(id, anchor: .bottom)
                     }
                 }
@@ -197,7 +197,7 @@ struct TestingScreen: View {
     }
 }
 
-//struct PeripheralRow: View {
+// struct PeripheralRow: View {
 //    let peripheral: Peripheral
 //
 //    var body: some View {
@@ -215,9 +215,9 @@ struct TestingScreen: View {
 //                .fill(Color.charcoal)
 //        }
 //    }
-//}
+// }
 
-//struct PeripheralInfo: View {
+// struct PeripheralInfo: View {
 //    @State var peripheral: Peripheral
 //
 //    var body: some View {
@@ -250,9 +250,9 @@ struct TestingScreen: View {
 //        .padding(10)
 //        .frame(maxWidth: .infinity, maxHeight: .infinity)
 //    }
-//}
+// }
 
-//struct ServiceRow: View {
+// struct ServiceRow: View {
 //    let service: CBService
 //
 //    var body: some View {
@@ -267,9 +267,9 @@ struct TestingScreen: View {
 //        .font(.system(size: 18, weight: .semibold))
 //        .padding(.vertical)
 //    }
-//}
+// }
 
-//struct CharacteristicRow: View {
+// struct CharacteristicRow: View {
 //    let characteristic: CBCharacteristic
 //    @State var response: String?
 //
@@ -314,7 +314,7 @@ struct TestingScreen: View {
 //           }
 //           return propertiesString
 //       }
-//}
+// }
 
 struct History: Identifiable {
     var id = UUID()
@@ -326,7 +326,7 @@ struct TestMessageView: View {
     var message: History
 
     var body: some View {
-        HStack{
+        HStack {
             Text(message.command)
             Spacer()
             Text(message.response)
@@ -341,7 +341,7 @@ struct TestMessageView: View {
     }
 }
 
-//class TestingScreenViewModel: ObservableObject {
+// class TestingScreenViewModel: ObservableObject {
 //
 //    let obdService: OBDServiceProtocol
 //    let garage: GarageProtocol
@@ -452,7 +452,7 @@ struct TestMessageView: View {
 //            }
 //        }
 //    }
-//}
+// }
 
 #Preview {
         TestingScreen(viewModel: TestingScreenViewModel(), displayType: .constant(.quarterScreen))

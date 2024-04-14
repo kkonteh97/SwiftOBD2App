@@ -47,5 +47,3 @@ struct MainView: View {
         .environmentObject(Garage())
         .environmentObject(OBDService())
 }
-
-

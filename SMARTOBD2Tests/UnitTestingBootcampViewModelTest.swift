@@ -130,7 +130,6 @@ final class UnitTestingBootcampViewModelTest: XCTestCase {
         // Given
         let vm = UnitTestingBootcampViewModel(isPremium: Bool.random())
 
-
         // When
         let loopCount = Int.random(in: 1...100)
         for _ in 0..<loopCount {
@@ -157,7 +156,7 @@ final class UnitTestingBootcampViewModelTest: XCTestCase {
         let expectation = XCTestExpectation(description: "Download items")
         vm.$dataArray
             .dropFirst()
-            .sink { returnItems in
+            .sink { _ in
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -180,7 +179,7 @@ final class UnitTestingBootcampViewModelTest: XCTestCase {
 
         vm.$dataArray
             .dropFirst()
-            .sink { returnItems in
+            .sink { _ in
                 expectation.fulfill()
             }
             .store(in: &cancellables)

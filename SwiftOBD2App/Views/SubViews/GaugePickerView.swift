@@ -48,7 +48,6 @@ struct GaugePickerView: View {
                         ForEach(GaugeType.allCases, id: \.self) { gaugeType in
                             GaugeView(
                                 dataItem: dataItem,
-                                value: dataItem.value,
                                 selectedGauge: gaugeType
                             )
                             .frame(width: cardWidth, height: cardHeight)
@@ -73,11 +72,11 @@ struct GaugePickerView: View {
                     )
 
                     Button {
-                        viewModel.data[dataItem.command]?.selectedGauge = GaugeType.allCases[currentIndex]
+                        dataItem.selectedGauge = GaugeType.allCases[currentIndex]
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                             enLarge.toggle()
                         }
-                    } label : {
+                    } label: {
                         Text("Exit")
                             .font(.caption)
                     }
@@ -92,10 +91,9 @@ struct GaugePickerView: View {
 }
 
 struct GaugeView: View {
-    @State var dataItem: DataItem
-    var value: Double
+    @ObservedObject var dataItem: DataItem
 
-    var selectedGauge: GaugeType? = nil
+    var selectedGauge: GaugeType?
 
     var body: some View {
         gaugeView(for: selectedGauge ?? dataItem.selectedGauge ?? .gaugeType2)
@@ -105,20 +103,19 @@ struct GaugeView: View {
     func gaugeView(for gaugeType: GaugeType) -> some View {
         switch gaugeType {
         case .gaugeType1:
-            GaugeType1(dataItem: dataItem, value: value)
+            GaugeType1(dataItem: dataItem)
         case .gaugeType2:
-            GaugeType2(dataItem: dataItem, value: value)
+            GaugeType2(dataItem: dataItem)
         case .gaugeType3:
-            GaugeType3(dataItem: dataItem, value: value)
+            GaugeType3(dataItem: dataItem)
         case .gaugeType4:
-            GaugeType4(dataItem: dataItem, value: value)
+            GaugeType4(dataItem: dataItem)
         }
     }
 }
 
 struct GaugeType1: View {
-    @State var dataItem: DataItem
-    var value: Double
+    @ObservedObject var dataItem: DataItem
 
     var body: some View {
         Gauge(value: dataItem.value,
@@ -134,12 +131,11 @@ struct GaugeType1: View {
 }
 
 struct GaugeType2: View {
-    @State var dataItem: DataItem
-    var value: Double
+    @ObservedObject var dataItem: DataItem
     let gradient = Gradient(colors: [.blue, .green, .pink])
 
     var body: some View {
-        Gauge(value: value,
+        Gauge(value: dataItem.value,
               in: 0...Double(dataItem.command.properties.maxValue)
         ) {
             Text( dataItem.command.properties.description)
@@ -154,8 +150,7 @@ struct GaugeType2: View {
 }
 
 struct GaugeType3: View {
-    @State var dataItem: DataItem
-    var value: Double
+    @ObservedObject var dataItem: DataItem
 
     var body: some View {
         Gauge(value: dataItem.value, in: 0...Double(dataItem.command.properties.maxValue)) {
@@ -170,11 +165,10 @@ struct GaugeType3: View {
 }
 
 struct GaugeType4: View {
-    @State var dataItem: DataItem
-    var value: Double
+    @ObservedObject var dataItem: DataItem
 
     var body: some View {
-        Gauge(value: value , in: 0...Double(dataItem.command.properties.maxValue)) {
+        Gauge(value: dataItem.value, in: 0...Double(dataItem.command.properties.maxValue)) {
             Text( dataItem.command.properties.description)
                 .font(.caption)
         } currentValueLabel: {
@@ -202,7 +196,7 @@ struct CustomGaugeView2: GaugeStyle {
 
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(Color.white, 
+                .stroke(Color.white,
                         style: StrokeStyle(lineWidth: 20,
                                            lineCap: .butt,
                                            lineJoin: .bevel,
@@ -273,5 +267,5 @@ struct SpeedometerGaugeStyle: GaugeStyle {
     GaugeType2(dataItem: DataItem(command: OBDCommand.mode1(.speed),
                                   value: 10,
                                   selectedGauge: .gaugeType4,
-                                  measurements: []), value: 10)
+                                  measurements: []))
 }
