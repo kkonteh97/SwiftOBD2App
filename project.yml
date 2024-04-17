@@ -2,13 +2,13 @@ name: SwiftOBD2App
 options:
   bundleIdPrefix: com.myapp
 targets:
-  SMARTOBD2:
+  SwiftOBD2App:
     type: application
     platform: iOS
     deploymentTarget: "16.0"
     dependencies:
-      - package:
-            url: "https://github.com/kkonteh97/SwiftOBD2.git"
+      - package: SwiftOBD2
+        product: SwiftOBD2
     info:
       path: "SwiftOBD2App/Info.plist"
       properties:
@@ -26,4 +26,10 @@ targets:
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
     sources:
       - path: "SwiftOBD2App"
+
+packages:
+    SwiftOBD2:
+        url: https://github.com/kkonteh97/SwiftOBD2.git
+        requirement:
+        branch: "main"
 
