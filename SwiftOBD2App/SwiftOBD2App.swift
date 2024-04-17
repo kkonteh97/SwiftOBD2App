@@ -20,10 +20,30 @@ extension Logger {
     static let bleCom = Logger(subsystem: subsystem, category: "BLEComms")
 }
 
-class GlobalSettings: ObservableObject {
+class GlobalSettings: NSObject, ObservableObject {
     @Published var displayType: BottomSheetType = .quarterScreen
     @Published var statusMessage = ""
     @Published var showAltText = false
+    @Published var connectionType: ConnectionType = .bluetooth {
+        didSet {
+            UserDefaults.standard.set(connectionType.rawValue, forKey: "connectionType")
+        }
+    }
+    @Published var selectedUnit: MeasurementUnits = .metric {
+        didSet {
+            UserDefaults.standard.set(selectedUnit.rawValue, forKey: "selectedUnit")
+        }
+    }
+
+    override init() {
+        super.init()
+        if let unit = UserDefaults.standard.string(forKey: "selectedUnit") {
+            selectedUnit = MeasurementUnits(rawValue: unit) ?? .metric
+        }
+        if let connection = UserDefaults.standard.string(forKey: "connectionType") {
+            connectionType = ConnectionType(rawValue: connection) ?? .bluetooth
+        }
+    }
 }
 
 @main

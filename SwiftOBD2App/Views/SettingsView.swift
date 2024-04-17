@@ -24,14 +24,97 @@ class SettingsViewModel: ObservableObject {
 
 struct SettingsView: View {
     @EnvironmentObject var globalSettings: GlobalSettings
-    @State var isDemoMode = false
+
+    @EnvironmentObject var obdService: OBDService
+    @Environment(\.dismiss) var dismiss
+    @Binding var displayType: BottomSheetType
+
+    @Binding var isDemoMode: Bool
 
     var body: some View {
-        VStack {
-            Spacer()
+        ZStack {
+            BackgroundView(isDemoMode: $isDemoMode)
+            VStack {
+                List {
+                    connectionSection
+                        .listRowBackground(Color.clear)
+
+                    displaySection
+                        .listRowBackground(Color.darkStart.opacity(0.3))
+
+                    otherSection
+                        .listRowSeparator(.automatic)
+                        .listRowBackground(Color.darkStart.opacity(0.3))
+                }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .foregroundColor(.white)
+            }
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        displayType = .quarterScreen
+                        dismiss()
+                    } label: {
+                        Label("Back", systemImage: "chevron.backward")
+                    }
+                }
+            }
+            .gesture(DragGesture().onEnded({
+                if $0.translation.width > 100 {
+                    displayType = .quarterScreen
+                    dismiss()
+                }
+            }))
         }
-        .padding()
     }
+
+    var displaySection: some View {
+        Section(header: Text("Display").font(.system(size: 20, weight: .bold, design: .rounded))) {
+            Picker("Units", selection: $globalSettings.selectedUnit) {
+                ForEach(MeasurementUnits.allCases, id: \.self) {
+                    Text($0.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+    }
+
+    var connectionSection: some View {
+        Section(header: Text("Connection").font(.system(size: 20, weight: .bold, design: .rounded))) {
+            Picker("Connection Type", selection: $obdService.connectionType) {
+                ForEach(ConnectionType.allCases, id: \.self) {
+                    Text($0.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .background(Color.darkStart.opacity(0.3))
+
+            switch obdService.connectionType {
+            case .bluetooth:
+                NavigationLink(destination: Text("Bluetooth Settings")) {
+                    Text("Bluetooth Settings")
+                }
+            case .wifi:
+                Text("Wifi Settings")
+
+            case .demo:
+                Text("Demo Mode")
+            }
+        }
+        .listRowSeparator(.hidden)
+
+    }
+
+    var otherSection: some View {
+        Section(header: Text("Other").font(.system(size: 20, weight: .bold, design: .rounded))) {
+            NavigationLink(destination: AboutView()) {
+                Text("About")
+            }
+        }
+    }
+
 }
 
 struct ProtocolPicker: View {
@@ -66,6 +149,6 @@ struct RoundedRectangleStyle: ViewModifier {
 }
 
 #Preview {
-    SettingsView()
+    SettingsView(displayType: .constant(.fullScreen), isDemoMode: .constant(true))
         .environmentObject(GlobalSettings())
 }

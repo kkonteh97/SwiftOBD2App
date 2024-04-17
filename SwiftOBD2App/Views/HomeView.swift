@@ -60,7 +60,8 @@ struct HomeView: View {
                                                            })
 
                     NavigationLink {
-                        SettingsView(isDemoMode: isDemoMode)
+                        SettingsView(displayType: $displayType, 
+                                     isDemoMode: $isDemoMode)
                     } label: {
                         SettingsAboutSectionView(title: "Settings", iconName: "gear", iconColor: .green.opacity(0.6))
                     }
