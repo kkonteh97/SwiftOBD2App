@@ -216,7 +216,7 @@ extension CustomTabBarView {
                 self.statusMessage = "Initializing OBD Adapter (BLE)"
                 toggleDisplayType(to: .halfScreen)
 
-                vehicle.obdinfo =  try await obdService.startConnection()
+                vehicle.obdinfo =  try await obdService.startConnection(preferedProtocol: .protocol6)
                 vehicle.obdinfo?.supportedPIDs = await obdService.getSupportedPIDs()
 
 //                if vehicle.make == "None",

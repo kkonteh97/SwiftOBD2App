@@ -150,8 +150,10 @@ struct LiveDataView: View {
         guard viewModel.isRequestingPids == false else {
             return
         }
+
         viewModel.isRequestingPids = true
         toggleDisplayType(to: .none)
+
         UIApplication.shared.isIdleTimerDisabled = true
 
         obdService.startContinuousUpdates(viewModel.pidData.map { $0.command })

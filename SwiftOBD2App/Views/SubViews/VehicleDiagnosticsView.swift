@@ -138,7 +138,7 @@ struct VehicleDiagnosticsView: View {
     @State private var alertMessage = ""
     @State private var loading = false
     @State private var clearCodeAlert = false
-    @State var troubleCodes: [TroubleCode] = []
+    @State var troubleCodes: [ECUID:[TroubleCode]] = [:]
 
     @State var requestingTroubleCodes = false
     @State var requestingTroubleCodesError = false
@@ -182,15 +182,17 @@ struct VehicleDiagnosticsView: View {
                 return
             }
             appendStage(Stage(name: "Reading trouble codes"))
-            let troubleCodes = try await obd2Service.scanForTroubleCodes()
+            let codes = try await obd2Service.scanForTroubleCodes()
             try await Task.sleep(nanoseconds: 2_500_000_000)
 
             appendStage(Stage(name: "Trouble codes found"))
 
-            for troubleCode in troubleCodes {
+            for (ecu, troubleCodes) in codes {
                 withAnimation {
-                    self.troubleCodes.append(troubleCode)
-                    appendStage(Stage(name: troubleCode.code + ": " + troubleCode.description))
+                    self.troubleCodes[ecu] = troubleCodes
+                    for troubleCode in troubleCodes {
+                        appendStage(Stage(name: troubleCode.code + ": " + troubleCode.description))
+                    }
                 }
             }
             currentVehicle.troubleCodes = troubleCodes
@@ -265,23 +267,25 @@ struct VehicleDiagnosticsView: View {
                         .padding()
                         Text("Confirmed Codes")
                             .padding(.horizontal)
-                        if  let troubleCodes = currentVehicle.troubleCodes {
-                            List(troubleCodes, id: \.self) { troubleCode in
-                                VStack {
-                                    HStack(spacing: 20) {
-                                        Text(troubleCode.code)
-                                        Text(troubleCode.description)
-                                        Spacer()
+                        if  let codes = currentVehicle.troubleCodes {
+                            ForEach(Array(codes.keys), id: \.self) { ecuid in
+                                ForEach(codes[ecuid] ?? [], id: \.self) { troubleCode in
+                                    VStack {
+                                        HStack(spacing: 20) {
+                                            Text(troubleCode.code)
+                                            Text(troubleCode.description)
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white)
+                                    .transition(.slide)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .animation(.easeInOut, value: troubleCode)
+                                    .listRowBackground(Color.clear)
                                 }
-                                .transition(.slide)
-                                .padding(.vertical, 10)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .animation(.easeInOut, value: troubleCode)
-                                .listRowBackground(Color.clear)
                             }
                             .listStyle(.inset)
                             .scrollContentBackground(.hidden)
