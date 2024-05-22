@@ -29,7 +29,7 @@ class GlobalSettings: NSObject, ObservableObject {
             UserDefaults.standard.set(connectionType.rawValue, forKey: "connectionType")
         }
     }
-    @Published var selectedUnit: MeasurementUnits = .metric {
+    @Published var selectedUnit: MeasurementUnit = .metric {
         didSet {
             UserDefaults.standard.set(selectedUnit.rawValue, forKey: "selectedUnit")
         }
@@ -38,7 +38,7 @@ class GlobalSettings: NSObject, ObservableObject {
     override init() {
         super.init()
         if let unit = UserDefaults.standard.string(forKey: "selectedUnit") {
-            selectedUnit = MeasurementUnits(rawValue: unit) ?? .metric
+            selectedUnit = MeasurementUnit(rawValue: unit) ?? .metric
         }
         if let connection = UserDefaults.standard.string(forKey: "connectionType") {
             connectionType = ConnectionType(rawValue: connection) ?? .bluetooth

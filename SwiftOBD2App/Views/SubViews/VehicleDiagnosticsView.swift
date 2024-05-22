@@ -169,7 +169,7 @@ struct VehicleDiagnosticsView: View {
 
         do {
             try await Task.sleep(nanoseconds: 2_000_000_000)
-            guard let status = try await obd2Service.getStatus() else {
+            guard let status = try await self.getStatus() else {
                 appendStage(Stage(name: "No status codes found"))
                 requestingTroubleCodesError = true
                 return
@@ -206,6 +206,22 @@ struct VehicleDiagnosticsView: View {
             self.alertMessage = error.localizedDescription
             showAlert = true
             requestingTroubleCodesError = true
+        }
+    }
+
+    func getStatus() async throws -> Status? {
+        let statusResult = try await obd2Service.getStatus()
+        switch statusResult {
+        case .success(let status):
+            guard let response = status.statusResult else {
+                    appendStage(Stage(name: "No status codes found"))
+                    requestingTroubleCodesError = true
+                    return nil
+            }
+            return response
+        case .failure(let error):
+            print(error.localizedDescription)
+            return nil
         }
     }
 

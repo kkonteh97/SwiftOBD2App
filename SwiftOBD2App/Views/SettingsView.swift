@@ -73,7 +73,7 @@ struct SettingsView: View {
     var displaySection: some View {
         Section(header: Text("Display").font(.system(size: 20, weight: .bold, design: .rounded))) {
             Picker("Units", selection: $globalSettings.selectedUnit) {
-                ForEach(MeasurementUnits.allCases, id: \.self) {
+                ForEach(MeasurementUnit.allCases, id: \.self) {
                     Text($0.rawValue)
                 }
             }
