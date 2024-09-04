@@ -70,7 +70,7 @@ struct TestingScreen: View {
         Task {
             do {
                 print("Sending Command: \(command.properties.command)")
-                let response = try await obdService.sendCommand(command.properties.command)
+                let response = try await obdService.sendCommandInternal(command.properties.command, retries: 3)
                 print("Response: \(response.joined(separator: " "))")
 //                let decodedValue = command.properties.decode(data: data)
 //                switch decodedValue {
@@ -168,7 +168,7 @@ struct TestingScreen: View {
     }
 
     func sendMessage() async throws -> [String] {
-        let response = try await obdService.sendCommand(command)
+        let response = try await obdService.sendCommandInternal(command, retries: 3)
             return response
     }
 

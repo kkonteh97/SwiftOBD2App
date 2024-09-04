@@ -164,7 +164,7 @@ struct LiveDataView: View {
                     print("Finished")
                 case .failure(let error):
                     print("Error: \(error)")
-                    stopRequestingPIDs()
+//                    stopRequestingPIDs()
                 }
             }, receiveValue: { measurements in
                 updateDataItems(measurements: measurements)

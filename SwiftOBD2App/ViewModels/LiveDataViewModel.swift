@@ -98,8 +98,8 @@ class LiveDataViewModel: ObservableObject {
             self.pidData = pidData
         } else {
             // default pids SPEED and RPM
-            pidData = [DataItem(command: .mode1(.rpm), value: 754, selectedGauge: .gaugeType4),
-                       DataItem(command: .mode1(.speed), value: 34, selectedGauge: .gaugeType1)]
+            pidData = [DataItem(command: .mode1(.rpm), value: 0, selectedGauge: .gaugeType4),
+                       DataItem(command: .mode1(.speed), value: 0, selectedGauge: .gaugeType1)]
         }
     }
 
